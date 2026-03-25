@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📚 Libro de Clases Digital — Vista Previa</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #0f172a; color: #1e293b; }
+
+  /* ── NAV DE PANTALLAS ── */
+  .nav-screens {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: #1e293b; padding: 12px 24px;
+    display: flex; gap: 8px; overflow-x: auto;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+  .screen-btn {
+    padding: 8px 16px; border-radius: 8px; border: none;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    font-family: inherit; white-space: nowrap; transition: all 0.2s;
+    background: #334155; color: #94a3b8;
+  }
+  .screen-btn.active { background: #2563EB; color: white; }
+  .screen-btn:hover:not(.active) { background: #475569; color: white; }
+
+  /* ── SCREENS ── */
+  .screens-wrapper { margin-top: 56px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ═══════════════════════════════════════════
+     SCREEN 1: LOGIN
+  ═══════════════════════════════════════════ */
+  .login-page {
+    display: flex; min-height: calc(100vh - 56px);
+  }
+  .login-left {
+    flex: 1;
+    background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px; position: relative; overflow: hidden;
+  }
+  .login-left .content { position: relative; z-index: 2; color: white; max-width: 420px; }
+  .login-left .big-emoji { font-size: 72px; display: block; margin-bottom: 24px; }
+  .login-left h1 { font-size: 30px; font-weight: 800; margin-bottom: 16px; line-height: 1.2; }
+  .login-left p { font-size: 16px; opacity: .88; line-height: 1.6; margin-bottom: 28px; }
+  .feature-item { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500;
+    background: rgba(255,255,255,.12); padding: 10px 16px; border-radius: 10px; margin-bottom: 8px; }
+  .shape { position: absolute; border-radius: 50%; opacity: .08; background: white; }
+  .s1 { width:320px;height:320px;top:-100px;right:-100px; }
+  .s2 { width:200px;height:200px;bottom:30px;left:-60px; }
+  .s3 { width:100px;height:100px;bottom:180px;right:60px; }
+
+  .login-right {
+    width: 440px; background: #f8fafc;
+    display: flex; align-items: center; justify-content: center; padding: 40px;
+  }
+  .login-card { width: 100%; max-width: 360px; }
+  .login-card .logo-big { font-size: 42px; margin-bottom: 12px; display: block; }
+  .login-card h2 { font-size: 26px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+  .login-card .sub { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+  .lform { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+  .lform label { font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 5px; }
+  .lform input {
+    width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0;
+    border-radius: 10px; font-size: 14px; font-family: inherit;
+    background: white; color: #1e293b;
+  }
+  .lform input:focus { outline: none; border-color: #2563EB; }
+  .btn-login-demo {
+    width: 100%; padding: 13px; background: linear-gradient(135deg,#2563EB,#7C3AED);
+    color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
+    cursor: pointer; font-family: inherit; margin-top: 4px;
+  }
+  .demo-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-top: 16px; }
+  .demo-pill {
+    padding: 7px 4px; border-radius: 8px; font-size: 11px; font-weight: 600;
+    text-align: center; border: 1.5px solid;
+  }
+  .dp-admin { background:#ede9fe;color:#7c3aed;border-color:#c4b5fd; }
+  .dp-dir   { background:#fef9c3;color:#ca8a04;border-color:#fde68a; }
+  .dp-prof  { background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe; }
+  .dp-alum  { background:#d1fae5;color:#065f46;border-color:#a7f3d0; }
+
+  /* ═══════════════════════════════════════════
+     LAYOUT GENERAL (SIDEBAR + CONTENT)
+  ═══════════════════════════════════════════ */
+  .app-layout {
+    display: flex; height: calc(100vh - 56px); background: #f1f5f9;
+  }
+  .sidebar {
+    width: 250px; background: white; border-right: 1px solid #e2e8f0;
+    display: flex; flex-direction: column;
+    box-shadow: 2px 0 8px rgba(0,0,0,.06); flex-shrink: 0;
+  }
+  .sb-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 18px 14px; border-bottom: 1px solid #f1f5f9;
+  }
+  .sb-logo {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: #2563EB; color: white; font-weight: 800; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .sb-info h2 { font-size: 12px; font-weight: 700; color: #1e293b; }
+  .sb-info span { font-size: 11px; color: #64748b; }
+  .sb-nav { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; overflow-y:auto; }
+  .nav-i {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #475569;
+    cursor: pointer; text-decoration: none; transition: background .2s;
+  }
+  .nav-i.active { background: #2563EB; color: white; box-shadow: 0 2px 8px rgba(37,99,235,.2); }
+  .nav-i:hover:not(.active) { background: #f1f5f9; color: #1e293b; }
+  .nav-i .ni { font-size: 16px; width: 22px; text-align: center; }
+  .sb-foot {
+    padding: 10px 8px; border-top: 1px solid #f1f5f9;
+  }
+  .user-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px; border-radius: 10px; background: #f8fafc;
+  }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: #2563EB;
+    color: white; font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .user-row .ud { flex: 1; }
+  .user-row .un { font-size: 12px; font-weight: 600; color: #1e293b; display: block; }
+  .user-row .ue { font-size: 10px; color: #94a3b8; display: block; }
+  .main-area { flex: 1; overflow-y: auto; }
+  .page-inner { padding: 24px 28px; }
+
+  /* ── Tarjeta / Card ── */
+  .card { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1px solid #f1f5f9; }
+  .ph { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+  .ph h1 { font-size: 22px; font-weight: 800; color: #0f172a; }
+  .ph p  { font-size: 13px; color: #64748b; margin-top: 3px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+    border-radius: 9px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: inherit; }
+  .btn-blue { background: #2563EB; color: white; box-shadow: 0 2px 8px rgba(37,99,235,.25); }
+  .btn-gray { background: #f1f5f9; color: #374151; border: 1px solid #e2e8f0; }
+  .btn-red  { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .btn-green{ background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+  .stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 22px; }
+  .stat-c { background: white; border-radius: 14px; padding: 18px; border: 1px solid #f1f5f9;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06); display: flex; align-items: center; gap: 14px; }
+  .si { width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0; }
+  .stat-c h3 { font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1; }
+  .stat-c p  { font-size: 12px; color: #64748b; margin-top: 3px; font-weight: 500; }
+
+  /* ── Table ── */
+  .tw { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: #f8fafc; }
+  th { padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b;
+    text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #e2e8f0; white-space:nowrap; }
+  td { padding: 13px 14px; font-size: 13px; color: #374151; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+
+  /* ── Badges ── */
+  .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .b-admin    { background:#ede9fe;color:#7c3aed; }
+  .b-directivo{ background:#fef9c3;color:#ca8a04; }
+  .b-profesor { background:#dbeafe;color:#1d4ed8; }
+  .b-alumno   { background:#d1fae5;color:#065f46; }
+  .b-active   { background:#d1fae5;color:#065f46; }
+  .b-positiva { background:#d1fae5;color:#065f46; }
+  .b-negativa { background:#fee2e2;color:#dc2626; }
+  .b-neutral  { background:#f1f5f9;color:#475569; }
+
+  /* ── Avatar stack ── */
+  .av { width:30px;height:30px;border-radius:50%;color:white;font-weight:700;font-size:11px;
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .row-user { display:flex;align-items:center;gap:9px; }
+  .ru-n { font-weight:600;color:#0f172a;font-size:13px; }
+  .ru-e { font-size:11px;color:#64748b; }
+
+  /* ── Nota chips ── */
+  .nota { display:inline-flex;align-items:center;justify-content:center;
+    width:38px;height:32px;border-radius:7px;font-size:13px;font-weight:700; }
+  .n-alta  { background:#d1fae5;color:#065f46; }
+  .n-media { background:#fef3c7;color:#92400e; }
+  .n-baja  { background:#fee2e2;color:#991b1b; }
+
+  /* ── Anotaciones ── */
+  .ann { border-radius: 11px; padding: 13px 16px; display: flex; gap: 12px; margin-bottom: 8px; }
+  .ann-pos { background:#d1fae5; }
+  .ann-neg { background:#fee2e2; }
+  .ann-neu { background:#f1f5f9; }
+  .ann .em { font-size:20px;flex-shrink:0;margin-top:1px; }
+  .ann h4 { font-size:13px;font-weight:700; }
+  .ann .ann-pos h4 { color:#065f46; }
+  .ann p  { font-size:12px;opacity:.85;margin-top:3px; }
+
+  /* ── Welcome banner ── */
+  .welcome-banner {
+    border-radius: 18px; padding: 28px; margin-bottom: 22px;
+    color: white; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #2563EB, #2563EBcc);
+  }
+  .wb-emoji { position:absolute;right:24px;top:50%;transform:translateY(-50%);font-size:72px;opacity:.12; }
+
+  /* ── Course cards ── */
+  .course-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .course-card {
+    background: white; border-radius: 14px; padding: 18px;
+    border: 1px solid #f1f5f9; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    border-top: 4px solid #2563EB; cursor: pointer; transition: all .2s;
+  }
+  .course-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+  .cc-icon { width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    font-size:20px;margin-bottom:12px; }
+  .cc-name { font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px; }
+  .cc-sub  { font-size:12px;color:#64748b;margin-bottom:12px; }
+  .cc-tags { display:flex;gap:6px;flex-wrap:wrap; }
+  .cc-tag  { padding:3px 9px;border-radius:8px;font-size:11px;font-weight:600; }
+
+  /* ── Color pickers ── */
+  .color-row { display:flex;align-items:center;gap:10px;margin-top:6px; }
+  .cp { width:40px;height:36px;border-radius:8px;border:2px solid #e2e8f0; }
+  .cp-input { flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:9px;
+    font-family:monospace;font-size:13px; }
+
+  /* ── Sections label ── */
+  .section-lbl { font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;
+    letter-spacing:.06em;margin-bottom:10px;margin-top:18px; }
+
+  /* ── Period cards ── */
+  .period-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:14px; }
+  .period-card { background:white;border-radius:14px;padding:18px;
+    border:1px solid #f1f5f9;box-shadow:0 1px 4px rgba(0,0,0,.06);border-top:4px solid #2563EB; }
+  .pc-name { font-size:15px;font-weight:700;color:#0f172a;margin-bottom:6px; }
+  .pc-meta { font-size:12px;color:#64748b; }
+
+  /* ── Hoja de vida ── */
+  .hv-header {
+    display:flex;align-items:center;gap:18px;padding:22px;
+    background:linear-gradient(135deg,#2563EB18,#2563EB08);
+    border-radius:16px;border:1px solid #2563EB30;margin-bottom:22px;
+  }
+  .hv-avatar { width:68px;height:68px;border-radius:14px;background:#2563EB;color:white;
+    font-weight:800;font-size:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .hv-name { font-size:20px;font-weight:800;color:#0f172a; }
+  .hv-sub  { font-size:13px;color:#64748b;margin-top:4px; }
+  .ann-summary { display:flex;gap:10px;margin-left:auto; }
+  .ann-pill { text-align:center;border-radius:10px;padding:8px 12px; }
+  .ann-pill .ap-n { font-size:20px; }
+  .ann-pill .ap-v { font-weight:800;font-size:18px;line-height:1; }
+  .ann-pill .ap-l { font-size:10px;font-weight:500; }
+
+  /* ── Grades table ── */
+  .nota-row { display:flex;gap:5px;flex-wrap:wrap; }
+
+  /* ── Reports ── */
+  .rep-stat { display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px; }
+  .rs-card { border-radius:12px;padding:14px 16px;text-align:center; }
+  .rs-ic { font-size:22px;margin-bottom:4px; }
+  .rs-val { font-size:22px;font-weight:800;color:#0f172a;line-height:1; }
+  .rs-lbl { font-size:11px;color:#64748b;font-weight:500;margin-top:3px; }
+</style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<div class="nav-screens">
+  <button class="screen-btn active" onclick="showScreen(0)">🔐 Login</button>
+  <button class="screen-btn" onclick="showScreen(1)">🏠 Dashboard</button>
+  <button class="screen-btn" onclick="showScreen(2)">👥 Usuarios</button>
+  <button class="screen-btn" onclick="showScreen(3)">🏫 Parámetros</button>
+  <button class="screen-btn" onclick="showScreen(4)">📅 Períodos</button>
+  <button class="screen-btn" onclick="showScreen(5)">📚 Cursos</button>
+  <button class="screen-btn" onclick="showScreen(6)">✏️ Calificaciones</button>
+  <button class="screen-btn" onclick="showScreen(7)">👤 Hoja de vida</button>
+  <button class="screen-btn" onclick="showScreen(8)">📊 Reportes</button>
+</div>
+
+<div class="screens-wrapper">
+
+<!-- ══════════════ SCREEN 0: LOGIN ══════════════ -->
+<div class="screen active" id="s0">
+  <div class="login-page">
+    <div class="login-left">
+      <div class="shape s1"></div><div class="shape s2"></div><div class="shape s3"></div>
+      <div class="content">
+        <span class="big-emoji">🏫</span>
+        <h1>Libro de Clases Digital</h1>
+        <p>Gestión escolar moderna, simple y eficiente para tu colegio</p>
+        <div class="feature-item"><span>✅</span> Calificaciones en tiempo real</div>
+        <div class="feature-item"><span>✅</span> Hoja de vida del alumno</div>
+        <div class="feature-item"><span>✅</span> Anotaciones y reportes</div>
+        <div class="feature-item"><span>✅</span> Multi-colegio y multi-perfil</div>
+      </div>
+    </div>
+    <div class="login-right">
+      <div class="login-card">
+        <span class="logo-big">📚</span>
+        <h2>Bienvenido</h2>
+        <p class="sub">Ingresa tus credenciales para acceder</p>
+        <div class="lform">
+          <div><label>Correo electrónico</label><input type="email" value="admin@sanpatricio.cl" /></div>
+          <div><label>Contraseña</label><input type="password" value="••••••••" /></div>
+          <button class="btn-login-demo" onclick="showScreen(1)">🔐 Ingresar</button>
+        </div>
+        <p style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Accesos de prueba</p>
+        <div class="demo-grid">
+          <div class="demo-pill dp-admin">Admin</div>
+          <div class="demo-pill dp-dir">Directivo</div>
+          <div class="demo-pill dp-prof">Profesor</div>
+          <div class="demo-pill dp-alum">Alumno</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ SCREEN 1: DASHBOARD ══════════════ -->
+<div class="screen" id="s1">
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-header">
+      <div class="sb-logo">S</div>
+      <div class="sb-info"><h2>Colegio San Patricio</h2><span class="badge b-admin">Administrador</span></div>
+    </div>
+    <nav class="sb-nav">
+      <a class="nav-i active" onclick="showScreen(1)"><span class="ni">🏠</span> Dashboard</a>
+      <a class="nav-i" onclick="showScreen(2)"><span class="ni">👥</span> Usuarios</a>
+      <a class="nav-i" onclick="showScreen(3)"><span class="ni">🏫</span> Colegio</a>
+      <a class="nav-i" onclick="showScreen(4)"><span class="ni">📅</span> Períodos</a>
+      <a class="nav-i" onclick="showScreen(5)"><span class="ni">📚</span> Cursos</a>
+      <a class="nav-i" onclick="showScreen(5)"><span class="ni">📖</span> Asignaturas</a>
+      <a class="nav-i" onclick="showScreen(6)"><span class="ni">✏️</span> Calificaciones</a>
+      <a class="nav-i" onclick="showScreen(8)"><span class="ni">📊</span> Reportes</a>
+    </nav>
+    <div class="sb-foot">
+      <div class="user-row">
+        <div class="avatar">CA</div>
+        <div class="ud"><span class="un">Carlos Administrador</span><span class="ue">admin@sanpatricio.cl</span></div>
+      </div>
+    </div>
+  </aside>
+  <!-- Contenido -->
+  <main class="main-area">
+    <div class="page-inner">
+      <!-- Banner bienvenida -->
+      <div class="welcome-banner">
+        <span class="wb-emoji">🏫</span>
+        <p style="opacity:.85;font-size:14px;margin-bottom:6px">Buenos días ☀️</p>
+        <h1 style="font-size:22px;font-weight:800">Carlos Administrador</h1>
+        <p style="opacity:.85;font-size:13px;margin-top:5px">Colegio San Patricio · Martes, 24 de marzo de 2026</p>
+      </div>
+      <!-- Stats -->
+      <div class="stat-grid">
+        <div class="stat-c"><div class="si" style="background:#ede9fe;color:#7c3aed">🎓</div><div><h3>48</h3><p>Estudiantes</p></div></div>
+        <div class="stat-c"><div class="si" style="background:#dbeafe;color:#1d4ed8">👨‍🏫</div><div><h3>8</h3><p>Profesores</p></div></div>
+        <div class="stat-c"><div class="si" style="background:#d1fae5;color:#065f46">📚</div><div><h3>6</h3><p>Cursos</p></div></div>
+        <div class="stat-c"><div class="si" style="background:#fef3c7;color:#92400e">⭐</div><div><h3>24</h3><p>Anotaciones +</p></div></div>
+      </div>
+      <!-- Grid inferior -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- Cursos recientes -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="font-size:15px;font-weight:700">📚 Cursos</h3>
+            <span style="font-size:12px;color:#2563EB;font-weight:600;cursor:pointer" onclick="showScreen(5)">Ver todos →</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;background:#f8fafc">
+              <div style="width:34px;height:34px;border-radius:8px;background:#2563EB;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">5</div>
+              <div><p style="font-weight:600;font-size:13px;color:#0f172a">5° Básico A</p><p style="font-size:11px;color:#64748b">6 alumnos</p></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;background:#f8fafc">
+              <div style="width:34px;height:34px;border-radius:8px;background:#7c3aed;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">6</div>
+              <div><p style="font-weight:600;font-size:13px;color:#0f172a">6° Básico B</p><p style="font-size:11px;color:#64748b">8 alumnos</p></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;background:#f8fafc">
+              <div style="width:34px;height:34px;border-radius:8px;background:#10b981;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">7</div>
+              <div><p style="font-weight:600;font-size:13px;color:#0f172a">7° Básico A</p><p style="font-size:11px;color:#64748b">7 alumnos</p></div>
+            </div>
+          </div>
+        </div>
+        <!-- Acciones rápidas -->
+        <div class="card">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:14px">⚡ Acciones rápidas</h3>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;background:#dbeafe;cursor:pointer" onclick="showScreen(6)">
+              <span style="font-size:17px">✏️</span><span style="font-weight:600;font-size:13px">Registrar calificaciones</span><span style="margin-left:auto;color:#64748b">→</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;background:#d1fae5;cursor:pointer" onclick="showScreen(5)">
+              <span style="font-size:17px">📋</span><span style="font-weight:600;font-size:13px">Ver cursos</span><span style="margin-left:auto;color:#64748b">→</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;background:#fef3c7;cursor:pointer" onclick="showScreen(8)">
+              <span style="font-size:17px">📊</span><span style="font-weight:600;font-size:13px">Ver reportes</span><span style="margin-left:auto;color:#64748b">→</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;background:#ede9fe;cursor:pointer" onclick="showScreen(2)">
+              <span style="font-size:17px">👥</span><span style="font-weight:600;font-size:13px">Gestionar usuarios</span><span style="margin-left:auto;color:#64748b">→</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</div>
+
+<!-- ══════════════ SCREEN 2: USUARIOS ══════════════ -->
+<div class="screen" id="s2">
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sb-header"><div class="sb-logo">S</div><div class="sb-info"><h2>Colegio San Patricio</h2><span class="badge b-admin">Administrador</span></div></div>
+    <nav class="sb-nav">
+      <a class="nav-i" onclick="showScreen(1)"><span class="ni">🏠</span> Dashboard</a>
+      <a class="nav-i active" onclick="showScreen(2)"><span class="ni">👥</span> Usuarios</a>
+      <a class="nav-i" onclick="showScreen(3)"><span class="ni">🏫</span> Colegio</a>
+      <a class="nav-i" onclick="showScreen(4)"><span class="ni">📅</span> Períodos</a>
+      <a class="nav-i" onclick="showScreen(5)"><span class="ni">📚</span> Cursos</a>
+      <a class="nav-i" onclick="showScreen(5)"><span class="ni">📖</span> Asignaturas</a>
+      <a class="nav-i" onclick="showScreen(6)"><span class="ni">✏️</span> Calificaciones</a>
+      <a class="nav-i" onclick="showScreen(8)"><span class="ni">📊</span> Reportes</a>
+    </nav>
+    <div class="sb-foot"><div class="user-row"><div class="avatar">CA</div><div class="ud"><span class="un">Carlos Administrador</span><span class="ue">admin@sanpatricio.cl</span></div></div></div>
+  </aside>
+  <main class="main-area"><div class="page-inner">
+    <div class="ph"><div><h1>👥 Usuarios</h1><p>10 usuarios registrados</p></div><button class="btn btn-blue">＋ Nuevo usuario</button></div>
+    <!-- Filtros -->
+    <div class="card" style="margin-bottom:16px;padding:14px 18px">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:9px;padding:4px">
+          <button class="btn" style="background:white;color:#2563EB;box-shadow:0 1px 3px rgba(0,0,0,.08);font-size:12px;padding:6px 12px;border-radius:7px">Todos</button>
+          <button class="btn" style="background:none;color:#64748b;border:none;font-size:12px;padding:6px 12px">Admin</button>
+          <button class="btn" style="background:none;color:#64748b;border:none;font-size:12px;padding:6px 12px">Directivo</button>
+          <button class="btn" style="background:none;color:#64748b;border:none;font-size:12px;padding:6px 12px">Profesor</button>
+          <button class="btn" style="background:none;color:#64748b;border:none;font-size:12px;padding:6px 12px">Alumno</button>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;background:white;border:1.5px solid #e2e8f0;border-radius:10px;padding:8px 12px">
+          <span>🔍</span><input style="border:none;outline:none;font-size:13px;color:#374151;width:200px" placeholder="Buscar por nombre, email, RUT..." />
+        </div>
+      </div>
+    </div>
+    <div class="card" style="padding:0">
+      <div class="tw">
+        <table>
+          <thead><tr><th>Usuario</th><th>RUT</th><th>Teléfono</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>
+            <tr><td><div class="row-user"><div class="av" style="background:#6366f1">CA</div><div><div class="ru-n">Carlos Administrador</div><div class="ru-e">admin@sanpatricio.cl</div></div></div></td><td style="color:#64748b;font-size:12px">11.111.111-1</td><td style="color:#64748b;font-size:12px">+56 9 1111 1111</td><td><span class="badge b-admin">Administrador</span></td><td><span class="badge b-active">Activo</span></td><td><div style="display:flex;gap:5px"><button class="btn btn-gray" style="padding:5px 10px;font-size:12px">✏️</button></div></td></tr>
+            <tr><td><div class="row-user"><div class="av" style="background:#ec4899">CG</div><div><div class="ru-n">Carmen González</div><div class="ru-e">directivo@sanpatricio.cl</div></div></div></td><td style="color:#64748b;font-size:12px">22.222.222-2</td><td style="color:#64748b;font-size:12px">+56 9 2222 2222</td><td><span class="badge b-directivo">Directivo</span></td><td><span class="badge b-active">Activo</span></td><td><div style="display:flex;gap:5px"><button class="btn btn-gray" style="padding:5px 10px;font-size:12px">✏️</button><button class="btn btn-red" style="padding:5px 10px;font-size:12px">🚫</button></div></td></tr>
+            <tr><td><div class="row-user"><div class="av" style="background:#f59e0b">MV</div><div><div class="ru-n">María Valdés Rojas</div><div class="ru-e">mvaldes@sanpatricio.cl</div></div></div></td><td style="color:#64748b;font-size:12px">33.333.333-3</td><td style="color:#64748b;font-size:12px">+56 9 3333 3333</td><td><span class="badge b-profesor">Profesor</span></td><td><span class="badge b-active">Activo</span></td><td><div style="display:flex;gap:5px"><button class="btn btn-gray" style="padding:5px 10px;font-size:12px">✏️</button><button class="btn btn-red" style="padding:5px 10px;font-size:12px">🚫</button></div></td></tr>
+            <tr><td><div class="row-user"><div class="av" style="background:#10b981">PA</div><div><div class="ru-n">Pedro Alvarado Soto</div><div class="ru-e">pedro.alvarado@gmail.com</div></div></div></td><td style="color:#64748b;font-size:12px">55.555.555-5</td><td style="color:#64748b;font-size:12px">—</td><td><span class="badge b-alumno">Alumno</span></td><td><span class="badge b-active">Activo</span></td><td><div style="display:flex;gap:5px"><button class="btn btn-gray" style="padding:5px 10px;font-size:12px">✏️</button><button class="btn btn-red" style="padding:5px 10px;font-size:12px">🚫</button></div></td></tr>
+            <tr><td><div class="row-user"><div class="av" style="background:#3b82f6">VB</div><div><div class="ru-n">Valentina Bravo Castro</div><div class="ru-e">vale.bravo@gmail.com</div></div></div></td><td style="color:#64748b;font-size:12px">66.666.666-6</td><td style="color:#64748b;font-size:12px">—</td><td><span class="badge b-alumno">Alumno</span></td><td><span class="badge b-active">Activo</span></td><td><div style="display:flex;gap:5px"><button class="btn btn-gray" style="padding:5px 10px;font-size:12px">✏️</button><button class="btn btn-red" style="padding:5px 10px;font-size:12px">🚫</button></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div></main>
+</div>
+</div>
+
+<!-- ══════════════ SCREEN 3: PARÁMETROS ══════════════ -->
+<div class="screen" id="s3">
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sb-header"><div class="sb-logo" id="preview-logo">S</div><div class="sb-info"><h2 id="preview-name">Colegio San Patricio</h2><span class="badge b-directivo">Directivo</span></div></div>
+    <nav class="sb-nav">
+      <a class="nav-i" onclick="showScreen(1)"><span class="ni">🏠</span> Dashboard</a>
+      <a class="nav-i" onclick="showScreen(2)"><span class="ni">👥</span> Usuarios</a>
+      <a class="nav-i active" onclick="showScreen(3)"><span class="ni">🏫</span> Colegio</a>
+      <a class="nav-i" onclick="showScreen(4)"><span class="ni">📅</span> Períodos</a>
+      <a class="nav-i" onclick="showScreen(5)"><span class="ni">📚</span> Cursos</a>
+    </nav>
+    <div class="sb-foot"><div class="user-row"><div class="avatar">CG</div><div class="ud"><span class="un">Carmen González</span><span class="ue">directivo@sanpatricio.cl</span></div></div></div>
+  </aside>
+  <main class="main-area"><div class="page-inner">
+    <div class="ph"><div><h1>🏫 Parámetros del Colegio</h1><p>Configuración general e identidad visual</p></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <!-- Info institucional -->
+      <div class="card" style="grid-column:1/-1">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">📋 Información institucional</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="grid-column:1/-1"><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Nombre del colegio</label><input style="width:100%;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit" value="Colegio San Patricio" /></div>
+          <div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">RUT</label><input style="width:100%;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit" value="12.345.678-9" /></div>
+          <div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Rector/a</label><input style="width:100%;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit" value="Carmen González Muñoz" /></div>
+          <div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Email</label><input style="width:100%;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit" value="contacto@sanpatricio.cl" /></div>
+          <div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Teléfono</label><input style="width:100%;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit" value="+56 2 2345 6789" /></div>
+        </div>
+      </div>
+      <!-- Colores -->
+      <div class="card">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:6px">🎨 Identidad visual</h3>
+        <p style="font-size:12px;color:#64748b;margin-bottom:16px">Define los colores que identifican a tu colegio.</p>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Color primario</label>
+            <div class="color-row"><input type="color" value="#2563EB" class="cp" oninput="updatePreviewColor(this.value)"><input class="cp-input" value="#2563EB" /></div></div>
+          <div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Color secundario</label>
+            <div class="color-row"><input type="color" value="#1E40AF" class="cp"><input class="cp-input" value="#1E40AF" /></div></div>
+          <div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Color de acento</label>
+            <div class="color-row"><input type="color" value="#3B82F6" class="cp"><input class="cp-input" value="#3B82F6" /></div></div>
+        </div>
+      </div>
+      <!-- Preview en vivo -->
+      <div class="card">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">👁️ Vista previa en vivo</h3>
+        <div style="border-radius:10px;overflow:hidden;border:1px solid #e2e8f0">
+          <div id="preview-header" style="background:#2563EB;padding:14px;display:flex;align-items:center;gap:10px">
+            <div id="preview-logo-mini" style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px">S</div>
+            <div><p id="preview-name-mini" style="color:white;font-weight:700;font-size:12px">Colegio San Patricio</p><p style="color:rgba(255,255,255,.7);font-size:10px">Administrador</p></div>
+          </div>
+          <div style="padding:14px;background:#f8fafc">
+            <div style="background:white;border-radius:7px;padding:10px;margin-bottom:7px">
+              <div id="preview-bar" style="height:9px;background:#2563EB;border-radius:3px;width:55%;margin-bottom:5px"></div>
+              <div style="height:7px;background:#e2e8f0;border-radius:3px;width:78%"></div>
+            </div>
+            <div id="preview-btn" style="background:#2563EB;border-radius:7px;padding:9px 13px;color:white;font-size:11px;font-weight:600">Botón principal</div>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">URL del logo</label>
+          <input style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit" placeholder="https://..." />
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-blue" style="min-width:150px">💾 Guardar cambios</button>
+    </div>
+  </div></main>
+</div>
+</div>
+
+<!-- ══════════════ SCREEN 4: PERÍODOS ══════════════ -->
+<div class="screen" id="s4">
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sb-header"><div class="sb-logo">S</div><div class="sb-info"><h2>Colegio San Patricio</h2><span class="badge b-admin">Administrador</span></div></div>
+    <nav class="sb-nav">
+      <a class="nav-i" onclick="showScreen(1)"><span class="ni">🏠</span> Dashboard</a>
+      <a class="nav-i" onclick="showScreen(2)"><span class="ni">👥</span> Usuarios</a>
+      <a class="nav-i" onclick="showScreen(3)"><span class="ni">🏫</span> Colegio</a>
+      <a class="nav-i active" onclick="showScreen(4)"><span class="ni">📅</span> Períodos</a>
+      <a class="nav-i" onclick="showScreen(5)"><span class="ni">📚</span> Cursos</a>
+      <a class="nav-i" onclick="showScreen(6)"><span class="ni">✏️</span> Calificaciones</a>
+      <a class="nav-i" onclick="showScreen(8)"><span class="ni">📊</span> Reportes</a>
+    </nav>
+    <div class="sb-foot"><div class="user-row"><div class="avatar">CA</div><div class="ud"><span class="un">Carlos Administrador</span><span class="ue">admin@sanpatricio.cl</span></div></div></div>
+  </aside>
+  <main class="main-area"><div class="page-inner">
+    <div class="ph"><div><h1>📅 Períodos académicos</h1><p>Año escolar 2026</p></div><button class="btn btn-blue">＋ Nuevo período</button></div>
+    <div class="period-grid">
+      <div class="period-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div><div class="pc-name">1er Semestre 2026</div><span class="badge b-active">Activo</span></div>
+          <div style="display:flex;gap:5px"><button class="btn btn-gray" style="padding:5px 10px;font-size:12px">✏️</button></div>
+        </div>
+        <div class="pc-meta">📋 Semestral — N° 1<br>📆 01/03/2026 → 15/07/2026</div>
+      </div>
+      <div class="period-card" style="border-top-color:#94a3b8">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div><div class="pc-name">2do Semestre 2026</div><span class="badge b-neutral">Inactivo</span></div>
+          <div style="display:flex;gap:5px"><button class="btn btn-gray" style="padding:5px 10px;font-size:12px">✏️</button></div>
+        </div>
+        <div class="pc-meta">📋 Semestral — N° 2<br>📆 01/08/2026 → 15/12/2026</div>
+      </div>
+    </div>
+  </div></main>
+</div>
+</div>
+
+<!-- ══════════════ SCREEN 5: CURSOS ══════════════ -->
+<div class="screen" id="s5">
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sb-header"><div class="sb-logo">S</div><div class="sb-info"><h2>Colegio San Patricio</h2><span class="badge b-admin">Administrador</span></div></div>
+    <nav class="sb-nav">
+      <a class="nav-i" onclick="showScreen(1)"><span class="ni">🏠</span> Dashboard</a>
+      <a class="nav-i" onclick="showScreen(2)"><span class="ni">👥</span> Usuarios</a>
+      <a class="nav-i" onclick="showScreen(3)"><span class="ni">🏫</span> Colegio</a>
+      <a class="nav-i" onclick="showScreen(4)"><span class="ni">📅</span> Períodos</a>
+      <a class="nav-i active" onclick="showScreen(5)"><span class="ni">📚</span> Cursos</a>
+      <a class="nav-i" onclick="showScreen(6)"><span class="ni">✏️</span> Calificaciones</a>
+      <a class="nav-i" onclick="showScreen(8)"><span class="ni">📊</span> Reportes</a>
+    </nav>
+    <div class="sb-foot"><div class="user-row"><div class="avatar">CA</div><div class="ud"><span class="un">Carlos Administrador</span><span class="ue">admin@sanpatricio.cl</span></div></div></div>
+  </aside>
+  <main class="main-area"><div class="page-inner">
+    <div class="ph"><div><h1>📚 Cursos</h1><p>3 cursos en 2026</p></div><button class="btn btn-blue">＋ Nuevo curso</button></div>
+    <div class="course-grid">
+      <div class="course-card" onclick="showScreen(6)">
+        <div class="cc-icon" style="background:#fef9c3">📚</div>
+        <div class="cc-name">5° Básico A</div>
+        <div class="cc-sub">5° Básico · 2026</div>
+        <div class="cc-tags">
+          <span class="cc-tag" style="background:#f1f5f9;color:#475569">👥 6 alumnos</span>
+          <span class="cc-tag" style="background:#dbeafe;color:#1d4ed8">👨‍🏫 Prof. M. Valdés</span>
+        </div>
+      </div>
+      <div class="course-card" style="border-top-color:#7c3aed">
+        <div class="cc-icon" style="background:#ede9fe">📚</div>
+        <div class="cc-name">6° Básico B</div>
+        <div class="cc-sub">6° Básico · 2026</div>
+        <div class="cc-tags">
+          <span class="cc-tag" style="background:#f1f5f9;color:#475569">👥 8 alumnos</span>
+          <span class="cc-tag" style="background:#dbeafe;color:#1d4ed8">👨‍🏫 Prof. J. Morales</span>
+        </div>
+      </div>
+      <div class="course-card" style="border-top-color:#10b981">
+        <div class="cc-icon" style="background:#d1fae5">📚</div>
+        <div class="cc-name">7° Básico A</div>
+        <div class="cc-sub">7° Básico · 2026</div>
+        <div class="cc-tags">
+          <span class="cc-tag" style="background:#f1f5f9;color:#475569">👥 7 alumnos</span>
+          <span class="cc-tag" style="background:#dbeafe;color:#1d4ed8">👨‍🏫 Prof. M. Valdés</span>
+        </div>
+      </div>
+    </div>
+  </div></main>
+</div>
+</div>
+
+<!-- ══════════════ SCREEN 6: CALIFICACIONES ══════════════ -->
+<div class="screen" id="s6">
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sb-header"><div class="sb-logo">S</div><div class="sb-info"><h2>Colegio San Patricio</h2><span class="badge b-profesor">Profesor</span></div></div>
+    <nav class="sb-nav">
+      <a class="nav-i" onclick="showScreen(1)"><span class="ni">🏠</span> Dashboard</a>
+      <a class="nav-i" onclick="showScreen(5)"><span class="ni">📚</span> Cursos</a>
+      <a class="nav-i" onclick="showScreen(5)"><span class="ni">📖</span> Asignaturas</a>
+      <a class="nav-i active" onclick="showScreen(6)"><span class="ni">✏️</span> Calificaciones</a>
+      <a class="nav-i" onclick="showScreen(8)"><span class="ni">📊</span> Reportes</a>
+    </nav>
+    <div class="sb-foot"><div class="user-row"><div class="avatar" style="background:#10b981">MV</div><div class="ud"><span class="un">María Valdés Rojas</span><span class="ue">mvaldes@sanpatricio.cl</span></div></div></div>
+  </aside>
+  <main class="main-area"><div class="page-inner">
+    <div class="ph"><div><h1>✏️ Calificaciones</h1><p>Registro y consulta de notas</p></div></div>
+    <!-- Selector -->
+    <div class="card" style="margin-bottom:16px;padding:16px 20px">
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+        <div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Curso</label>
+          <select style="padding:9px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit;min-width:180px"><option>5° Básico A</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Período</label>
+          <select style="padding:9px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit;min-width:180px"><option>1er Semestre 2026</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Asignatura</label>
+          <select style="padding:9px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit;min-width:180px"><option>Matemática</option></select></div>
+        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:9px;padding:4px;align-self:flex-end">
+          <button class="btn" style="background:white;color:#2563EB;box-shadow:0 1px 3px rgba(0,0,0,.08);font-size:12px;padding:7px 14px;border-radius:7px">📖 Por asignatura</button>
+          <button class="btn" style="background:none;color:#64748b;border:none;font-size:12px;padding:7px 14px">👤 Por alumno</button>
+        </div>
+      </div>
+    </div>
+    <!-- Tabla de notas -->
+    <div class="card" style="padding:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+        <div><h3 style="font-weight:700;font-size:15px">Matemática — 5° Básico A</h3><p style="font-size:12px;color:#64748b">👨‍🏫 Prof. María Valdés</p></div>
+        <button class="btn btn-blue">💾 Guardar notas</button>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>#</th><th>Alumno</th><th>Notas existentes</th><th>Nueva nota</th><th>Promedio</th><th></th></tr></thead>
+          <tbody>
+            <tr><td style="color:#94a3b8;font-weight:600">1</td><td><div class="row-user"><div class="av" style="background:#2563EB">PA</div><span class="ru-n">Pedro Alvarado Soto</span></div></td><td><div class="nota-row"><span class="nota n-alta">6.5</span><span class="nota n-alta">6.0</span><span class="nota n-media">5.5</span></div></td><td><input type="number" placeholder="1.0–7.0" style="width:68px;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:13px;text-align:center" /></td><td><span class="nota n-alta">6.0</span></td><td><button class="btn btn-gray" style="padding:5px 10px;font-size:12px" onclick="showScreen(7)">📋</button></td></tr>
+            <tr><td style="color:#94a3b8;font-weight:600">2</td><td><div class="row-user"><div class="av" style="background:#ec4899">VB</div><span class="ru-n">Valentina Bravo Castro</span></div></td><td><div class="nota-row"><span class="nota n-alta">7.0</span><span class="nota n-alta">6.8</span><span class="nota n-alta">6.5</span></div></td><td><input type="number" placeholder="1.0–7.0" style="width:68px;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:13px;text-align:center" /></td><td><span class="nota n-alta">6.8</span></td><td><button class="btn btn-gray" style="padding:5px 10px;font-size:12px" onclick="showScreen(7)">📋</button></td></tr>
+            <tr><td style="color:#94a3b8;font-weight:600">3</td><td><div class="row-user"><div class="av" style="background:#f59e0b">DC</div><span class="ru-n">Diego Contreras Díaz</span></div></td><td><div class="nota-row"><span class="nota n-media">4.8</span><span class="nota n-media">5.0</span><span class="nota n-baja">3.9</span></div></td><td><input type="number" placeholder="1.0–7.0" style="width:68px;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:13px;text-align:center" /></td><td><span class="nota n-media">4.6</span></td><td><button class="btn btn-gray" style="padding:5px 10px;font-size:12px" onclick="showScreen(7)">📋</button></td></tr>
+            <tr><td style="color:#94a3b8;font-weight:600">4</td><td><div class="row-user"><div class="av" style="background:#8b5cf6">CE</div><span class="ru-n">Camila Espinoza Fuentes</span></div></td><td><div class="nota-row"><span class="nota n-alta">6.2</span><span class="nota n-media">5.8</span><span class="nota n-alta">6.1</span></div></td><td><input type="number" placeholder="1.0–7.0" style="width:68px;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:13px;text-align:center" /></td><td><span class="nota n-alta">6.0</span></td><td><button class="btn btn-gray" style="padding:5px 10px;font-size:12px" onclick="showScreen(7)">📋</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div></main>
+</div>
+</div>
+
+<!-- ══════════════ SCREEN 7: HOJA DE VIDA ══════════════ -->
+<div class="screen" id="s7">
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sb-header"><div class="sb-logo">S</div><div class="sb-info"><h2>Colegio San Patricio</h2><span class="badge b-profesor">Profesor</span></div></div>
+    <nav class="sb-nav">
+      <a class="nav-i" onclick="showScreen(1)"><span class="ni">🏠</span> Dashboard</a>
+      <a class="nav-i" onclick="showScreen(5)"><span class="ni">📚</span> Cursos</a>
+      <a class="nav-i" onclick="showScreen(6)"><span class="ni">✏️</span> Calificaciones</a>
+      <a class="nav-i" onclick="showScreen(8)"><span class="ni">📊</span> Reportes</a>
+    </nav>
+    <div class="sb-foot"><div class="user-row"><div class="avatar" style="background:#10b981">MV</div><div class="ud"><span class="un">María Valdés Rojas</span><span class="ue">mvaldes@sanpatricio.cl</span></div></div></div>
+  </aside>
+  <main class="main-area"><div class="page-inner">
+    <a style="color:#2563EB;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none" onclick="showScreen(6)">← Volver</a>
+    <!-- Header alumno -->
+    <div class="hv-header" style="margin-top:14px">
+      <div class="hv-avatar">PA</div>
+      <div>
+        <div class="hv-name">Pedro Alvarado Soto</div>
+        <div class="hv-sub">RUT: 55.555.555-5 · pedro.alvarado@gmail.com</div>
+      </div>
+      <div class="ann-summary">
+        <div class="ann-pill" style="background:#d1fae5"><div class="ap-n">⭐</div><div class="ap-v" style="color:#065f46">3</div><div class="ap-l" style="color:#065f46">Positivas</div></div>
+        <div class="ann-pill" style="background:#fee2e2"><div class="ap-n">⚠️</div><div class="ap-v" style="color:#dc2626">1</div><div class="ap-l" style="color:#dc2626">Negativas</div></div>
+        <div class="ann-pill" style="background:#f1f5f9"><div class="ap-n">📝</div><div class="ap-v" style="color:#475569">2</div><div class="ap-l" style="color:#475569">Neutras</div></div>
+      </div>
+    </div>
+    <!-- Tabs -->
+    <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:10px;padding:4px;margin-bottom:18px;width:fit-content">
+      <button class="btn" style="background:white;color:#2563EB;box-shadow:0 1px 3px rgba(0,0,0,.08);font-size:12px;padding:8px 16px;border-radius:8px">📊 Calificaciones</button>
+      <button class="btn" style="background:none;color:#64748b;border:none;font-size:12px;padding:8px 16px">📝 Anotaciones (6)</button>
+      <button class="btn" style="background:none;color:#64748b;border:none;font-size:12px;padding:8px 16px">👤 Datos personales</button>
+    </div>
+    <!-- Notas por asignatura -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="font-weight:700;font-size:14px">📐 Matemática</h3>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:#64748b">Promedio:</span><span class="nota n-alta" style="font-weight:800">6.0</span></div>
+        </div>
+        <div class="nota-row">
+          <div style="text-align:center"><span class="nota n-alta">6.5</span><p style="font-size:10px;color:#94a3b8;margin-top:2px">1er Sem</p></div>
+          <div style="text-align:center"><span class="nota n-alta">6.0</span><p style="font-size:10px;color:#94a3b8;margin-top:2px">1er Sem</p></div>
+          <div style="text-align:center"><span class="nota n-media">5.5</span><p style="font-size:10px;color:#94a3b8;margin-top:2px">1er Sem</p></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="font-weight:700;font-size:14px">📝 Lenguaje y Comunicación</h3>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:#64748b">Promedio:</span><span class="nota n-alta">5.7</span></div>
+        </div>
+        <div class="nota-row">
+          <div style="text-align:center"><span class="nota n-media">5.2</span><p style="font-size:10px;color:#94a3b8;margin-top:2px">1er Sem</p></div>
+          <div style="text-align:center"><span class="nota n-alta">6.0</span><p style="font-size:10px;color:#94a3b8;margin-top:2px">1er Sem</p></div>
+          <div style="text-align:center"><span class="nota n-alta">5.8</span><p style="font-size:10px;color:#94a3b8;margin-top:2px">1er Sem</p></div>
+        </div>
+      </div>
+      <!-- Anotaciones preview -->
+      <div class="card">
+        <h3 style="font-weight:700;font-size:14px;margin-bottom:12px">📝 Anotaciones recientes</h3>
+        <div class="ann ann-pos"><span class="em">⭐</span><div><h4 style="color:#065f46">Participación destacada</h4><p style="color:#065f46">Excelente participación en clase de Matemática</p><p style="font-size:11px;color:#94a3b8;margin-top:4px">Por: María Valdés · 20/03/2026</p></div></div>
+        <div class="ann ann-neg"><span class="em">⚠️</span><div><h4 style="color:#dc2626">Atraso reiterado</h4><p style="color:#dc2626">Llegó tarde 3 veces esta semana sin justificación</p><p style="font-size:11px;color:#94a3b8;margin-top:4px">Por: María Valdés · 18/03/2026</p></div></div>
+        <div class="ann ann-neu"><span class="em">📝</span><div><h4 style="color:#475569">Tarea pendiente</h4><p style="color:#475569">No presentó tarea de Matemática del 15/03</p><p style="font-size:11px;color:#94a3b8;margin-top:4px">Por: María Valdés · 16/03/2026</p></div></div>
+      </div>
+    </div>
+  </div></main>
+</div>
+</div>
+
+<!-- ══════════════ SCREEN 8: REPORTES ══════════════ -->
+<div class="screen" id="s8">
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sb-header"><div class="sb-logo">S</div><div class="sb-info"><h2>Colegio San Patricio</h2><span class="badge b-directivo">Directivo</span></div></div>
+    <nav class="sb-nav">
+      <a class="nav-i" onclick="showScreen(1)"><span class="ni">🏠</span> Dashboard</a>
+      <a class="nav-i" onclick="showScreen(2)"><span class="ni">👥</span> Usuarios</a>
+      <a class="nav-i" onclick="showScreen(3)"><span class="ni">🏫</span> Colegio</a>
+      <a class="nav-i" onclick="showScreen(5)"><span class="ni">📚</span> Cursos</a>
+      <a class="nav-i" onclick="showScreen(6)"><span class="ni">✏️</span> Calificaciones</a>
+      <a class="nav-i active" onclick="showScreen(8)"><span class="ni">📊</span> Reportes</a>
+    </nav>
+    <div class="sb-foot"><div class="user-row"><div class="avatar" style="background:#ec4899">CG</div><div class="ud"><span class="un">Carmen González</span><span class="ue">directivo@sanpatricio.cl</span></div></div></div>
+  </aside>
+  <main class="main-area"><div class="page-inner">
+    <div class="ph"><div><h1>📊 Reportes</h1><p>Informes académicos y resúmenes</p></div><button class="btn btn-gray">🖨️ Imprimir</button></div>
+    <!-- Stats resumen -->
+    <div class="rep-stat">
+      <div class="rs-card" style="background:#ede9fe"><div class="rs-ic">🎓</div><div class="rs-val">48</div><div class="rs-lbl">Estudiantes</div></div>
+      <div class="rs-card" style="background:#dbeafe"><div class="rs-ic">👨‍🏫</div><div class="rs-val">8</div><div class="rs-lbl">Profesores</div></div>
+      <div class="rs-card" style="background:#d1fae5"><div class="rs-ic">✅</div><div class="rs-val">42</div><div class="rs-lbl">Aprobados</div></div>
+      <div class="rs-card" style="background:#fee2e2"><div class="rs-ic">⚠️</div><div class="rs-val">6</div><div class="rs-lbl">En riesgo</div></div>
+    </div>
+    <!-- Selector -->
+    <div class="card" style="margin-bottom:16px;padding:16px 20px">
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+        <div><label style="font-size:12px;font-weight:600;color:#374141;display:block;margin-bottom:5px">Curso</label>
+          <select style="padding:9px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit;min-width:180px"><option>5° Básico A</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:#374141;display:block;margin-bottom:5px">Período</label>
+          <select style="padding:9px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit;min-width:180px"><option>1er Semestre 2026</option></select></div>
+        <button class="btn btn-blue">🔍 Generar informe</button>
+      </div>
+    </div>
+    <!-- Informe -->
+    <div class="card" style="padding:0">
+      <div style="text-align:center;padding:20px;border-bottom:2px solid #e2e8f0">
+        <h2 style="font-size:18px;font-weight:800">Informe de Calificaciones</h2>
+        <p style="font-size:15px;font-weight:600;color:#475569;margin-top:4px">5° Básico A</p>
+        <p style="font-size:12px;color:#94a3b8;margin-top:4px">Colegio San Patricio · 1er Semestre 2026</p>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>#</th><th>Alumno</th><th style="text-align:center">Lenguaje</th><th style="text-align:center">Matemática</th><th style="text-align:center">Historia</th><th style="text-align:center">Ciencias</th><th style="text-align:center">Promedio Gral.</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#94a3b8;font-weight:600">1</td><td><div class="row-user"><div class="av" style="background:#2563EB">PA</div><span class="ru-n">Pedro Alvarado S.</span></div></td><td style="text-align:center"><span class="nota n-media">5.7</span></td><td style="text-align:center"><span class="nota n-alta">6.0</span></td><td style="text-align:center"><span class="nota n-media">5.5</span></td><td style="text-align:center"><span class="nota n-alta">6.2</span></td><td style="text-align:center"><span class="nota n-alta" style="font-weight:800;width:44px;height:36px">5.9</span></td></tr>
+            <tr><td style="color:#94a3b8;font-weight:600">2</td><td><div class="row-user"><div class="av" style="background:#ec4899">VB</div><span class="ru-n">Valentina Bravo C.</span></div></td><td style="text-align:center"><span class="nota n-alta">6.5</span></td><td style="text-align:center"><span class="nota n-alta">6.8</span></td><td style="text-align:center"><span class="nota n-alta">6.3</span></td><td style="text-align:center"><span class="nota n-alta">6.7</span></td><td style="text-align:center"><span class="nota n-alta" style="font-weight:800;width:44px;height:36px">6.6</span></td></tr>
+            <tr><td style="color:#94a3b8;font-weight:600">3</td><td><div class="row-user"><div class="av" style="background:#f59e0b">DC</div><span class="ru-n">Diego Contreras D.</span></div></td><td style="text-align:center"><span class="nota n-baja">3.8</span></td><td style="text-align:center"><span class="nota n-media">4.6</span></td><td style="text-align:center"><span class="nota n-media">4.2</span></td><td style="text-align:center"><span class="nota n-media">4.8</span></td><td style="text-align:center"><span class="nota n-media" style="font-weight:800;width:44px;height:36px">4.4</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Estadísticas del informe -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px 20px">
+        <div style="background:#d1fae5;border-radius:10px;padding:12px;text-align:center"><div style="font-size:20px">🏆</div><div style="font-size:18px;font-weight:800;color:#0f172a">6.6</div><div style="font-size:10px;color:#64748b">Mejor promedio</div></div>
+        <div style="background:#dbeafe;border-radius:10px;padding:12px;text-align:center"><div style="font-size:20px">📈</div><div style="font-size:18px;font-weight:800;color:#0f172a">5.6</div><div style="font-size:10px;color:#64748b">Promedio del curso</div></div>
+        <div style="background:#d1fae5;border-radius:10px;padding:12px;text-align:center"><div style="font-size:20px">✅</div><div style="font-size:18px;font-weight:800;color:#0f172a">5/6</div><div style="font-size:10px;color:#64748b">Aprobados</div></div>
+        <div style="background:#fee2e2;border-radius:10px;padding:12px;text-align:center"><div style="font-size:20px">❌</div><div style="font-size:18px;font-weight:800;color:#0f172a">1/6</div><div style="font-size:10px;color:#64748b">En riesgo</div></div>
+      </div>
+    </div>
+  </div></main>
+</div>
+</div>
+
+</div><!-- /screens-wrapper -->
+
+<script>
+function showScreen(n) {
+  document.querySelectorAll('.screen').forEach((s,i) => s.classList.toggle('active', i === n));
+  document.querySelectorAll('.screen-btn').forEach((b,i) => b.classList.toggle('active', i === n));
+}
+
+function updatePreviewColor(color) {
+  document.getElementById('preview-header').style.background = color;
+  document.getElementById('preview-logo-mini').style.background = 'rgba(255,255,255,0.2)';
+  document.getElementById('preview-bar').style.background = color;
+  document.getElementById('preview-btn').style.background = color;
+  // Actualizar sidebar del screen actual
+  document.querySelectorAll('.sb-logo').forEach(el => el.style.background = color);
+  document.querySelectorAll('.nav-i.active').forEach(el => el.style.background = color);
+  document.querySelectorAll('.btn-blue').forEach(el => el.style.background = color);
+}
+</script>
+</body>
+</html>
