@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd frontend && npm install && npm run build && cd .. && pip install -r backend/requirements.txt"
+buildCommand = "cd frontend && npm install && npm run build && cd .. && pip install --break-system-packages -r backend/requirements.txt"
 
 [deploy]
 startCommand = "gunicorn --chdir backend app:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
