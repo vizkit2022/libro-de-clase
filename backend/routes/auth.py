@@ -27,11 +27,14 @@ def login():
 
     token = create_access_token(
         identity=str(user.id),
-        additional_claims={'role': user.role, 'school_id': user.school_id},
+        additional_claims={
+            'role': user.role,
+            'school_id': user.school_id  # None para super_admin
+        },
         expires_delta=timedelta(hours=12)
     )
 
-    school = School.query.get(user.school_id)
+    school = School.query.get(user.school_id) if user.school_id else None
 
     return jsonify({
         'access_token': token,
@@ -47,7 +50,7 @@ def get_me():
     user = User.query.get(int(user_id))
     if not user:
         return jsonify({'error': 'Usuario no encontrado'}), 404
-    school = School.query.get(user.school_id)
+    school = School.query.get(user.school_id) if user.school_id else None
     return jsonify({'user': user.to_dict(), 'school': school.to_dict() if school else None}), 200
 
 

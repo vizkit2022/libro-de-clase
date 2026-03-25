@@ -2,7 +2,7 @@ import os
 from flask import Flask, send_from_directory
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from models import db, School, User, Period, Subject, Course, Enrollment, CourseSubject, Grade, Annotation
+from models import db, School, User, Period, Subject, Course, Enrollment, CourseSubject, Grade, Annotation, Subscription
 from datetime import datetime, date
 
 # Path to the built React frontend (relative to this file)
@@ -52,6 +52,8 @@ def create_app():
     from routes.annotations import annotations_bp
     from routes.reports import reports_bp
     from routes.ocr import ocr_bp
+    from routes.super_admin import super_admin_bp
+    from routes.payments import payments_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -63,6 +65,8 @@ def create_app():
     app.register_blueprint(annotations_bp, url_prefix='/api/annotations')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
     app.register_blueprint(ocr_bp, url_prefix='/api/ocr')
+    app.register_blueprint(super_admin_bp, url_prefix='/api/super-admin')
+    app.register_blueprint(payments_bp, url_prefix='/api/payments')
 
     # ── Serve React (SPA catch-all) ───────────────────────────────────────────
     @app.route('/', defaults={'path': ''})
@@ -93,9 +97,25 @@ def create_app():
 def seed_data():
     """Crea datos de ejemplo si la BD está vacía"""
     if School.query.count() > 0:
+        # Asegurar que exista el super_admin aunque haya datos
+        if not User.query.filter_by(role='super_admin').first():
+            sa = User(school_id=None, email='superadmin@sistema.cl',
+                      first_name='Super', last_name='Administrador',
+                      role='super_admin')
+            sa.set_password('super123')
+            db.session.add(sa)
+            db.session.commit()
+            print("✅ Super Admin creado: superadmin@sistema.cl / super123")
         return
 
     print("🌱 Creando datos de ejemplo...")
+
+    # ── Super Admin (sin colegio) ───────────────────────────────────────────
+    super_admin = User(school_id=None, email='superadmin@sistema.cl',
+                       first_name='Super', last_name='Administrador',
+                       role='super_admin')
+    super_admin.set_password('super123')
+    db.session.add(super_admin)
 
     # Colegio demo
     school = School(
@@ -233,10 +253,11 @@ def seed_data():
     db.session.commit()
     print("✅ Datos de ejemplo creados!")
     print("\n📋 Accesos de prueba:")
-    print("  Admin:     admin@sanpatricio.cl / admin123")
-    print("  Directivo: directivo@sanpatricio.cl / dir123")
-    print("  Profesor:  mvaldes@sanpatricio.cl / prof123")
-    print("  Alumno:    pedro.alvarado@gmail.com / alumno123")
+    print("  Super Admin: superadmin@sistema.cl / super123")
+    print("  Admin:       admin@sanpatricio.cl / admin123")
+    print("  Directivo:   directivo@sanpatricio.cl / dir123")
+    print("  Profesor:    mvaldes@sanpatricio.cl / prof123")
+    print("  Alumno:      pedro.alvarado@gmail.com / alumno123")
 
 
 # Objeto para gunicorn

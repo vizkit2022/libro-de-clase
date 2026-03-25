@@ -17,9 +17,16 @@ import ApoderadoPage from './pages/Apoderado/ApoderadoPage';
 import OcrAnnotationPage from './pages/Management/OcrAnnotationPage';
 import SubjectCurriculumPage from './pages/Courses/SubjectCurriculumPage';
 
+// Super Admin
+import SuperAdminLayout from './pages/SuperAdmin/SuperAdminLayout';
+import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard';
+import SchoolsManagementPage, { SchoolFormPage, SchoolDetailPage } from './pages/SuperAdmin/SchoolsManagementPage';
+import SubscriptionsPage from './pages/SuperAdmin/SubscriptionsPage';
+
 const RedirectByRole = () => {
   const { user } = useAuth();
   if (user?.role === 'apoderado') return <Navigate to="/apoderado" replace />;
+  if (user?.role === 'super_admin') return <Navigate to="/super-admin" replace />;
   return <Navigate to="/dashboard" replace />;
 };
 
@@ -35,8 +42,9 @@ const PrivateRoute = ({ children, roles }) => {
   );
   if (!user) return <Navigate to="/login" replace />;
   if (roles && !roles.includes(user.role)) {
-    // Apoderado tiene su propia página de inicio
-    return <Navigate to={user.role === 'apoderado' ? '/apoderado' : '/dashboard'} replace />;
+    if (user.role === 'apoderado') return <Navigate to="/apoderado" replace />;
+    if (user.role === 'super_admin') return <Navigate to="/super-admin" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   return children;
 };
@@ -47,7 +55,27 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
+
+          {/* Portal Super Admin (layout propio) */}
+          <Route path="/super-admin" element={
+            <PrivateRoute roles={['super_admin']}>
+              <SuperAdminLayout />
+            </PrivateRoute>
+          }>
+            <Route index element={<SuperAdminDashboard />} />
+            <Route path="schools" element={<SchoolsManagementPage />} />
+            <Route path="schools/new" element={<SchoolFormPage />} />
+            <Route path="schools/:id" element={<SchoolDetailPage />} />
+            <Route path="schools/:id/edit" element={<SchoolFormPage />} />
+            <Route path="subscriptions" element={<SubscriptionsPage />} />
+          </Route>
+
+          {/* App normal de colegios */}
+          <Route path="/" element={
+            <PrivateRoute roles={['admin','directivo','profesor','apoderado','alumno']}>
+              <Layout />
+            </PrivateRoute>
+          }>
             <Route index element={<RedirectByRole />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="users" element={<PrivateRoute roles={['admin','directivo']}><UsersPage /></PrivateRoute>} />
@@ -63,7 +91,8 @@ export default function App() {
             <Route path="apoderado" element={<PrivateRoute roles={['apoderado']}><ApoderadoPage /></PrivateRoute>} />
             <Route path="ocr-annotations" element={<PrivateRoute roles={['admin','directivo','profesor']}><OcrAnnotationPage /></PrivateRoute>} />
           </Route>
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -10,15 +10,19 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { if (user) navigate('/dashboard'); }, [user, navigate]);
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === 'super_admin' ? '/super-admin' : '/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await login(form.email, form.password);
-      navigate('/dashboard');
+      const data = await login(form.email, form.password);
+      navigate(data.user?.role === 'super_admin' ? '/super-admin' : '/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al iniciar sesión');
     } finally {
@@ -28,6 +32,7 @@ export default function LoginPage() {
 
   const fillDemo = (role) => {
     const demos = {
+      superadmin: { email: 'superadmin@sistema.cl', password: 'super123' },
       admin: { email: 'admin@sanpatricio.cl', password: 'admin123' },
       directivo: { email: 'directivo@sanpatricio.cl', password: 'dir123' },
       profesor: { email: 'mvaldes@sanpatricio.cl', password: 'prof123' },
@@ -98,6 +103,7 @@ export default function LoginPage() {
           <div className="demo-section">
             <p className="demo-label">Accesos de prueba</p>
             <div className="demo-buttons">
+              <button onClick={() => fillDemo('superadmin')} className="demo-btn" style={{background:'#6366f1',color:'#fff',border:'none'}}>⚡ Super Admin</button>
               <button onClick={() => fillDemo('admin')} className="demo-btn admin">Admin</button>
               <button onClick={() => fillDemo('directivo')} className="demo-btn directivo">Directivo</button>
               <button onClick={() => fillDemo('profesor')} className="demo-btn profesor">Profesor</button>

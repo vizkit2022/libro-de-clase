@@ -20,11 +20,17 @@ class School(db.Model):
     accent_color = db.Column(db.String(7), default='#3B82F6')
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Plan: free | paid
+    plan = db.Column(db.String(20), default='free')
+    # Estado del plan: active | inactive | trial | expired
+    plan_status = db.Column(db.String(20), default='active')
+    subscription_expires_at = db.Column(db.DateTime, nullable=True)
 
     users = db.relationship('User', backref='school', lazy=True)
     courses = db.relationship('Course', backref='school', lazy=True)
     periods = db.relationship('Period', backref='school', lazy=True)
     subjects = db.relationship('Subject', backref='school', lazy=True)
+    subscriptions = db.relationship('Subscription', backref='school', lazy=True)
 
     def to_dict(self):
         return {
@@ -33,14 +39,19 @@ class School(db.Model):
             'website': self.website, 'rector': self.rector,
             'logo_url': self.logo_url, 'primary_color': self.primary_color,
             'secondary_color': self.secondary_color, 'accent_color': self.accent_color,
-            'is_active': self.is_active
+            'is_active': self.is_active,
+            'plan': self.plan, 'plan_status': self.plan_status,
+            'subscription_expires_at': self.subscription_expires_at.isoformat() if self.subscription_expires_at else None,
+            'user_count': len(self.users) if self.users else 0,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
 
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
+    # nullable=True para que super_admin no necesite school
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     first_name = db.Column(db.String(100), nullable=False)
@@ -52,7 +63,7 @@ class User(db.Model):
     gender = db.Column(db.String(10))
     avatar_url = db.Column(db.String(500))
     photo = db.Column(db.Text)         # base64 data URL de la foto de perfil
-    # Roles: admin, directivo, profesor, apoderado, alumno
+    # Roles: super_admin, admin, directivo, profesor, apoderado, alumno
     role = db.Column(db.String(20), nullable=False, default='alumno')
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -256,4 +267,44 @@ class Annotation(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'student': self.student.to_dict() if self.student else None,
             'creator_name': f"{self.creator.first_name} {self.creator.last_name}" if self.creator else None
+        }
+
+
+class Subscription(db.Model):
+    """Suscripción mensual de un colegio al plan de pago."""
+    __tablename__ = 'subscriptions'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
+    # Tipo de plan: monthly | annual
+    plan_type = db.Column(db.String(20), default='monthly')
+    amount = db.Column(db.Float, default=29990.0)   # en CLP
+    currency = db.Column(db.String(10), default='CLP')
+    # Estado: pending | authorized | active | paused | cancelled | expired
+    status = db.Column(db.String(20), default='pending')
+    # IDs de Mercado Pago
+    mp_subscription_id = db.Column(db.String(200))   # preapproval id
+    mp_payment_id = db.Column(db.String(200))          # pago individual
+    mp_payer_email = db.Column(db.String(200))
+    # Fechas
+    start_date = db.Column(db.DateTime, nullable=True)
+    next_payment_date = db.Column(db.DateTime, nullable=True)
+    end_date = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'school_id': self.school_id,
+            'school_name': self.school.name if self.school else None,
+            'plan_type': self.plan_type,
+            'amount': self.amount,
+            'currency': self.currency,
+            'status': self.status,
+            'mp_subscription_id': self.mp_subscription_id,
+            'mp_payer_email': self.mp_payer_email,
+            'start_date': self.start_date.isoformat() if self.start_date else None,
+            'next_payment_date': self.next_payment_date.isoformat() if self.next_payment_date else None,
+            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
         }
