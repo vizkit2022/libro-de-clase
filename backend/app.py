@@ -10,11 +10,9 @@ FRONTEND_BUILD = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'buil
 
 
 def create_app():
-    app = Flask(
-        __name__,
-        static_folder=FRONTEND_BUILD,
-        static_url_path='/'
-    )
+    # static_folder=None para que Flask no registre rutas estáticas propias
+    # (el catch-all serve_react se encarga de servir el build de React)
+    app = Flask(__name__, static_folder=None)
 
     # ── Database ──────────────────────────────────────────────────────────────
     database_url = os.environ.get('DATABASE_URL')
