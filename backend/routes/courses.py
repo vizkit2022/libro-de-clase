@@ -1,9 +1,21 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from models import db, Course, Enrollment, CourseSubject, User, StudentGuardian
+from sqlalchemy import or_
 from datetime import date
 
 courses_bp = Blueprint('courses', __name__)
+
+def _course_to_dict_with_teacher_info(course, teacher_id):
+    """Serializa un curso incluyendo flag is_head_teacher y asignaturas que imparte el profesor."""
+    data = course.to_dict()
+    data['is_head_teacher'] = (course.head_teacher_id == teacher_id)
+    # Asignaturas que imparte este profesor en el curso
+    my_subjects = [cs.to_dict() for cs in course.course_subjects if cs.teacher_id == teacher_id]
+    data['my_subjects'] = my_subjects
+    # Alumnos del curso
+    data['students'] = [e.to_dict() for e in course.enrollments if e.is_active]
+    return data
 
 @courses_bp.route('/', methods=['GET'])
 @jwt_required()
@@ -11,15 +23,29 @@ def get_courses():
     claims = get_jwt()
     school_id = claims.get('school_id')
     year = request.args.get('year', date.today().year, type=int)
-    query = Course.query.filter_by(school_id=school_id, is_active=True)
-    if year:
-        query = query.filter_by(year=year)
-    # Si es profesor, solo sus cursos
+
     if claims.get('role') == 'profesor':
         teacher_id = int(claims['sub'])
-        query = query.filter_by(head_teacher_id=teacher_id)
-    courses = query.order_by(Course.level, Course.letter).all()
-    return jsonify([c.to_dict() for c in courses]), 200
+        # Cursos donde es profesor jefe O donde imparte alguna asignatura
+        subject_course_ids = db.session.query(CourseSubject.course_id).filter_by(teacher_id=teacher_id).subquery()
+        query = Course.query.filter(
+            Course.school_id == school_id,
+            Course.is_active == True,
+            or_(
+                Course.head_teacher_id == teacher_id,
+                Course.id.in_(subject_course_ids)
+            )
+        )
+        if year:
+            query = query.filter(Course.year == year)
+        courses = query.order_by(Course.level, Course.letter).all()
+        return jsonify([_course_to_dict_with_teacher_info(c, teacher_id) for c in courses]), 200
+    else:
+        query = Course.query.filter_by(school_id=school_id, is_active=True)
+        if year:
+            query = query.filter_by(year=year)
+        courses = query.order_by(Course.level, Course.letter).all()
+        return jsonify([c.to_dict() for c in courses]), 200
 
 @courses_bp.route('/<int:course_id>', methods=['GET'])
 @jwt_required()

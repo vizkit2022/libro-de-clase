@@ -104,6 +104,10 @@ export default function UsersPage() {
   const [allStudents, setAllStudents] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
 
+  // Profesor → cursos
+  const [teacherCourses, setTeacherCourses] = useState([]);  // cursos asignados al profesor en edición
+  const [togglingCourse, setTogglingCourse] = useState(null); // id del curso en proceso
+
   // Foto de perfil en modal
   const [pendingPhoto, setPendingPhoto] = useState(null); // base64 data URL a guardar
 
@@ -143,6 +147,7 @@ export default function UsersPage() {
     setForm(EMPTY_FORM);
     setEditing(null);
     setSelectedStudents([]);
+    setTeacherCourses([]);
     setPendingPhoto(null);
     setShowModal(true);
   };
@@ -151,12 +156,19 @@ export default function UsersPage() {
     setForm({ ...u, password: '', birth_date: u.birth_date || '' });
     setEditing(u);
     setSelectedStudents([]);
+    setTeacherCourses([]);
     setPendingPhoto(null);
     if (u.role === 'apoderado') {
       try {
         const { data } = await axios.get(`/api/users/${u.id}/students`);
         setSelectedStudents(data.map(s => s.id));
       } catch(e) { /* sin alumnos aún */ }
+    }
+    if (u.role === 'profesor') {
+      try {
+        const { data } = await axios.get(`/api/users/${u.id}/courses`);
+        setTeacherCourses(data);
+      } catch(e) { /* sin cursos */ }
     }
     setShowModal(true);
   };
@@ -165,6 +177,25 @@ export default function UsersPage() {
     setSelectedStudents(prev =>
       prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
     );
+  };
+
+  const handleToggleHeadTeacher = async (courseId, currentIsHead) => {
+    if (!editing) return;
+    setTogglingCourse(courseId);
+    try {
+      await axios.post(`/api/users/${editing.id}/set-head-teacher`, {
+        course_id: courseId,
+        is_head_teacher: !currentIsHead
+      });
+      // Refrescar cursos
+      const { data } = await axios.get(`/api/users/${editing.id}/courses`);
+      setTeacherCourses(data);
+      showToast(currentIsHead ? 'Removido como Profesor Jefe' : 'Marcado como Profesor Jefe');
+    } catch(e) {
+      showToast('Error al actualizar', 'error');
+    } finally {
+      setTogglingCourse(null);
+    }
   };
 
   const handleSave = async (e) => {
@@ -417,6 +448,86 @@ export default function UsersPage() {
                           {selectedStudents.length} alumno(s) seleccionado(s)
                         </p>
                       )}
+                    </div>
+                  )}
+
+                  {/* Cursos del profesor (solo al editar) */}
+                  {form.role === 'profesor' && editing && (
+                    <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                      <label>📚 Cursos asignados</label>
+                      {teacherCourses.length === 0 ? (
+                        <div style={{
+                          padding: '14px 16px', borderRadius: 8,
+                          background: '#f8fafc', border: '1px dashed #cbd5e1',
+                          textAlign: 'center'
+                        }}>
+                          <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
+                            Este profesor no tiene cursos asignados aún.
+                          </p>
+                          <p style={{ fontSize: 12, color: '#94a3b8', margin: '4px 0 0' }}>
+                            Asígna cursos y asignaturas desde la sección <strong>Cursos</strong>.
+                          </p>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {teacherCourses.map(course => (
+                            <div key={course.id} style={{
+                              display: 'flex', alignItems: 'center', gap: 12,
+                              padding: '10px 14px', borderRadius: 8,
+                              background: course.is_head_teacher ? '#fef3c722' : '#f8fafc',
+                              border: `1px solid ${course.is_head_teacher ? '#fde68a' : '#e2e8f0'}`
+                            }}>
+                              {/* Info del curso */}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', margin: 0 }}>
+                                  {course.name}
+                                </p>
+                                <p style={{ fontSize: 11, color: '#94a3b8', margin: '2px 0 0' }}>
+                                  {course.students?.length || 0} alumnos
+                                  {course.my_subjects?.length > 0 && (
+                                    <> · {course.my_subjects.map(s => s.subject?.name).filter(Boolean).join(', ')}</>
+                                  )}
+                                </p>
+                              </div>
+                              {/* Badge + Toggle Profesor Jefe */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                {course.is_head_teacher && (
+                                  <span style={{
+                                    fontSize: 11, fontWeight: 700,
+                                    background: '#fef3c7', color: '#92400e',
+                                    padding: '2px 8px', borderRadius: 20, border: '1px solid #fde68a'
+                                  }}>
+                                    ⭐ Prof. Jefe
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  disabled={togglingCourse === course.id}
+                                  onClick={() => handleToggleHeadTeacher(course.id, course.is_head_teacher)}
+                                  style={{
+                                    fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                                    padding: '4px 10px', borderRadius: 6, border: '1px solid',
+                                    background: course.is_head_teacher ? '#fef2f2' : `${primary}15`,
+                                    color: course.is_head_teacher ? '#dc2626' : primary,
+                                    borderColor: course.is_head_teacher ? '#fecaca' : `${primary}40`,
+                                    opacity: togglingCourse === course.id ? 0.6 : 1
+                                  }}
+                                >
+                                  {togglingCourse === course.id
+                                    ? '...'
+                                    : course.is_head_teacher
+                                      ? 'Quitar Prof. Jefe'
+                                      : 'Asignar como Prof. Jefe'
+                                  }
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p style={{ fontSize: 11, color: '#94a3b8', margin: '6px 0 0' }}>
+                        💡 Para agregar cursos o asignaturas al profesor, ve a <strong>Cursos → Detalle del curso</strong>.
+                      </p>
                     </div>
                   )}
                 </div>

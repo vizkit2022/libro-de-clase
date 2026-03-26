@@ -16,6 +16,7 @@ import ReportsPage from './pages/Reports/ReportsPage';
 import ApoderadoPage from './pages/Apoderado/ApoderadoPage';
 import OcrAnnotationPage from './pages/Management/OcrAnnotationPage';
 import SubjectCurriculumPage from './pages/Courses/SubjectCurriculumPage';
+import ProfesorPage from './pages/Profesor/ProfesorPage';
 
 // Super Admin
 import SuperAdminLayout from './pages/SuperAdmin/SuperAdminLayout';
@@ -27,6 +28,7 @@ const RedirectByRole = () => {
   const { user } = useAuth();
   if (user?.role === 'apoderado') return <Navigate to="/apoderado" replace />;
   if (user?.role === 'super_admin') return <Navigate to="/super-admin" replace />;
+  if (user?.role === 'profesor') return <Navigate to="/mis-cursos" replace />;
   return <Navigate to="/dashboard" replace />;
 };
 
@@ -44,6 +46,7 @@ const PrivateRoute = ({ children, roles }) => {
   if (roles && !roles.includes(user.role)) {
     if (user.role === 'apoderado') return <Navigate to="/apoderado" replace />;
     if (user.role === 'super_admin') return <Navigate to="/super-admin" replace />;
+    if (user.role === 'profesor') return <Navigate to="/mis-cursos" replace />;
     return <Navigate to="/dashboard" replace />;
   }
   return children;
@@ -89,6 +92,7 @@ export default function App() {
             <Route path="students/:id/life" element={<StudentLifePage />} />
             <Route path="reports" element={<PrivateRoute roles={['admin','directivo','profesor']}><ReportsPage /></PrivateRoute>} />
             <Route path="apoderado" element={<PrivateRoute roles={['apoderado']}><ApoderadoPage /></PrivateRoute>} />
+            <Route path="mis-cursos" element={<PrivateRoute roles={['profesor']}><ProfesorPage /></PrivateRoute>} />
             <Route path="ocr-annotations" element={<PrivateRoute roles={['admin','directivo','profesor']}><OcrAnnotationPage /></PrivateRoute>} />
           </Route>
 

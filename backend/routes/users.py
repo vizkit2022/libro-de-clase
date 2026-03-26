@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, Response
 from flask_jwt_extended import jwt_required, get_jwt
-from models import db, User, School, StudentGuardian
+from models import db, User, School, StudentGuardian, Course, CourseSubject, Enrollment
+from sqlalchemy import or_
 from functools import wraps
 import base64
 
@@ -104,6 +105,66 @@ def delete_user(user_id):
     user.is_active = False
     db.session.commit()
     return jsonify({'message': 'Usuario desactivado'}), 200
+
+# ── Profesor ↔ Cursos ────────────────────────────────────────────────
+
+@users_bp.route('/<int:user_id>/courses', methods=['GET'])
+@jwt_required()
+def get_teacher_courses(user_id):
+    """Devuelve los cursos de un profesor: donde es profesor jefe + donde enseña asignaturas."""
+    claims = get_jwt()
+    school_id = claims.get('school_id')
+    current_user_id = int(claims.get('sub', 0))
+    current_role = claims.get('role')
+
+    # El profesor solo puede ver sus propios cursos; admin/directivo pueden ver de cualquiera
+    if current_role == 'profesor' and current_user_id != user_id:
+        return jsonify({'error': 'Sin permisos'}), 403
+
+    # Cursos donde es profesor jefe O imparte asignaturas
+    subject_course_ids = db.session.query(CourseSubject.course_id).filter_by(teacher_id=user_id).subquery()
+    courses = Course.query.filter(
+        Course.school_id == school_id,
+        Course.is_active == True,
+        or_(
+            Course.head_teacher_id == user_id,
+            Course.id.in_(subject_course_ids)
+        )
+    ).order_by(Course.level, Course.letter).all()
+
+    result = []
+    for c in courses:
+        data = c.to_dict()
+        data['is_head_teacher'] = (c.head_teacher_id == user_id)
+        # Asignaturas que imparte este profesor en el curso
+        my_subjects = [cs.to_dict() for cs in c.course_subjects if cs.teacher_id == user_id]
+        data['my_subjects'] = my_subjects
+        # Alumnos activos del curso
+        data['students'] = [e.to_dict() for e in c.enrollments if e.is_active]
+        result.append(data)
+    return jsonify(result), 200
+
+
+@users_bp.route('/<int:user_id>/set-head-teacher', methods=['POST'])
+@jwt_required()
+@require_roles('admin', 'directivo')
+def set_head_teacher(user_id):
+    """Marca o desmarca a un profesor como profesor jefe de un curso."""
+    claims = get_jwt()
+    school_id = claims.get('school_id')
+    data = request.get_json()
+    course_id = data.get('course_id')
+    is_head = data.get('is_head_teacher', True)
+
+    course = Course.query.filter_by(id=course_id, school_id=school_id).first_or_404()
+    if is_head:
+        course.head_teacher_id = user_id
+    else:
+        if course.head_teacher_id == user_id:
+            course.head_teacher_id = None
+    db.session.commit()
+    return jsonify({'message': 'Actualizado', 'course': course.to_dict()}), 200
+
 
 # ── Apoderado ↔ Alumnos ──────────────────────────────────────────────
 

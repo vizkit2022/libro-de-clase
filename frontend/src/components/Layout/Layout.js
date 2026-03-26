@@ -13,7 +13,8 @@ const ROLE_LABELS = {
 };
 
 const navItems = [
-  { to: '/dashboard', icon: '🏠', label: 'Dashboard', roles: ['admin','directivo','profesor','apoderado','alumno'] },
+  { to: '/dashboard', icon: '🏠', label: 'Dashboard', roles: ['admin','directivo','alumno'] },
+  { to: '/mis-cursos', icon: '👨‍🏫', label: 'Mis cursos', roles: ['profesor'] },
   { to: '/users', icon: '👥', label: 'Usuarios', roles: ['admin','directivo'] },
   { to: '/parameters', icon: '🏫', label: 'Colegio', roles: ['admin','directivo'] },
   { to: '/periods', icon: '📅', label: 'Períodos', roles: ['admin','directivo'] },
