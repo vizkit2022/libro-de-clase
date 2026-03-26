@@ -89,9 +89,63 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        run_migrations()
         seed_data()
 
     return app
+
+
+def run_migrations():
+    """
+    Aplica migraciones manuales para bases de datos existentes.
+    db.create_all() solo crea tablas nuevas, no modifica columnas existentes.
+    """
+    is_postgres = 'postgresql' in (db.engine.url.drivername or '')
+    is_sqlite   = 'sqlite'     in (db.engine.url.drivername or '')
+
+    with db.engine.connect() as conn:
+        from sqlalchemy import text
+
+        if is_postgres:
+            # 1. Hacer school_id nullable en users (para rol super_admin)
+            try:
+                conn.execute(text(
+                    "ALTER TABLE users ALTER COLUMN school_id DROP NOT NULL"
+                ))
+                conn.commit()
+                print("✅ Migración: users.school_id ahora es nullable")
+            except Exception:
+                conn.rollback()   # ya era nullable → ignorar
+
+            # 2. Agregar columnas de plan a schools si no existen
+            for col, definition in [
+                ('plan',                    "VARCHAR(20) DEFAULT 'free'"),
+                ('plan_status',             "VARCHAR(20) DEFAULT 'active'"),
+                ('subscription_expires_at', 'TIMESTAMP'),
+            ]:
+                try:
+                    conn.execute(text(
+                        f"ALTER TABLE schools ADD COLUMN {col} {definition}"
+                    ))
+                    conn.commit()
+                    print(f"✅ Migración: columna schools.{col} agregada")
+                except Exception:
+                    conn.rollback()   # ya existía → ignorar
+
+        elif is_sqlite:
+            # SQLite tiene ALTER TABLE limitado; solo agregar columnas
+            for col, definition in [
+                ('plan',                    "VARCHAR(20) DEFAULT 'free'"),
+                ('plan_status',             "VARCHAR(20) DEFAULT 'active'"),
+                ('subscription_expires_at', 'DATETIME'),
+            ]:
+                try:
+                    conn.execute(text(
+                        f"ALTER TABLE schools ADD COLUMN {col} {definition}"
+                    ))
+                    conn.commit()
+                except Exception:
+                    conn.rollback()   # ya existía
 
 
 def seed_data():
