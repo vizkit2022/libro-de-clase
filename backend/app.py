@@ -2,7 +2,7 @@ import os
 from flask import Flask, send_from_directory
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from models import db, School, User, Period, Subject, Course, Enrollment, CourseSubject, Grade, Annotation, Subscription
+from models import db, School, User, Period, Subject, Course, Enrollment, CourseSubject, Grade, Annotation, Subscription, ConvivenciaCase, ConvivenciaCaseStep
 from datetime import datetime, date
 
 # Path to the built React frontend (relative to this file)
@@ -52,6 +52,7 @@ def create_app():
     from routes.ocr import ocr_bp
     from routes.super_admin import super_admin_bp
     from routes.payments import payments_bp
+    from routes.convivencia import convivencia_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -65,6 +66,7 @@ def create_app():
     app.register_blueprint(ocr_bp, url_prefix='/api/ocr')
     app.register_blueprint(super_admin_bp, url_prefix='/api/super-admin')
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
+    app.register_blueprint(convivencia_bp, url_prefix='/api/convivencia')
 
     # ── Serve React (SPA catch-all) ───────────────────────────────────────────
     @app.route('/', defaults={'path': ''})
@@ -144,6 +146,9 @@ def run_migrations():
                     conn.commit()
                 except Exception:
                     conn.rollback()   # ya existía
+
+        # Las tablas convivencia_cases y convivencia_case_steps se crean
+        # automáticamente por db.create_all() al ser modelos nuevos.
 
 
 def seed_data():

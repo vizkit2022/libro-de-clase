@@ -23,6 +23,7 @@ const navItems = [
   { to: '/grades', icon: '✏️', label: 'Calificaciones', roles: ['admin','directivo','profesor'] },
   { to: '/reports', icon: '📊', label: 'Reportes', roles: ['admin','directivo','profesor'] },
   { to: '/ocr-annotations', icon: '📷', label: 'Escanea anotaciones', roles: ['admin','directivo','profesor'] },
+  { to: '/convivencia', icon: '🤝', label: 'Convivencia', roles: ['admin','directivo','profesor'] },
   { to: '/apoderado', icon: '👨‍👧', label: 'Mis alumnos', roles: ['apoderado'] },
 ];
 

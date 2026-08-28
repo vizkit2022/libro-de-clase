@@ -308,3 +308,120 @@ class Subscription(db.Model):
             'end_date': self.end_date.isoformat() if self.end_date else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+# ══════════════════════════════════════════════════════════════
+#  MÓDULO CONVIVENCIA ESCOLAR
+# ══════════════════════════════════════════════════════════════
+
+CONVIVENCIA_PROCEDURES = [
+    'Entrevista Estudiante',
+    'Atención psicológica',
+    'Seguimiento de caso',
+    'Entrevista Apoderado/a',
+    'Visita domiciliaria',
+    'Otro',
+]
+
+CONVIVENCIA_TYPIFICATIONS = [
+    'Falta Leve',
+    'Falta Grave',
+    'Falta Gravísima',
+    'Desregulación Emocional',
+    'Víctima',
+    'No corresponde',
+    'Otro',
+]
+
+CONVIVENCIA_PROTOCOL_STEPS = [
+    'Detección de la Situación',
+    'Indagación Interna de los Hechos',
+    'Comunicación con la Familia',
+    'Derivación o Denuncia',
+    'Medidas de Apoyo',
+    'Cierre del Caso',
+]
+
+
+class ConvivenciaCase(db.Model):
+    __tablename__ = 'convivencia_cases'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
+    # Número correlativo por colegio y año
+    case_number = db.Column(db.Integer, default=1)
+    year = db.Column(db.Integer, default=2026)
+    # Alumno involucrado (puede quedar sin asignar)
+    student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=True)
+    # Profesional responsable
+    professional_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    # Datos del caso
+    title = db.Column(db.String(300), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    procedure = db.Column(db.String(100))        # Entrevista Estudiante, etc.
+    typification = db.Column(db.String(100))     # Falta Leve, Falta Grave, etc.
+    motive = db.Column(db.Text)                  # Motivo / Descripción
+    agreements = db.Column(db.Text)              # Acuerdos y compromisos
+    # Estado y criticidad
+    status = db.Column(db.String(20), default='abierto')    # abierto | cerrado
+    criticality = db.Column(db.String(10), default='media') # baja | media | alta
+    # Auditoría
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    student = db.relationship('User', foreign_keys=[student_id])
+    professional = db.relationship('User', foreign_keys=[professional_id])
+    creator = db.relationship('User', foreign_keys=[created_by])
+    course = db.relationship('Course', foreign_keys=[course_id])
+    steps = db.relationship('ConvivenciaCaseStep', backref='case', lazy=True,
+                            order_by='ConvivenciaCaseStep.step_number')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'school_id': self.school_id,
+            'case_number': self.case_number,
+            'year': self.year,
+            'student_id': self.student_id,
+            'student': self.student.to_dict() if self.student else None,
+            'course_id': self.course_id,
+            'course_name': self.course.name if self.course else None,
+            'professional_id': self.professional_id,
+            'professional': self.professional.to_dict() if self.professional else None,
+            'title': self.title,
+            'date': self.date.isoformat() if self.date else None,
+            'procedure': self.procedure,
+            'typification': self.typification,
+            'motive': self.motive,
+            'agreements': self.agreements,
+            'status': self.status,
+            'criticality': self.criticality,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'steps': [s.to_dict() for s in self.steps],
+            'steps_completed': sum(1 for s in self.steps if s.status == 'completed'),
+            'steps_total': len(self.steps),
+        }
+
+
+class ConvivenciaCaseStep(db.Model):
+    __tablename__ = 'convivencia_case_steps'
+    id = db.Column(db.Integer, primary_key=True)
+    case_id = db.Column(db.Integer, db.ForeignKey('convivencia_cases.id'), nullable=False)
+    step_number = db.Column(db.Integer, nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending | in_progress | completed
+    notes = db.Column(db.Text)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'case_id': self.case_id,
+            'step_number': self.step_number,
+            'name': self.name,
+            'status': self.status,
+            'notes': self.notes,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+        }

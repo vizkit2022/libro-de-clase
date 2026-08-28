@@ -17,6 +17,9 @@ import ApoderadoPage from './pages/Apoderado/ApoderadoPage';
 import OcrAnnotationPage from './pages/Management/OcrAnnotationPage';
 import SubjectCurriculumPage from './pages/Courses/SubjectCurriculumPage';
 import ProfesorPage from './pages/Profesor/ProfesorPage';
+import ConvivenciaDashboard from './pages/Convivencia/ConvivenciaDashboard';
+import ConvivenciaCasosPage, { ConvivenciaCasoForm } from './pages/Convivencia/ConvivenciaCasosPage';
+import ConvivenciaCasoDetail from './pages/Convivencia/ConvivenciaCasoDetail';
 
 // Super Admin
 import SuperAdminLayout from './pages/SuperAdmin/SuperAdminLayout';
@@ -94,6 +97,12 @@ export default function App() {
             <Route path="apoderado" element={<PrivateRoute roles={['apoderado']}><ApoderadoPage /></PrivateRoute>} />
             <Route path="mis-cursos" element={<PrivateRoute roles={['profesor']}><ProfesorPage /></PrivateRoute>} />
             <Route path="ocr-annotations" element={<PrivateRoute roles={['admin','directivo','profesor']}><OcrAnnotationPage /></PrivateRoute>} />
+            {/* Módulo Convivencia */}
+            <Route path="convivencia" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaDashboard /></PrivateRoute>} />
+            <Route path="convivencia/casos" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasosPage /></PrivateRoute>} />
+            <Route path="convivencia/casos/nuevo" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoForm /></PrivateRoute>} />
+            <Route path="convivencia/casos/:id" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoDetail /></PrivateRoute>} />
+            <Route path="convivencia/casos/:id/editar" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoForm /></PrivateRoute>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
