@@ -151,6 +151,28 @@ def run_migrations():
         # automáticamente por db.create_all() al ser modelos nuevos.
 
 
+def _ensure_all_default_periods():
+    """Crea Semestre 1 y 2 del año actual en todos los colegios que no los tengan."""
+    from datetime import date as date_cls
+    year = datetime.utcnow().year
+    schools = School.query.all()
+    created = 0
+    for s in schools:
+        if Period.query.filter_by(school_id=s.id, year=year).count() == 0:
+            db.session.add_all([
+                Period(school_id=s.id, name=f'Semestre 1 {year}', period_type='semestral',
+                       year=year, number=1, is_active=True,
+                       start_date=date_cls(year, 3, 1), end_date=date_cls(year, 7, 31)),
+                Period(school_id=s.id, name=f'Semestre 2 {year}', period_type='semestral',
+                       year=year, number=2, is_active=True,
+                       start_date=date_cls(year, 8, 1), end_date=date_cls(year, 12, 31)),
+            ])
+            created += 1
+    if created:
+        db.session.commit()
+        print(f"✅ Períodos creados en {created} colegios")
+
+
 def seed_data():
     """Crea datos de ejemplo si la BD está vacía"""
     if School.query.count() > 0:
@@ -163,6 +185,8 @@ def seed_data():
             db.session.add(sa)
             db.session.commit()
             print("✅ Super Admin creado: superadmin@sistema.cl / super123")
+        # Asegurar períodos en todos los colegios existentes
+        _ensure_all_default_periods()
         return
 
     print("🌱 Creando datos de ejemplo...")
