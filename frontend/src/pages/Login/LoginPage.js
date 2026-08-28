@@ -30,17 +30,6 @@ export default function LoginPage() {
     }
   };
 
-  const fillDemo = (role) => {
-    const demos = {
-      superadmin: { email: 'superadmin@sistema.cl', password: 'super123' },
-      admin: { email: 'admin@sanpatricio.cl', password: 'admin123' },
-      directivo: { email: 'directivo@sanpatricio.cl', password: 'dir123' },
-      profesor: { email: 'mvaldes@sanpatricio.cl', password: 'prof123' },
-      alumno: { email: 'pedro.alvarado@gmail.com', password: 'alumno123' },
-    };
-    setForm(demos[role]);
-  };
-
   return (
     <div className="login-page">
       {/* Left: ilustración */}
@@ -98,18 +87,6 @@ export default function LoginPage() {
               {loading ? <span className="spinner-sm" /> : '🔐 Ingresar'}
             </button>
           </form>
-
-          {/* Accesos rápidos demo */}
-          <div className="demo-section">
-            <p className="demo-label">Accesos de prueba</p>
-            <div className="demo-buttons">
-              <button onClick={() => fillDemo('superadmin')} className="demo-btn" style={{background:'#6366f1',color:'#fff',border:'none'}}>⚡ Super Admin</button>
-              <button onClick={() => fillDemo('admin')} className="demo-btn admin">Admin</button>
-              <button onClick={() => fillDemo('directivo')} className="demo-btn directivo">Directivo</button>
-              <button onClick={() => fillDemo('profesor')} className="demo-btn profesor">Profesor</button>
-              <button onClick={() => fillDemo('alumno')} className="demo-btn alumno">Alumno</button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
