@@ -174,9 +174,6 @@ export function SchoolFormPage() {
     }
   };
 
-  // Field se usa con value={form[x]} onChange={handleChange}
-  const F = (props) => <Field {...props} value={form[props.field]} onChange={handleChange} />;
-
   return (
     <div style={{ padding: 32, maxWidth: 800 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
@@ -200,13 +197,20 @@ export function SchoolFormPage() {
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 20px' }}>🏫 Información del Colegio</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-            <div style={{ gridColumn: '1/-1' }}><F label="Nombre *" field="name" placeholder="Colegio San Patricio" /></div>
-            <F label="RUT" field="rut" placeholder="12.345.678-9" />
-            <F label="Email" field="email" type="email" placeholder="contacto@colegio.cl" />
-            <F label="Teléfono" field="phone" placeholder="+56 2 2345 6789" />
-            <F label="Sitio Web" field="website" placeholder="https://www.colegio.cl" />
-            <div style={{ gridColumn: '1/-1' }}><F label="Dirección" field="address" placeholder="Av. Principal 1234, Santiago" /></div>
-            <div style={{ gridColumn: '1/-1' }}><F label="Rector/a" field="rector" placeholder="Nombre del rector" /></div>
+            <div style={{ gridColumn: '1/-1' }}>
+              <Field label="Nombre *" field="name" placeholder="Colegio San Patricio"
+                value={form.name} onChange={handleChange} />
+            </div>
+            <Field label="RUT" field="rut" placeholder="12.345.678-9" value={form.rut} onChange={handleChange} />
+            <Field label="Email" field="email" type="email" placeholder="contacto@colegio.cl" value={form.email} onChange={handleChange} />
+            <Field label="Teléfono" field="phone" placeholder="+56 2 2345 6789" value={form.phone} onChange={handleChange} />
+            <Field label="Sitio Web" field="website" placeholder="https://www.colegio.cl" value={form.website} onChange={handleChange} />
+            <div style={{ gridColumn: '1/-1' }}>
+              <Field label="Dirección" field="address" placeholder="Av. Principal 1234, Santiago" value={form.address} onChange={handleChange} />
+            </div>
+            <div style={{ gridColumn: '1/-1' }}>
+              <Field label="Rector/a" field="rector" placeholder="Nombre del rector" value={form.rector} onChange={handleChange} />
+            </div>
           </div>
 
           {/* Plan */}
@@ -239,10 +243,13 @@ export function SchoolFormPage() {
             <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>👤 Administrador Inicial (opcional)</h3>
             <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>Crea el primer usuario admin del colegio</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-              <div style={{ gridColumn: '1/-1' }}><F label="Email del Admin" field="admin_email" type="email" placeholder="admin@colegio.cl" /></div>
-              <F label="Nombre" field="admin_first_name" placeholder="Juan" />
-              <F label="Apellido" field="admin_last_name" placeholder="González" />
-              <F label="Contraseña inicial" field="admin_password" placeholder="colegio123" />
+              <div style={{ gridColumn: '1/-1' }}>
+                <Field label="Email del Admin" field="admin_email" type="email" placeholder="admin@colegio.cl"
+                  value={form.admin_email} onChange={handleChange} />
+              </div>
+              <Field label="Nombre" field="admin_first_name" placeholder="Juan" value={form.admin_first_name} onChange={handleChange} />
+              <Field label="Apellido" field="admin_last_name" placeholder="González" value={form.admin_last_name} onChange={handleChange} />
+              <Field label="Contraseña inicial" field="admin_password" placeholder="colegio123" value={form.admin_password} onChange={handleChange} />
             </div>
           </div>
         )}
