@@ -267,6 +267,31 @@ def ensure_all_periods():
     return jsonify({'updated': updated, 'count': len(updated)}), 200
 
 
+@super_admin_bp.route('/schools/<int:school_id>/create-user', methods=['POST'])
+@require_super_admin
+def create_user_for_school(school_id):
+    """Crea un usuario en cualquier colegio (solo super_admin)."""
+    School.query.get_or_404(school_id)
+    data = request.get_json()
+    if not data.get('email') or not data.get('password'):
+        return jsonify({'error': 'Email y contraseña son requeridos'}), 400
+    if User.query.filter_by(email=data['email'].lower().strip()).first():
+        return jsonify({'error': 'Ya existe un usuario con ese email'}), 409
+    user = User(
+        school_id=school_id,
+        email=data['email'].lower().strip(),
+        first_name=data.get('first_name', 'Usuario'),
+        last_name=data.get('last_name', ''),
+        role=data.get('role', 'admin'),
+        phone=data.get('phone'),
+        rut=data.get('rut'),
+    )
+    user.set_password(data['password'])
+    db.session.add(user)
+    db.session.commit()
+    return jsonify(user.to_dict()), 201
+
+
 @super_admin_bp.route('/schools/seed-franz-liszt', methods=['POST'])
 @require_super_admin
 def seed_franz_liszt():
