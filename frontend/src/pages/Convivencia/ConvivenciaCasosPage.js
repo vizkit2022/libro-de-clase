@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -200,13 +200,22 @@ export function ConvivenciaCasoForm() {
   const { school } = useAuth();
   const primary = school?.primary_color || '#2563EB';
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const isEdit = Boolean(id);
 
+  // Pre-relleno desde extracción IA (viene via navigate state)
+  const prefill = location.state?.prefill || {};
+
   const [form, setForm] = useState({
-    title: '', date: new Date().toISOString().split('T')[0],
-    procedure: '', typification: '', motive: '',
-    agreements: '', status: 'abierto', criticality: 'media',
+    title: prefill.title || '',
+    date: prefill.date || new Date().toISOString().split('T')[0],
+    procedure: prefill.procedure || '',
+    typification: prefill.typification || '',
+    motive: prefill.motive || '',
+    agreements: prefill.agreements || '',
+    status: 'abierto',
+    criticality: prefill.criticality || 'media',
     student_id: '', professional_id: '', course_id: '',
   });
   const [catalogs, setCatalogs] = useState({ procedures: [], typifications: [] });
@@ -280,6 +289,13 @@ export function ConvivenciaCasoForm() {
           border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer'
         }}>← Volver</button>
       </div>
+
+      {prefill.title && (
+        <div style={{ background: '#f3e8ff', border: '1px solid #c4b5fd', borderRadius: 8,
+          padding: '10px 16px', marginBottom: 16, color: '#6d28d9', fontSize: 13, fontWeight: 500 }}>
+          ✨ Datos pre-rellenados por IA — revisa y completa antes de guardar
+        </div>
+      )}
 
       {error && (
         <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8,

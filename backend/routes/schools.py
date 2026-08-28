@@ -1,3 +1,4 @@
+import base64
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from models import db, School
@@ -54,3 +55,25 @@ def update_school(school_id):
             setattr(school, field, data[field])
     db.session.commit()
     return jsonify(school.to_dict()), 200
+
+
+@schools_bp.route('/<int:school_id>/upload-logo', methods=['POST'])
+@jwt_required()
+def upload_logo(school_id):
+    claims = get_jwt()
+    if claims.get('role') not in ['admin', 'directivo']:
+        return jsonify({'error': 'Sin permisos'}), 403
+    school = School.query.get_or_404(school_id)
+
+    file = request.files.get('logo')
+    if not file:
+        return jsonify({'error': 'No se envió ningún archivo'}), 400
+
+    # Leer y convertir a data URL (base64) para almacenar sin sistema de archivos
+    mime = file.content_type or 'image/png'
+    data = base64.b64encode(file.read()).decode('utf-8')
+    logo_url = f"data:{mime};base64,{data}"
+
+    school.logo_url = logo_url
+    db.session.commit()
+    return jsonify({'logo_url': logo_url}), 200

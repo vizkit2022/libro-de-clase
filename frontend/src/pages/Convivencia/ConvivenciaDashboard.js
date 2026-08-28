@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
@@ -31,6 +31,27 @@ export default function ConvivenciaDashboard() {
   const year = new Date().getFullYear();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [extracting, setExtracting] = useState(false);
+  const fileRef = useRef();
+  const navigate = useNavigate();
+
+  const handleExtract = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setExtracting(true);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const { data: extracted } = await axios.post('/api/convivencia/extract-from-image', fd,
+        { headers: { 'Content-Type': 'multipart/form-data' } });
+      navigate('/convivencia/casos/nuevo', { state: { prefill: extracted } });
+    } catch (err) {
+      alert('Error al procesar la imagen: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setExtracting(false);
+      fileRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     axios.get(`/api/convivencia/dashboard?year=${year}`)
@@ -65,6 +86,15 @@ export default function ConvivenciaDashboard() {
           }}>
             + Crear caso
           </Link>
+          <label style={{
+            padding: '9px 20px', background: '#7c3aed', color: '#fff',
+            borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: extracting ? 'not-allowed' : 'pointer',
+            opacity: extracting ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: 6
+          }}>
+            {extracting ? '⏳ Analizando...' : '📷 Subir caso (IA)'}
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+              onChange={handleExtract} disabled={extracting} />
+          </label>
         </div>
       </div>
 

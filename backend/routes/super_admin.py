@@ -4,8 +4,8 @@ Permiten gestionar todos los colegios, sus planes y suscripciones.
 """
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
-from models import db, School, User, Subscription
-from datetime import datetime, timedelta
+from models import db, School, User, Subscription, Period
+from datetime import datetime, timedelta, date
 from functools import wraps
 
 super_admin_bp = Blueprint('super_admin', __name__)
@@ -104,8 +104,29 @@ def create_school():
         admin.set_password(admin_password)
         db.session.add(admin)
 
+    # Crear 2 períodos académicos por defecto (año actual)
+    _create_default_periods(school.id)
+
     db.session.commit()
     return jsonify(school.to_dict()), 201
+
+
+def _create_default_periods(school_id):
+    """Crea Semestre 1 y Semestre 2 para el año actual si no existen."""
+    year = datetime.utcnow().year
+    existing = Period.query.filter_by(school_id=school_id, year=year).count()
+    if existing > 0:
+        return
+    periods = [
+        Period(school_id=school_id, name=f'Semestre 1 {year}', period_type='semestral',
+               year=year, number=1, is_active=True,
+               start_date=date(year, 3, 1), end_date=date(year, 7, 31)),
+        Period(school_id=school_id, name=f'Semestre 2 {year}', period_type='semestral',
+               year=year, number=2, is_active=True,
+               start_date=date(year, 8, 1), end_date=date(year, 12, 31)),
+    ]
+    for p in periods:
+        db.session.add(p)
 
 
 @super_admin_bp.route('/schools/<int:school_id>', methods=['GET'])
@@ -211,3 +232,30 @@ def create_super_admin():
     db.session.add(admin)
     db.session.commit()
     return jsonify(admin.to_dict()), 201
+
+
+@super_admin_bp.route('/schools/<int:school_id>/ensure-periods', methods=['POST'])
+@require_super_admin
+def ensure_periods(school_id):
+    """Crea períodos por defecto en un colegio que no los tiene."""
+    School.query.get_or_404(school_id)
+    _create_default_periods(school_id)
+    db.session.commit()
+    periods = Period.query.filter_by(school_id=school_id).all()
+    return jsonify([p.to_dict() for p in periods]), 200
+
+
+@super_admin_bp.route('/schools/ensure-all-periods', methods=['POST'])
+@require_super_admin
+def ensure_all_periods():
+    """Crea períodos por defecto en TODOS los colegios que no los tengan."""
+    schools = School.query.all()
+    updated = []
+    for s in schools:
+        year = datetime.utcnow().year
+        existing = Period.query.filter_by(school_id=s.id, year=year).count()
+        if existing == 0:
+            _create_default_periods(s.id)
+            updated.append(s.name)
+    db.session.commit()
+    return jsonify({'updated': updated, 'count': len(updated)}), 200

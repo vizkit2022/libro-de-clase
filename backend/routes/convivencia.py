@@ -215,3 +215,68 @@ def update_step(case_id, step_id):
 
     db.session.commit()
     return jsonify(step.to_dict()), 200
+
+
+# ── Extracción de caso desde imagen (IA) ───────────────────────────────
+
+@convivencia_bp.route('/extract-from-image', methods=['POST'])
+@jwt_required()
+@school_required
+def extract_from_image():
+    import anthropic, base64, os, json as json_lib
+    from models import CONVIVENCIA_PROCEDURES, CONVIVENCIA_TYPIFICATIONS
+
+    file = request.files.get('image')
+    if not file:
+        return jsonify({'error': 'No se envió imagen'}), 400
+
+    mime = file.content_type or 'image/jpeg'
+    img_data = base64.standard_b64encode(file.read()).decode('utf-8')
+
+    api_key = os.environ.get('ANTHROPIC_API_KEY')
+    if not api_key:
+        return jsonify({'error': 'ANTHROPIC_API_KEY no configurada'}), 500
+
+    client = anthropic.Anthropic(api_key=api_key)
+
+    prompt = f"""Eres un asistente de convivencia escolar chileno. Analiza la imagen adjunta y extrae la información del caso de convivencia.
+
+Devuelve SOLO un JSON con estos campos (deja vacío si no aparece en la imagen):
+{{
+  "title": "título breve del caso",
+  "date": "YYYY-MM-DD o vacío",
+  "typification": "uno de: {', '.join(CONVIVENCIA_TYPIFICATIONS)} o vacío",
+  "procedure": "uno de: {', '.join(CONVIVENCIA_PROCEDURES)} o vacío",
+  "criticality": "alta, media o baja",
+  "motive": "descripción del motivo o situación",
+  "agreements": "acuerdos o compromisos si los hay",
+  "student_name": "nombre del estudiante si aparece",
+  "professional_name": "nombre del profesional si aparece"
+}}
+
+Responde SOLO con el JSON, sin markdown ni explicaciones."""
+
+    try:
+        msg = client.messages.create(
+            model='claude-haiku-4-5-20251001',
+            max_tokens=1024,
+            messages=[{
+                'role': 'user',
+                'content': [
+                    {'type': 'image', 'source': {'type': 'base64', 'media_type': mime, 'data': img_data}},
+                    {'type': 'text', 'text': prompt}
+                ]
+            }]
+        )
+        raw = msg.content[0].text.strip()
+        # Limpiar posible markdown
+        if raw.startswith('```'):
+            raw = raw.split('```')[1]
+            if raw.startswith('json'):
+                raw = raw[4:]
+        result = json_lib.loads(raw)
+        return jsonify(result), 200
+    except json_lib.JSONDecodeError:
+        return jsonify({'error': 'No se pudo interpretar la respuesta del modelo', 'raw': raw}), 422
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

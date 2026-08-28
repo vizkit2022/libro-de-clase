@@ -7,6 +7,25 @@ export default function ParametersPage() {
   const [form, setForm] = useState(school || {});
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast('El logo debe ser menor a 2MB', 'error'); return; }
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('logo', file);
+      const { data } = await axios.post(`/api/schools/${school.id}/upload-logo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setForm(f => ({ ...f, logo_url: data.logo_url }));
+      updateSchool({ ...school, logo_url: data.logo_url });
+      showToast('✅ Logo subido correctamente');
+    } catch { showToast('Error al subir logo', 'error'); }
+    finally { setUploadingLogo(false); e.target.value = ''; }
+  };
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -136,11 +155,30 @@ export default function ParametersPage() {
             </div>
 
             <div className="form-group" style={{ marginTop: '16px' }}>
-              <label>URL del logo</label>
-              <input value={form.logo_url || ''} onChange={e => setForm({...form, logo_url: e.target.value})} placeholder="https://..." />
-              {form.logo_url && (
-                <img src={form.logo_url} alt="logo" style={{ width: 60, height: 60, objectFit: 'contain', borderRadius: 8, border: '1px solid #e2e8f0', marginTop: 8 }} onError={e => e.target.style.display='none'} />
-              )}
+              <label>Logo del colegio</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 6 }}>
+                {form.logo_url && (
+                  <img src={form.logo_url} alt="logo"
+                    style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 10,
+                      border: '1px solid #e2e8f0', background: '#f8fafc', padding: 4, flexShrink: 0 }}
+                    onError={e => e.target.style.display='none'} />
+                )}
+                <div style={{ flex: 1 }}>
+                  <label htmlFor="logo-upload" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+                    padding: '8px 16px', background: primaryColor, color: '#fff',
+                    borderRadius: 8, fontSize: 13, fontWeight: 600,
+                    opacity: uploadingLogo ? 0.7 : 1
+                  }}>
+                    {uploadingLogo ? '⏳ Subiendo...' : '📁 Subir logo'}
+                    <input id="logo-upload" type="file" accept="image/*" style={{ display: 'none' }}
+                      onChange={handleLogoUpload} disabled={uploadingLogo} />
+                  </label>
+                  <p style={{ fontSize: 11, color: '#94a3b8', margin: '6px 0 0' }}>PNG, JPG o SVG · máx 2MB</p>
+                  <input value={form.logo_url || ''} onChange={e => setForm({...form, logo_url: e.target.value})}
+                    placeholder="O pega una URL: https://..." style={{ marginTop: 8, width: '100%', fontSize: 12 }} />
+                </div>
+              </div>
             </div>
           </div>
         </div>
