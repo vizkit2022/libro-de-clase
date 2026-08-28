@@ -207,42 +207,6 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Sección demo */
-.demo-section {
-  border-top: 1px solid #e2e8f0;
-  padding-top: 20px;
-}
-
-.demo-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 10px;
-}
-
-.demo-buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.demo-btn {
-  padding: 8px 6px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1.5px solid;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.demo-btn.admin     { background: #ede9fe; color: #7c3aed; border-color: #c4b5fd; }
-.demo-btn.directivo { background: #fef9c3; color: #ca8a04; border-color: #fde68a; }
-.demo-btn.profesor  { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
-.demo-btn.alumno    { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
-.demo-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
 @media (max-width: 768px) {
   .login-page { flex-direction: column; }
