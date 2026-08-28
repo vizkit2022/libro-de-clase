@@ -147,8 +147,42 @@ def run_migrations():
                 except Exception:
                     conn.rollback()   # ya existía
 
-        # Las tablas convivencia_cases y convivencia_case_steps se crean
-        # automáticamente por db.create_all() al ser modelos nuevos.
+        # 3. Agregar columnas Anexo a convivencia_cases
+        if is_postgres:
+            for col, definition in [
+                ('estado',     "VARCHAR(30) DEFAULT 'recepcion'"),
+                ('anx1_data',  'TEXT'),
+                ('anx2_data',  'TEXT'),
+                ('anx3_data',  'TEXT'),
+                ('anx4_data',  'TEXT'),
+                ('anx5_data',  'TEXT'),
+            ]:
+                try:
+                    conn.execute(text(
+                        f"ALTER TABLE convivencia_cases ADD COLUMN {col} {definition}"
+                    ))
+                    conn.commit()
+                    print(f"✅ Migración: convivencia_cases.{col} agregada")
+                except Exception:
+                    conn.rollback()
+        elif is_sqlite:
+            for col, definition in [
+                ('estado',     "VARCHAR(30) DEFAULT 'recepcion'"),
+                ('anx1_data',  'TEXT'),
+                ('anx2_data',  'TEXT'),
+                ('anx3_data',  'TEXT'),
+                ('anx4_data',  'TEXT'),
+                ('anx5_data',  'TEXT'),
+            ]:
+                try:
+                    conn.execute(text(
+                        f"ALTER TABLE convivencia_cases ADD COLUMN {col} {definition}"
+                    ))
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+        # La tabla convivencia_bitacora se crea automáticamente por db.create_all()
 
 
 def _ensure_all_default_periods():

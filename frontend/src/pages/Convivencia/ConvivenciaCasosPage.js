@@ -16,6 +16,15 @@ const STATUS_STYLE = {
   cerrado: { bg: '#d1fae5', color: '#065f46' },
 };
 
+const ESTADO_STYLE = {
+  recepcion:           { bg: '#fef9c3', color: '#854d0e',  label: 'Recepción' },
+  entrevista:          { bg: '#dbeafe', color: '#1d4ed8',  label: 'Entrevista' },
+  seguimiento:         { bg: '#ede9fe', color: '#6d28d9',  label: 'Seguimiento' },
+  intervencion_grupal: { bg: '#d1fae5', color: '#065f46',  label: 'Intervención' },
+  apelacion:           { bg: '#fee2e2', color: '#991b1b',  label: 'Apelación' },
+  cerrado:             { bg: '#f1f5f9', color: '#475569',  label: 'Cerrado' },
+};
+
 function CritDot({ level }) {
   const s = CRITICALITY_STYLE[level] || CRITICALITY_STYLE.baja;
   return (
@@ -136,7 +145,7 @@ export default function ConvivenciaCasosPage() {
                   <th>Procedimiento</th>
                   <th>Alumno</th>
                   <th>Responsable</th>
-                  <th>Protocolo</th>
+                  <th>Etapa</th>
                   <th>Crit.</th>
                   <th>Estado</th>
                   <th>Fecha</th>
@@ -170,7 +179,15 @@ export default function ConvivenciaCasosPage() {
                         {c.professional ? `${c.professional.first_name} ${c.professional.last_name}` : '—'}
                       </td>
                       <td style={{ minWidth: 110 }}>
-                        <ProtocolProgress done={c.steps_completed} total={c.steps_total} />
+                        {(() => {
+                          const es = ESTADO_STYLE[c.estado] || ESTADO_STYLE.recepcion;
+                          return (
+                            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px',
+                              borderRadius: 20, background: es.bg, color: es.color }}>
+                              {es.label}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td><CritDot level={c.criticality} /></td>
                       <td>

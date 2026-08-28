@@ -372,12 +372,32 @@ class ConvivenciaCase(db.Model):
 
     student = db.relationship('User', foreign_keys=[student_id])
     professional = db.relationship('User', foreign_keys=[professional_id])
+    # ── Anexo-based fields ─────────────────────────────────────────────
+    # Estado del flujo de Convivencia Escolar
+    estado = db.Column(db.String(30), default='recepcion')
+    # recepcion | entrevista | seguimiento | intervencion_grupal | apelacion | cerrado
+
+    # Datos de cada Anexo almacenados como JSON
+    anx1_data = db.Column(db.Text)  # Recepción
+    anx2_data = db.Column(db.Text)  # Entrevista Apoderado
+    anx3_data = db.Column(db.Text)  # Seguimiento Individual
+    anx4_data = db.Column(db.Text)  # Intervención Grupal
+    anx5_data = db.Column(db.Text)  # Apelación
+
     creator = db.relationship('User', foreign_keys=[created_by])
     course = db.relationship('Course', foreign_keys=[course_id])
     steps = db.relationship('ConvivenciaCaseStep', backref='case', lazy=True,
                             order_by='ConvivenciaCaseStep.step_number')
+    bitacora = db.relationship('ConvivenciaBitacora', backref='case', lazy=True,
+                               cascade='all, delete-orphan',
+                               order_by='ConvivenciaBitacora.fecha')
 
     def to_dict(self):
+        import json as _json
+        def _parse(s):
+            if not s: return None
+            try: return _json.loads(s)
+            except: return None
         return {
             'id': self.id,
             'school_id': self.school_id,
@@ -397,11 +417,18 @@ class ConvivenciaCase(db.Model):
             'agreements': self.agreements,
             'status': self.status,
             'criticality': self.criticality,
+            'estado': self.estado or 'recepcion',
+            'anx1_data': _parse(self.anx1_data),
+            'anx2_data': _parse(self.anx2_data),
+            'anx3_data': _parse(self.anx3_data),
+            'anx4_data': _parse(self.anx4_data),
+            'anx5_data': _parse(self.anx5_data),
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'steps': [s.to_dict() for s in self.steps],
             'steps_completed': sum(1 for s in self.steps if s.status == 'completed'),
             'steps_total': len(self.steps),
+            'bitacora': [b.to_dict() for b in self.bitacora],
         }
 
 
@@ -424,4 +451,26 @@ class ConvivenciaCaseStep(db.Model):
             'status': self.status,
             'notes': self.notes,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+        }
+
+
+class ConvivenciaBitacora(db.Model):
+    __tablename__ = 'convivencia_bitacora'
+    id = db.Column(db.Integer, primary_key=True)
+    case_id = db.Column(db.Integer, db.ForeignKey('convivencia_cases.id'), nullable=False)
+    fecha = db.Column(db.Date, nullable=True)
+    tipo_accion = db.Column(db.String(200))
+    observaciones = db.Column(db.Text)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'case_id': self.case_id,
+            'fecha': self.fecha.isoformat() if self.fecha else None,
+            'tipo_accion': self.tipo_accion,
+            'observaciones': self.observaciones,
+            'created_by_id': self.created_by_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
         }

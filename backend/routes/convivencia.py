@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
-from models import (db, ConvivenciaCase, ConvivenciaCaseStep, User, Course,
-                    CONVIVENCIA_PROTOCOL_STEPS)
+from models import (db, ConvivenciaCase, ConvivenciaCaseStep, ConvivenciaBitacora,
+                    User, Course, CONVIVENCIA_PROTOCOL_STEPS)
 from datetime import date, datetime
 from sqlalchemy import extract, func
+import json as json_lib
 
 convivencia_bp = Blueprint('convivencia', __name__)
 
@@ -180,15 +181,91 @@ def update_case(case_id):
     data = request.get_json()
 
     for field in ['title', 'procedure', 'typification', 'motive',
-                  'agreements', 'status', 'criticality',
+                  'agreements', 'status', 'criticality', 'estado',
                   'professional_id', 'student_id', 'course_id']:
         if field in data:
             setattr(case, field, data[field] or None if field.endswith('_id') else data[field])
     if 'date' in data and data['date']:
         case.date = date.fromisoformat(data['date'])
 
+    # Guardar datos de Anexos
+    for anx in ['anx1_data', 'anx2_data', 'anx3_data', 'anx4_data', 'anx5_data']:
+        if anx in data:
+            setattr(case, anx, json_lib.dumps(data[anx]) if data[anx] is not None else None)
+
     db.session.commit()
     return jsonify(case.to_dict()), 200
+
+
+# ── Avanzar etapa ─────────────────────────────────────────────────────
+
+ESTADO_FLOW = ['recepcion', 'entrevista', 'seguimiento', 'intervencion_grupal', 'apelacion', 'cerrado']
+
+@convivencia_bp.route('/cases/<int:case_id>/avanzar', methods=['POST'])
+@jwt_required()
+@school_required
+def avanzar_estado(case_id):
+    claims = get_jwt()
+    case = ConvivenciaCase.query.filter_by(
+        id=case_id, school_id=claims.get('school_id')
+    ).first_or_404()
+
+    estado_actual = case.estado or 'recepcion'
+    try:
+        idx = ESTADO_FLOW.index(estado_actual)
+    except ValueError:
+        idx = 0
+
+    if idx < len(ESTADO_FLOW) - 1:
+        case.estado = ESTADO_FLOW[idx + 1]
+        if case.estado == 'cerrado':
+            case.status = 'cerrado'
+    db.session.commit()
+    return jsonify(case.to_dict()), 200
+
+
+# ── Bitácora de seguimiento ───────────────────────────────────────────
+
+@convivencia_bp.route('/cases/<int:case_id>/bitacora', methods=['GET'])
+@jwt_required()
+@school_required
+def get_bitacora(case_id):
+    claims = get_jwt()
+    ConvivenciaCase.query.filter_by(id=case_id, school_id=claims.get('school_id')).first_or_404()
+    entries = ConvivenciaBitacora.query.filter_by(case_id=case_id).order_by(ConvivenciaBitacora.fecha).all()
+    return jsonify([e.to_dict() for e in entries]), 200
+
+
+@convivencia_bp.route('/cases/<int:case_id>/bitacora', methods=['POST'])
+@jwt_required()
+@school_required
+def add_bitacora(case_id):
+    claims = get_jwt()
+    user_id = int(claims.get('sub', 0))
+    ConvivenciaCase.query.filter_by(id=case_id, school_id=claims.get('school_id')).first_or_404()
+    data = request.get_json()
+    entry = ConvivenciaBitacora(
+        case_id=case_id,
+        fecha=date.fromisoformat(data['fecha']) if data.get('fecha') else None,
+        tipo_accion=data.get('tipo_accion', ''),
+        observaciones=data.get('observaciones', ''),
+        created_by_id=user_id,
+    )
+    db.session.add(entry)
+    db.session.commit()
+    return jsonify(entry.to_dict()), 201
+
+
+@convivencia_bp.route('/cases/<int:case_id>/bitacora/<int:entry_id>', methods=['DELETE'])
+@jwt_required()
+@school_required
+def delete_bitacora(case_id, entry_id):
+    claims = get_jwt()
+    ConvivenciaCase.query.filter_by(id=case_id, school_id=claims.get('school_id')).first_or_404()
+    entry = ConvivenciaBitacora.query.filter_by(id=entry_id, case_id=case_id).first_or_404()
+    db.session.delete(entry)
+    db.session.commit()
+    return jsonify({'ok': True}), 200
 
 
 # ── Pasos del protocolo ────────────────────────────────────────────────
