@@ -104,10 +104,16 @@ def create_school():
         admin.set_password(admin_password)
         db.session.add(admin)
 
-    # Crear 2 períodos académicos por defecto (año actual)
-    _create_default_periods(school.id)
-
     db.session.commit()
+
+    # Crear 2 períodos por defecto (en transacción separada para no bloquear la creación)
+    try:
+        _create_default_periods(school.id)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"[warn] No se pudieron crear períodos para colegio {school.id}: {e}")
+
     return jsonify(school.to_dict()), 201
 
 
@@ -259,3 +265,24 @@ def ensure_all_periods():
             updated.append(s.name)
     db.session.commit()
     return jsonify({'updated': updated, 'count': len(updated)}), 200
+
+
+@super_admin_bp.route('/schools/seed-franz-liszt', methods=['POST'])
+@require_super_admin
+def seed_franz_liszt():
+    """Crea el colegio Franz Liszt si no existe."""
+    from datetime import date as date_cls
+    existing = School.query.filter(School.name.ilike('%franz liszt%')).first()
+    if existing:
+        return jsonify({'message': 'Ya existe', 'school': existing.to_dict()}), 200
+
+    school = School(
+        name='Colegio Franz Liszt',
+        plan='free', plan_status='active', is_active=True,
+        primary_color='#2563EB', secondary_color='#1E40AF', accent_color='#3B82F6',
+    )
+    db.session.add(school)
+    db.session.flush()
+    _create_default_periods(school.id)
+    db.session.commit()
+    return jsonify({'message': 'Creado', 'school': school.to_dict()}), 201

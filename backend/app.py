@@ -186,7 +186,10 @@ def seed_data():
             db.session.commit()
             print("✅ Super Admin creado: superadmin@sistema.cl / super123")
         # Asegurar períodos en todos los colegios existentes
-        _ensure_all_default_periods()
+        try:
+            _ensure_all_default_periods()
+        except Exception as e:
+            print(f"[warn] ensure periods: {e}")
         return
 
     print("🌱 Creando datos de ejemplo...")
