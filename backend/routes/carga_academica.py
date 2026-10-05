@@ -11,6 +11,7 @@ from datetime import date, datetime
 from functools import wraps
 import json as json_lib
 import io
+import os
 
 carga_bp = Blueprint('carga_academica', __name__)
 
@@ -2005,3 +2006,405 @@ def cobertura_demanda():
         })
 
     return jsonify(salida), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  SUGERENCIA DE REPARTO
+#
+#  El modelo solo traduce las instrucciones en preferencias; el reparto lo
+#  arma un solver determinista. Al revés —pidiéndole la distribución al
+#  modelo— saldrían asignaciones que no cuadran con la jornada ni con la
+#  demanda, que es justo lo que no se puede fallar acá.
+# ══════════════════════════════════════════════════════════════════════
+
+# Filas que la sugerencia no toca: son decisiones ya tomadas
+TIPOS_ESTRUCTURALES = ('jefe_departamento', 'jefatura', 'orientacion',
+                       'toma_contacto', 'otro')
+
+PREFERENCIAS_BASE = {
+    'rotar_niveles': False,
+    'mantener_continuidad': True,
+    'concentrar_niveles': True,
+    'max_disponibilidad': MAX_HORAS_DISPONIBILIDAD,
+    'docentes': {},      # nombre -> {preferir_niveles, evitar_niveles, ...}
+    'asignaturas': {},   # asignatura -> {preferir_docentes, evitar_docentes}
+    'notas': [],
+}
+
+
+def _preferencias_desde_texto(texto, nombres, asignaturas, niveles):
+    """Traduce instrucciones en lenguaje natural a preferencias estructuradas.
+
+    Si no hay API key o la respuesta no se entiende, devuelve las de base: el
+    reparto igual se arma, solo que sin las indicaciones del usuario.
+    """
+    prefs = {**PREFERENCIAS_BASE, 'docentes': {}, 'asignaturas': {}, 'notas': []}
+    texto = (texto or '').strip()
+    if not texto:
+        return prefs, None
+
+    api_key = os.environ.get('ANTHROPIC_API_KEY')
+    if not api_key:
+        prefs['notas'].append(
+            'No hay ANTHROPIC_API_KEY configurada: se repartió con los criterios '
+            'por defecto y no se aplicaron las instrucciones escritas.')
+        return prefs, 'sin_api_key'
+
+    import anthropic
+    cliente = anthropic.Anthropic(api_key=api_key)
+    prompt = f"""Traduce instrucciones de un jefe de UTP chileno a preferencias de reparto de carga docente.
+
+Docentes disponibles: {', '.join(nombres)}
+Asignaturas: {', '.join(asignaturas)}
+Niveles: {', '.join(niveles)}
+
+Instrucciones del usuario:
+\"\"\"{texto}\"\"\"
+
+Devuelve SOLO un JSON con esta forma, usando exactamente los nombres de la lista:
+{{
+  "rotar_niveles": false,
+  "mantener_continuidad": true,
+  "concentrar_niveles": true,
+  "docentes": {{
+    "Nombre Apellido": {{
+      "preferir_niveles": [], "evitar_niveles": [],
+      "preferir_asignaturas": [], "evitar_asignaturas": []
+    }}
+  }},
+  "asignaturas": {{
+    "Nombre asignatura": {{ "preferir_docentes": [], "evitar_docentes": [] }}
+  }},
+  "notas": ["qué entendiste, en una línea por instrucción"]
+}}
+
+rotar_niveles=true si piden mover de nivel a los docentes respecto del año anterior.
+mantener_continuidad=true si piden que sigan con lo mismo del año pasado.
+concentrar_niveles=true si piden que cada docente trabaje en pocos niveles.
+Omite docentes o asignaturas sobre los que no haya indicación. Sin markdown."""
+
+    try:
+        msg = cliente.messages.create(
+            model='claude-haiku-4-5-20251001', max_tokens=1500,
+            messages=[{'role': 'user', 'content': prompt}])
+        raw = msg.content[0].text.strip()
+        if raw.startswith('```'):
+            raw = raw.split('```')[1]
+            if raw.startswith('json'):
+                raw = raw[4:]
+        datos = json_lib.loads(raw)
+    except Exception as e:
+        prefs['notas'].append(f'No se pudieron interpretar las instrucciones ({e}). '
+                              f'Se repartió con los criterios por defecto.')
+        return prefs, 'error'
+
+    for clave in ('rotar_niveles', 'mantener_continuidad', 'concentrar_niveles'):
+        if isinstance(datos.get(clave), bool):
+            prefs[clave] = datos[clave]
+    # Solo nombres que existan: el modelo puede inventar
+    for nombre, reglas in (datos.get('docentes') or {}).items():
+        if nombre in nombres and isinstance(reglas, dict):
+            prefs['docentes'][nombre] = reglas
+    for asig, reglas in (datos.get('asignaturas') or {}).items():
+        if asig in asignaturas and isinstance(reglas, dict):
+            prefs['asignaturas'][asig] = reglas
+    prefs['notas'] = [str(n) for n in (datos.get('notas') or [])][:10]
+    return prefs, None
+
+
+def _resolver_reparto(sid, year, prefs):
+    """Reparte las horas de la demanda entre los docentes del año.
+
+    Reglas duras que nunca se rompen: cada docente llega justo a sus horas
+    pedagógicas, ninguna asignatura queda sobreasignada, y un curso no se le
+    da a dos docentes.
+    """
+    demanda = CargaDemanda.query.filter_by(school_id=sid, year=year)\
+        .order_by(CargaDemanda.orden, CargaDemanda.id).all()
+    docentes = CargaDocente.query.filter_by(school_id=sid, year=year)\
+        .order_by(CargaDocente.orden, CargaDocente.id).all()
+    if not docentes:
+        return None, ['No hay docentes en este proceso.']
+    if not demanda:
+        return None, ['No hay demanda de horas definida.']
+
+    # Qué dictó cada docente el año anterior, para continuidad o rotación
+    historico = {}
+    for prev in CargaDocente.query.filter_by(school_id=sid, year=year - 1).all():
+        pares = set()
+        for a in prev.asignaciones:
+            if a.demanda_id and a.demanda:
+                pares.add((a.demanda.asignatura, a.demanda.nivel))
+        historico[prev.nombre] = pares
+
+    # Roles del año anterior: jefatura, orientación, jefe de departamento.
+    # Son cargos que se arrastran y ocupan buena parte de la jornada, así que
+    # sin ellos la capacidad queda inflada y nada cuadra.
+    roles_previos = {}
+    for prev in CargaDocente.query.filter_by(school_id=sid, year=year - 1).all():
+        roles_previos[prev.nombre] = [
+            {'tipo': a.tipo, 'demanda_id': None,
+             'asignatura': a.asignatura_libre or TIPO_ETIQUETA.get(a.tipo, a.tipo),
+             'nivel': None, 'letras': a.letras, 'horas': int(a.horas or 0)}
+            for a in prev.asignaciones if a.tipo in TIPOS_ESTRUCTURALES
+        ]
+
+    # Capacidad: horas de aula menos lo estructural, que se conserva
+    estado = {}
+    for d in docentes:
+        info = d.to_dict()
+        propias = [a for a in d.asignaciones if a.tipo in TIPOS_ESTRUCTURALES]
+        if propias:
+            fijas = sum(int(a.horas or 0) for a in propias)
+            heredadas = []          # ya las tiene cargadas, no se tocan
+        else:
+            heredadas = roles_previos.get(d.nombre, [])
+            fijas = sum(f['horas'] for f in heredadas)
+        estado[d.id] = {
+            'docente': d, 'nombre': d.nombre,
+            'capacidad': info['horas_pedagogicas'] - fijas,
+            'libre': info['horas_pedagogicas'] - fijas,
+            'horas_pedagogicas': info['horas_pedagogicas'],
+            'fijas': fijas, 'heredadas': heredadas,
+            'niveles': set(), 'asignaturas': set(), 'unidades': [],
+        }
+
+    # Unidades a repartir: un curso concreto, o el grupo único de un electivo
+    unidades = []
+    for dem in demanda:
+        horas = int(dem.horas_por_grupo or 0)
+        if horas <= 0:
+            continue
+        if dem.por_letra:
+            for L in [x.strip() for x in (dem.letras or '').split(',') if x.strip()]:
+                unidades.append({'demanda': dem, 'letra': L, 'horas': horas})
+        else:
+            unidades.append({'demanda': dem, 'letra': None, 'horas': horas})
+
+    # Las más pesadas primero: son las más difíciles de encajar al final
+    unidades.sort(key=lambda u: (-u['horas'], u['demanda'].asignatura, u['letra'] or ''))
+
+    def puntaje(est, u):
+        dem = u['demanda']
+        s = est['libre'] * 0.1          # equilibra la carga entre docentes
+        previo = historico.get(est['nombre'], set())
+        if (dem.asignatura, dem.nivel) in previo:
+            s += 3.0 if prefs['mantener_continuidad'] else 0.0
+            if prefs['rotar_niveles']:
+                s -= 4.0
+        if dem.nivel in est['niveles'] and prefs['concentrar_niveles']:
+            s += 2.0
+        if dem.asignatura in est['asignaturas']:
+            s += 1.5
+        pd = prefs['docentes'].get(est['nombre'], {}) or {}
+        if dem.nivel in (pd.get('preferir_niveles') or []): s += 6.0
+        if dem.nivel in (pd.get('evitar_niveles') or []): s -= 6.0
+        if dem.asignatura in (pd.get('preferir_asignaturas') or []): s += 5.0
+        if dem.asignatura in (pd.get('evitar_asignaturas') or []): s -= 5.0
+        pa = prefs['asignaturas'].get(dem.asignatura, {}) or {}
+        if est['nombre'] in (pa.get('preferir_docentes') or []): s += 6.0
+        if est['nombre'] in (pa.get('evitar_docentes') or []): s -= 6.0
+        return s
+
+    sin_asignar = []
+    for u in unidades:
+        candidatos = [e for e in estado.values() if e['libre'] >= u['horas']]
+        if not candidatos:
+            sin_asignar.append(u)
+            continue
+        elegido = max(candidatos, key=lambda e: puntaje(e, u))
+        elegido['libre'] -= u['horas']
+        elegido['niveles'].add(u['demanda'].nivel)
+        elegido['asignaturas'].add(u['demanda'].asignatura)
+        elegido['unidades'].append(u)
+
+    # Reparación: el reparto codicioso puede dejar a uno con mucha sobra y a
+    # otro justo. Se mueven unidades hasta que a nadie le sobre más de lo que
+    # permite la disponibilidad.
+    tope = prefs['max_disponibilidad']
+    for _ in range(300):
+        excedidos = sorted([e for e in estado.values() if e['libre'] > tope],
+                           key=lambda e: -e['libre'])
+        if not excedidos:
+            break
+        movido = False
+        for b in excedidos:
+            opciones = [
+                (a, u)
+                for a in estado.values() if a is not b
+                for u in a['unidades']
+                if u['horas'] <= b['libre'] and a['libre'] + u['horas'] <= tope
+            ]
+            if not opciones:
+                continue
+            # La unidad más grande que quepa: acerca más rápido al tope
+            a, u = max(opciones, key=lambda c: c[1]['horas'])
+            a['unidades'].remove(u)
+            a['libre'] += u['horas']
+            b['unidades'].append(u)
+            b['libre'] -= u['horas']
+            movido = True
+            break
+        if not movido:
+            break
+
+    # Armar la propuesta agrupando letras de una misma asignatura y nivel
+    propuesta, advertencias = [], []
+    for est in estado.values():
+        por_dem = {}
+        for u in est['unidades']:
+            por_dem.setdefault(u['demanda'].id, []).append(u)
+        filas = []
+        for dem_id, us in por_dem.items():
+            dem = us[0]['demanda']
+            letras = sorted([u['letra'] for u in us if u['letra']])
+            filas.append({
+                'tipo': 'asignatura', 'demanda_id': dem_id,
+                'asignatura': dem.nombre(), 'nivel': dem.nivel,
+                'letras': ','.join(letras) if letras else None,
+                'horas': sum(u['horas'] for u in us),
+            })
+        filas.sort(key=lambda f: (f['asignatura'], f['nivel'] or ''))
+        # Los cargos del año anterior se proponen junto con los ramos
+        filas.extend(est['heredadas'])
+
+        # Lo que sobra va a disponibilidad, con tope
+        sobra = est['libre']
+        if sobra > 0:
+            tope = min(sobra, prefs['max_disponibilidad'])
+            if tope > 0:
+                filas.append({'tipo': 'disponibilidad', 'demanda_id': None,
+                              'asignatura': 'Disponibilidad', 'nivel': None,
+                              'letras': None, 'horas': tope})
+            if sobra > tope:
+                advertencias.append(
+                    f"{est['nombre']}: quedan {sobra - tope} h sin asignar por sobre "
+                    f"las {prefs['max_disponibilidad']} de disponibilidad.")
+
+        propuesta.append({
+            'docente_id': est['docente'].id,
+            'docente': est['nombre'],
+            'horas_contrato': est['docente'].horas_contrato,
+            'horas_pedagogicas': est['horas_pedagogicas'],
+            'horas_estructurales': est['fijas'],
+            'roles_heredados': [f['asignatura'] for f in est['heredadas']],
+            # Si los roles se heredaron ya están dentro de filas; si el docente
+            # los tenía cargados, se suman aparte porque no se re-emiten
+            'horas_asignadas': (sum(f['horas'] for f in filas)
+                                + (0 if est['heredadas'] else est['fijas'])),
+            'filas': filas,
+        })
+
+    for u in sin_asignar:
+        dem = u['demanda']
+        destino = f"{dem.nivel} {u['letra']}" if u['letra'] else dem.nivel
+        advertencias.append(
+            f"Sin docente con horas libres: {dem.nombre()} · {destino} ({u['horas']} h).")
+
+    # Diagnóstico de fondo: si la demanda no llega a cubrir las jornadas,
+    # ningún reparto va a cuadrar y conviene decirlo derecho
+    capacidad_total = sum(e['horas_pedagogicas'] for e in estado.values())
+    estructural_total = sum(e['fijas'] for e in estado.values())
+    demanda_total = sum(u['horas'] for u in unidades)
+    holgura = capacidad_total - estructural_total - demanda_total
+    tope_disp = prefs['max_disponibilidad'] * len(estado)
+    if holgura > tope_disp:
+        advertencias.insert(0,
+            f"La demanda ({demanda_total} h) más los cargos ({estructural_total} h) "
+            f"no alcanzan a llenar las {capacidad_total} h de aula del equipo: "
+            f"sobran {holgura} h y la disponibilidad solo cubre {tope_disp}. "
+            f"Falta definir demanda, o estos docentes tienen horas en otros "
+            f"departamentos.")
+
+    return propuesta, advertencias
+
+
+@carga_bp.route('/procesos/<int:year>/sugerir', methods=['POST'])
+@jwt_required()
+@school_required
+def sugerir_reparto(year):
+    """Propone un reparto completo. No guarda nada: es para revisar."""
+    sid = _sid()
+    d = request.get_json() or {}
+
+    docentes = CargaDocente.query.filter_by(school_id=sid, year=year).all()
+    demanda = CargaDemanda.query.filter_by(school_id=sid, year=year).all()
+    if not docentes or not demanda:
+        return jsonify({'error': 'El proceso necesita docentes y demanda definidos.'}), 400
+
+    prefs, aviso = _preferencias_desde_texto(
+        d.get('instrucciones'),
+        [x.nombre for x in docentes],
+        sorted({x.nombre() for x in demanda}),
+        sorted({x.nivel for x in demanda}),
+    )
+    if d.get('rotar_niveles') is not None:
+        prefs['rotar_niveles'] = bool(d['rotar_niveles'])
+
+    propuesta, advertencias = _resolver_reparto(sid, year, prefs)
+    if propuesta is None:
+        return jsonify({'error': advertencias[0]}), 400
+
+    total_demanda = sum(x.horas_totales() for x in demanda)
+    total_prop = sum(f['horas'] for p in propuesta
+                     for f in p['filas'] if f['tipo'] == 'asignatura')
+
+    return jsonify({
+        'ok': True, 'year': year,
+        'propuesta': propuesta,
+        'advertencias': advertencias,
+        'preferencias': prefs,
+        'aviso': aviso,
+        'resumen': {
+            'total_demanda': total_demanda,
+            'total_propuesto': total_prop,
+            'sin_repartir': total_demanda - total_prop,
+            'docentes': len(propuesta),
+            'docentes_cuadrados': sum(
+                1 for p in propuesta if p['horas_asignadas'] == p['horas_pedagogicas']),
+        },
+    }), 200
+
+
+@carga_bp.route('/procesos/<int:year>/aplicar-sugerencia', methods=['POST'])
+@jwt_required()
+@school_required
+def aplicar_sugerencia(year):
+    """Guarda una propuesta ya revisada, conservando las filas estructurales."""
+    sid = _sid()
+    d = request.get_json() or {}
+    propuesta = d.get('propuesta')
+    if not isinstance(propuesta, list) or not propuesta:
+        return jsonify({'error': 'Falta la propuesta'}), 400
+
+    ids_validos = {x.id for x in CargaDocente.query.filter_by(school_id=sid, year=year).all()}
+    creadas, borradas = 0, 0
+
+    for bloque in propuesta:
+        did = bloque.get('docente_id')
+        if did not in ids_validos:
+            continue
+        # El horario cuelga de las asignaciones que se reemplazan
+        viejas = CargaAsignacion.query.filter_by(docente_id=did, year=year)\
+            .filter(~CargaAsignacion.tipo.in_(TIPOS_ESTRUCTURALES)).all()
+        for v in viejas:
+            HorarioCelda.query.filter_by(asignacion_id=v.id)\
+                .delete(synchronize_session=False)
+            db.session.delete(v)
+            borradas += 1
+
+        base = CargaAsignacion.query.filter_by(docente_id=did, year=year).count()
+        for i, f in enumerate(bloque.get('filas') or []):
+            db.session.add(CargaAsignacion(
+                school_id=sid, year=year, docente_id=did,
+                tipo=f.get('tipo', 'asignatura'),
+                demanda_id=f.get('demanda_id') or None,
+                asignatura_libre=None if f.get('demanda_id') else f.get('asignatura'),
+                letras=f.get('letras'), horas=int(f.get('horas') or 0),
+                orden=base + i))
+            creadas += 1
+
+    db.session.commit()
+    return jsonify({'ok': True, 'year': year, 'filas_creadas': creadas,
+                    'filas_reemplazadas': borradas,
+                    'resumen': _resumen_year(sid, year)}), 200

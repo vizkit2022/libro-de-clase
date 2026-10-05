@@ -51,6 +51,13 @@ export default function CargaAcademicaDashboard() {
   const [demanda, setDemanda] = useState([]);
   const [cat, setCat] = useState(null);
   const [asignaturas, setAsignaturas] = useState([]);
+  const [cobertura, setCobertura] = useState([]);
+  const [abiertas, setAbiertas] = useState({});   // acordeón: asignatura y nivel
+  const [sugerencia, setSugerencia] = useState(null);   // propuesta a revisar
+  const [promptOpen, setPromptOpen] = useState(false);
+  const [instrucciones, setInstrucciones] = useState('');
+  const [rotar, setRotar] = useState(true);
+  const [pensando, setPensando] = useState(false);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [nuevoDocente, setNuevoDocente] = useState(null);
@@ -84,6 +91,11 @@ export default function CargaAcademicaDashboard() {
         axios.get('/api/carga-academica/asignaturas'),
       ]);
       setData(d.data); setDemanda(dm.data); setCat(c.data); setAsignaturas(asg.data);
+      // Apoyo: si no está, el resto del dashboard igual funciona
+      try {
+        const cob = await axios.get(`/api/carga-academica/demanda/cobertura?year=${year}`);
+        setCobertura(Array.isArray(cob.data) ? cob.data : []);
+      } catch { setCobertura([]); }
     } catch {
       // Año sin datos o error de red: se parte de cero, nunca con lo anterior
       setData(null); setDemanda([]);
@@ -164,6 +176,25 @@ export default function CargaAcademicaDashboard() {
     setNuevoDocente(null);
     navigate(`/carga-academica/docentes/${r.data.id}`);
   };
+
+  const pedirSugerencia = async () => {
+    setPensando(true);
+    try {
+      const r = await axios.post(`/api/carga-academica/procesos/${year}/sugerir`,
+        { instrucciones, rotar_niveles: rotar });
+      setSugerencia(r.data);
+      setPromptOpen(false);
+    } catch (e) {
+      alert(e.response?.data?.error || 'No se pudo generar la sugerencia');
+    }
+    setPensando(false);
+  };
+
+  const aplicarSugerencia = () => accion(async () => {
+    await axios.post(`/api/carga-academica/procesos/${year}/aplicar-sugerencia`,
+      { propuesta: sugerencia.propuesta });
+    setSugerencia(null);
+  }, `¿Aplicar este reparto a ${year}? Reemplaza las asignaturas actuales de cada docente; los cargos como jefatura se conservan.`);
 
   const publicar = () => accion(async () => {
     const r = await axios.post(`/api/carga-academica/procesos/${year}/publicar`, {});
@@ -292,6 +323,14 @@ export default function CargaAcademicaDashboard() {
             </button>
           </React.Fragment>
         ))}
+        <button onClick={() => setPromptOpen(true)} disabled={busy || vacio}
+          title="Propone un reparto completo respetando las jornadas y la demanda"
+          style={{ padding: '8px 16px',
+            background: 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff',
+            border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
+            cursor: 'pointer', opacity: busy || vacio ? 0.5 : 1 }}>
+          ✨ Sugerir reparto
+        </button>
         <button onClick={() => setNuevoDocente({ nombre: '', departamento: departamentos[0] || '', nivel: 'Media', horas_contrato: 44 })}
           style={{ padding: '8px 16px', background: primary, color: '#fff', border: 'none',
             borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Docente</button>
@@ -572,43 +611,125 @@ export default function CargaAcademicaDashboard() {
               <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ padding: '12px 18px', borderBottom: '1px solid #f1f5f9' }}>
                   <h3 style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', margin: 0,
-                    textTransform: 'uppercase', letterSpacing: '0.06em' }}>Detalle por nivel</h3>
+                    textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Detalle: asignatura › nivel › curso
+                  </h3>
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc' }}>
-                      {['Asignatura', 'Nivel', 'Grupos', 'Demanda', 'Asignado', 'Estado'].map(h => (
-                        <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11,
-                          textTransform: 'uppercase', color: '#64748b', fontWeight: 700 }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data?.detalle_demanda || []).map(d => {
-                      const col = d.estado === 'completa' ? '#16a34a'
-                        : d.estado === 'sobreasignada' ? '#dc2626' : '#f59e0b';
-                      return (
-                        <tr key={d.id} style={{ borderTop: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '8px 12px', fontWeight: 600, color: '#1e293b' }}>{d.asignatura}</td>
-                          <td style={{ padding: '8px 12px', color: '#475569' }}>{d.nivel}</td>
-                          <td style={{ padding: '8px 12px', color: '#94a3b8', fontSize: 12 }}>
-                            {d.por_letra ? `${d.letras} (${d.horas_por_grupo} h c/u)` : `único (${d.horas_por_grupo} h)`}
-                          </td>
-                          <td style={{ padding: '8px 12px', fontWeight: 700 }}>{d.horas_totales}</td>
-                          <td style={{ padding: '8px 12px', fontWeight: 700, color: col }}>{d.horas_asignadas}</td>
-                          <td style={{ padding: '8px 12px' }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px',
-                              borderRadius: 20, background: `${col}18`, color: col }}>
-                              {d.estado === 'completa' ? '✓ completa'
-                                : d.estado === 'sobreasignada' ? `+${-d.horas_faltantes}`
-                                : `faltan ${d.horas_faltantes}`}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+
+                {/* Acordeón de tres niveles */}
+                {(() => {
+                  const filas = cobertura.length ? cobertura : (data?.detalle_demanda || []);
+                  const porAsig = {};
+                  filas.forEach(f => { (porAsig[f.asignatura] ||= []).push(f); });
+
+                  return Object.entries(porAsig).map(([asig, niveles]) => {
+                    const dem = niveles.reduce((n, x) => n + x.horas_totales, 0);
+                    const asi = niveles.reduce((n, x) => n + x.horas_asignadas, 0);
+                    const col = asi === dem ? '#16a34a' : asi > dem ? '#dc2626' : '#f59e0b';
+                    const open = !!abiertas[asig];
+                    return (
+                      <div key={asig} style={{ borderTop: '1px solid #f1f5f9' }}>
+                        {/* Nivel 1: asignatura */}
+                        <div onClick={() => setAbiertas(a => ({ ...a, [asig]: !a[asig] }))}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10,
+                            padding: '11px 18px', cursor: 'pointer', userSelect: 'none',
+                            background: open ? '#f8fafc' : '#fff' }}>
+                          <span style={{ color: '#94a3b8', fontSize: 11, width: 12 }}>
+                            {open ? '▼' : '▶'}
+                          </span>
+                          <span style={{ flex: 1, fontWeight: 700, fontSize: 13.5,
+                            color: '#0f172a' }}>{asig}</span>
+                          <span style={{ fontSize: 12, color: '#94a3b8' }}>
+                            {niveles.length} {niveles.length === 1 ? 'nivel' : 'niveles'}
+                          </span>
+                          <span style={{ fontSize: 12.5, fontWeight: 800, color: col,
+                            minWidth: 86, textAlign: 'right' }}>
+                            {asi} / {dem} h
+                          </span>
+                        </div>
+
+                        {open && niveles.map(n => {
+                          const clave = `${asig}|${n.nivel}`;
+                          const abierto = !!abiertas[clave];
+                          const cn = n.horas_asignadas === n.horas_totales ? '#16a34a'
+                            : n.horas_asignadas > n.horas_totales ? '#dc2626' : '#f59e0b';
+                          const detalle = n.por_letra_detalle;
+                          return (
+                            <div key={n.id} style={{ borderTop: '1px solid #f8fafc' }}>
+                              {/* Nivel 2: nivel */}
+                              <div onClick={() => setAbiertas(a => ({ ...a, [clave]: !a[clave] }))}
+                                style={{ display: 'flex', alignItems: 'center', gap: 10,
+                                  padding: '8px 18px 8px 42px', cursor: detalle ? 'pointer' : 'default',
+                                  background: abierto ? '#f1f5f9' : 'transparent' }}>
+                                <span style={{ color: '#cbd5e1', fontSize: 10, width: 12 }}>
+                                  {detalle ? (abierto ? '▼' : '▶') : '·'}
+                                </span>
+                                <span style={{ flex: 1, fontSize: 13, color: '#334155' }}>{n.nivel}</span>
+                                <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                                  {n.por_letra
+                                    ? `${(n.letras_demanda || n.letras?.split(',') || []).join(', ')} · ${n.horas_por_grupo} h c/u`
+                                    : `grupo único · ${n.horas_por_grupo} h`}
+                                </span>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: cn,
+                                  minWidth: 86, textAlign: 'right' }}>
+                                  {n.horas_asignadas} / {n.horas_totales} h
+                                </span>
+                              </div>
+
+                              {/* Nivel 3: curso */}
+                              {abierto && detalle && (
+                                <div style={{ padding: '4px 18px 12px 66px', background: '#fafbfc' }}>
+                                  {n.por_letra ? (
+                                    (n.letras_demanda || []).map(L => {
+                                      const quienes = detalle[L] || [];
+                                      const cc = quienes.length > 1 ? '#dc2626'
+                                        : quienes.length === 1 ? '#16a34a' : '#94a3b8';
+                                      return (
+                                        <div key={L} style={{ display: 'flex', alignItems: 'center',
+                                          gap: 10, padding: '5px 0',
+                                          borderBottom: '1px solid #f1f5f9' }}>
+                                          <span style={{ fontSize: 12, fontWeight: 800,
+                                            color: '#0f172a', minWidth: 92 }}>
+                                            {n.nivel} {L}
+                                          </span>
+                                          <span style={{ flex: 1, fontSize: 12.5, color: cc,
+                                            fontWeight: quienes.length === 1 ? 500 : 700 }}>
+                                            {quienes.length === 0 ? 'sin docente asignado'
+                                              : quienes.length > 1
+                                                ? `⚠ ${quienes.map(q => q.docente).join(' + ')}`
+                                                : quienes[0].docente}
+                                          </span>
+                                          <span style={{ fontSize: 12, color: '#64748b',
+                                            fontWeight: 700 }}>
+                                            {quienes.length ? `${n.horas_por_grupo} h` : '—'}
+                                          </span>
+                                        </div>
+                                      );
+                                    })
+                                  ) : (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10,
+                                      padding: '5px 0' }}>
+                                      <span style={{ fontSize: 12, fontWeight: 800,
+                                        color: '#0f172a', minWidth: 92 }}>grupo único</span>
+                                      <span style={{ flex: 1, fontSize: 12.5,
+                                        color: n.asignados?.length ? '#16a34a' : '#94a3b8' }}>
+                                        {n.asignados?.length
+                                          ? n.asignados.map(a => a.docente).join(', ')
+                                          : 'sin docente asignado'}
+                                      </span>
+                                      <span style={{ fontSize: 12, color: '#64748b',
+                                        fontWeight: 700 }}>{n.horas_por_grupo} h</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </>
           )}
@@ -750,6 +871,165 @@ export default function CargaAcademicaDashboard() {
             </div>
           )}
         </>
+      )}
+
+      {/* Prompt de la sugerencia */}
+      {promptOpen && (
+        <div onClick={() => !pensando && setPromptOpen(false)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 2000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff',
+            borderRadius: 16, width: 540, maxWidth: '95vw', padding: 24 }}>
+            <h2 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 800 }}>
+              ✨ Sugerir reparto {year}
+            </h2>
+            <p style={{ margin: '0 0 18px', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
+              Reparte la demanda entre los docentes respetando sus jornadas, sin pasar
+              de {cat?.max_disponibilidad || 3} h de disponibilidad y sin dejar un curso
+              con dos profesores. Primero vas a ver la propuesta.
+            </p>
+
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b',
+              textTransform: 'uppercase', marginBottom: 6 }}>
+              Qué tener en cuenta <span style={{ fontWeight: 400 }}>(opcional)</span>
+            </label>
+            <textarea rows={5} value={instrucciones}
+              onChange={e => setInstrucciones(e.target.value)}
+              placeholder={'Por ejemplo:\n· Karla prefiere básica, no darle IV Medio\n· Los electivos de III Medio para Dominique\n· Francisca sigue con Taller PAES'}
+              style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0',
+                borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical',
+                boxSizing: 'border-box', lineHeight: 1.5 }} />
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14,
+              fontSize: 13, color: '#334155', cursor: 'pointer' }}>
+              <input type="checkbox" checked={rotar} onChange={e => setRotar(e.target.checked)} />
+              Mover de niveles a los docentes respecto del año anterior
+            </label>
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 22 }}>
+              <button disabled={pensando} onClick={() => setPromptOpen(false)} style={{
+                padding: '9px 18px', background: '#f1f5f9', border: 'none', borderRadius: 8,
+                fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#475569' }}>
+                Cancelar
+              </button>
+              <button disabled={pensando} onClick={pedirSugerencia} style={{
+                padding: '9px 20px', background: 'linear-gradient(135deg,#7c3aed,#2563eb)',
+                color: '#fff', border: 'none', borderRadius: 8, fontSize: 13,
+                fontWeight: 700, cursor: 'pointer', opacity: pensando ? 0.6 : 1 }}>
+                {pensando ? 'Calculando…' : 'Proponer reparto'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vista previa de la propuesta */}
+      {sugerencia && (
+        <div onClick={() => setSugerencia(null)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 2000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff',
+            borderRadius: 16, width: 760, maxWidth: '96vw', maxHeight: '88vh',
+            display: 'flex', flexDirection: 'column' }}>
+
+            <div style={{ padding: '18px 22px', borderBottom: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, flex: 1 }}>
+                  Propuesta de reparto {year}
+                </h2>
+                <button onClick={() => setSugerencia(null)} style={{ background: 'none',
+                  border: 'none', fontSize: 22, cursor: 'pointer', color: '#94a3b8' }}>×</button>
+              </div>
+              <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
+                {[
+                  ['Horas repartidas', `${sugerencia.resumen.total_propuesto} / ${sugerencia.resumen.total_demanda}`,
+                    sugerencia.resumen.sin_repartir === 0 ? '#16a34a' : '#dc2626'],
+                  ['Docentes cuadrados', `${sugerencia.resumen.docentes_cuadrados} / ${sugerencia.resumen.docentes}`,
+                    sugerencia.resumen.docentes_cuadrados === sugerencia.resumen.docentes ? '#16a34a' : '#f59e0b'],
+                ].map(([l, v, c]) => (
+                  <div key={l}>
+                    <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: '#94a3b8',
+                      textTransform: 'uppercase' }}>{l}</p>
+                    <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: c }}>{v}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ overflowY: 'auto', padding: '16px 22px', flex: 1 }}>
+              {(sugerencia.preferencias?.notas || []).length > 0 && (
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe',
+                  borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+                  <p style={{ fontSize: 11, fontWeight: 800, color: '#1e3a8a',
+                    textTransform: 'uppercase', margin: '0 0 5px' }}>Qué se consideró</p>
+                  {sugerencia.preferencias.notas.map((n, i) => (
+                    <p key={i} style={{ fontSize: 12.5, color: '#1d4ed8', margin: '2px 0' }}>· {n}</p>
+                  ))}
+                </div>
+              )}
+
+              {sugerencia.advertencias.length > 0 && (
+                <div style={{ background: '#fffbeb', border: '1px solid #fde68a',
+                  borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+                  <p style={{ fontSize: 11, fontWeight: 800, color: '#92400e',
+                    textTransform: 'uppercase', margin: '0 0 5px' }}>Revisar</p>
+                  {sugerencia.advertencias.map((a, i) => (
+                    <p key={i} style={{ fontSize: 12.5, color: '#92400e', margin: '3px 0',
+                      lineHeight: 1.5 }}>· {a}</p>
+                  ))}
+                </div>
+              )}
+
+              {sugerencia.propuesta.map(p => {
+                const ok = p.horas_asignadas === p.horas_pedagogicas;
+                return (
+                  <div key={p.docente_id} style={{ border: '1px solid #e2e8f0',
+                    borderRadius: 10, marginBottom: 10, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '9px 14px', background: '#f8fafc' }}>
+                      <span style={{ fontWeight: 700, fontSize: 13.5, flex: 1 }}>{p.docente}</span>
+                      <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                        jornada {p.horas_contrato} h
+                      </span>
+                      <span style={{ fontSize: 12.5, fontWeight: 800,
+                        color: ok ? '#16a34a' : '#dc2626' }}>
+                        {p.horas_asignadas} / {p.horas_pedagogicas} h {ok ? '✓' : ''}
+                      </span>
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                      <tbody>
+                        {p.filas.map((f, i) => (
+                          <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '5px 14px', color: '#334155' }}>{f.asignatura}</td>
+                            <td style={{ padding: '5px 10px', color: '#94a3b8', width: 170 }}>
+                              {f.nivel ? `${f.nivel}${f.letras ? ' ' + f.letras.replace(/,/g, ', ') : ''}` : ''}
+                            </td>
+                            <td style={{ padding: '5px 14px', textAlign: 'right', width: 54,
+                              fontWeight: 700 }}>{f.horas} h</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ padding: '14px 22px', borderTop: '1px solid #e2e8f0',
+              display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => { setSugerencia(null); setPromptOpen(true); }}
+                style={{ padding: '9px 18px', background: '#f1f5f9', border: 'none',
+                  borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  color: '#475569' }}>Ajustar instrucciones</button>
+              <button disabled={busy} onClick={aplicarSugerencia} style={{
+                padding: '9px 20px', background: '#16a34a', color: '#fff', border: 'none',
+                borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                opacity: busy ? 0.6 : 1 }}>
+                Aplicar a {year}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal nuevo docente */}
