@@ -505,9 +505,13 @@ def informe_departamento():
 @school_required
 def seed_lenguaje():
     """Puebla cursos 7°-IV Medio (A,B,C), la demanda de Lenguaje y los 6 docentes
-    con su carga 2026 como línea base para 2027."""
+    con la carga histórica 2026 tal como viene del Word del departamento.
+
+    Este es el AÑO BASE. Para armar 2027 se usa /procesos/iniciar, que arrastra
+    docentes y demanda pero deja la distribución en blanco."""
     sid = _sid()
-    year = request.get_json(silent=True) and request.get_json().get('year') or _year()
+    body = request.get_json(silent=True) or {}
+    year = body.get('year') or 2026
     LETRAS = ['A', 'B', 'C']
     creados = {'cursos': 0, 'demanda': 0, 'docentes': 0, 'asignaciones': 0}
 
@@ -627,3 +631,268 @@ def seed_lenguaje():
     db.session.commit()
 
     return jsonify({'ok': True, 'year': year, 'creados': creados}), 201
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  PROCESOS POR AÑO
+#  Cada año es un proceso independiente. El año base (2026) guarda el
+#  histórico; los años siguientes arrastran docentes y demanda pero
+#  parten con la distribución en blanco para re-repartir.
+# ══════════════════════════════════════════════════════════════════════
+
+def _resumen_year(sid, year):
+    docs = CargaDocente.query.filter_by(school_id=sid, year=year).all()
+    dem = CargaDemanda.query.filter_by(school_id=sid, year=year).all()
+    asgs = CargaAsignacion.query.filter_by(school_id=sid, year=year).all()
+
+    asignado_por_demanda = {}
+    for a in asgs:
+        if a.demanda_id:
+            asignado_por_demanda[a.demanda_id] = asignado_por_demanda.get(a.demanda_id, 0) + int(a.horas or 0)
+
+    total_demanda = sum(d.horas_totales() for d in dem)
+    total_asignado = sum(asignado_por_demanda.values())
+    infos = [d.to_dict(with_asignaciones=False) for d in docs]
+    completos = sum(1 for i in infos if i['completo'])
+
+    return {
+        'year': year,
+        'docentes': len(docs),
+        'docentes_completos': completos,
+        'filas_demanda': len(dem),
+        'filas_asignacion': len(asgs),
+        'total_demanda': total_demanda,
+        'total_asignado': total_asignado,
+        'cobertura_pct': round(total_asignado / total_demanda * 100, 1) if total_demanda else 0,
+        'en_blanco': len(asgs) == 0,
+        'cerrado': total_demanda > 0 and total_asignado == total_demanda and completos == len(docs) and len(docs) > 0,
+    }
+
+
+@carga_bp.route('/procesos', methods=['GET'])
+@jwt_required()
+@school_required
+def list_procesos():
+    """Años que tienen datos, con el estado de avance de cada uno."""
+    sid = _sid()
+    years = set()
+    for Model in (CargaDocente, CargaDemanda, CargaAsignacion):
+        for (y,) in db.session.query(Model.year).filter_by(school_id=sid).distinct().all():
+            if y:
+                years.add(y)
+    return jsonify({
+        'procesos': [_resumen_year(sid, y) for y in sorted(years, reverse=True)],
+        'sugerido': max(years) + 1 if years else date.today().year,
+    }), 200
+
+
+@carga_bp.route('/procesos/iniciar', methods=['POST'])
+@jwt_required()
+@school_required
+def iniciar_proceso():
+    """Abre un año nuevo arrastrando docentes y demanda desde un año base.
+
+    Respeta la regla "mantener las horas cronológicas de contrato actual":
+    la jornada de cada docente se copia tal cual. Por defecto la distribución
+    queda en blanco para re-repartir; con copiar_distribucion=true se arrastra
+    la del año base como punto de partida.
+    """
+    sid = _sid()
+    d = request.get_json() or {}
+    origen = d.get('year_origen')
+    destino = d.get('year_destino')
+    copiar_dist = bool(d.get('copiar_distribucion', False))
+    copiar_demanda = bool(d.get('copiar_demanda', True))
+
+    if not destino:
+        return jsonify({'error': 'Falta year_destino'}), 400
+    destino = int(destino)
+
+    existente = _resumen_year(sid, destino)
+    if existente['docentes'] or existente['filas_demanda']:
+        return jsonify({
+            'error': f'El año {destino} ya tiene datos. Usa "reiniciar distribución" '
+                     f'o elimina el proceso antes de volver a abrirlo.',
+            'resumen': existente,
+        }), 409
+
+    creados = {'docentes': 0, 'demanda': 0, 'asignaciones': 0}
+
+    if not origen:
+        # Proceso en blanco: no hay nada que copiar
+        return jsonify({'ok': True, 'year': destino, 'creados': creados,
+                        'resumen': _resumen_year(sid, destino)}), 201
+
+    origen = int(origen)
+
+    # 1) Demanda
+    mapa_demanda = {}
+    if copiar_demanda:
+        for src in CargaDemanda.query.filter_by(school_id=sid, year=origen)\
+                .order_by(CargaDemanda.orden, CargaDemanda.id).all():
+            nueva = CargaDemanda(
+                school_id=sid, year=destino, departamento=src.departamento,
+                asignatura=src.asignatura, nivel=src.nivel, por_letra=src.por_letra,
+                letras=src.letras, horas_por_grupo=src.horas_por_grupo, orden=src.orden)
+            db.session.add(nueva)
+            db.session.flush()
+            mapa_demanda[src.id] = nueva.id
+            creados['demanda'] += 1
+
+    # 2) Docentes — se mantiene la jornada contratada
+    mapa_docente = {}
+    for src in CargaDocente.query.filter_by(school_id=sid, year=origen)\
+            .order_by(CargaDocente.orden, CargaDocente.id).all():
+        nuevo = CargaDocente(
+            school_id=sid, year=destino, nombre=src.nombre, rut=src.rut,
+            user_id=src.user_id, departamento=src.departamento, nivel=src.nivel,
+            horas_contrato=src.horas_contrato,          # regla: jornada se mantiene
+            no_lectivas_json=src.no_lectivas_json, orden=src.orden)
+        db.session.add(nuevo)
+        db.session.flush()
+        mapa_docente[src.id] = nuevo.id
+        creados['docentes'] += 1
+
+    # 3) Distribución (opcional)
+    if copiar_dist:
+        for src in CargaAsignacion.query.filter_by(school_id=sid, year=origen)\
+                .order_by(CargaAsignacion.orden, CargaAsignacion.id).all():
+            if src.docente_id not in mapa_docente:
+                continue
+            db.session.add(CargaAsignacion(
+                school_id=sid, year=destino, docente_id=mapa_docente[src.docente_id],
+                tipo=src.tipo, demanda_id=mapa_demanda.get(src.demanda_id),
+                asignatura_libre=src.asignatura_libre, letras=src.letras,
+                horas=src.horas, orden=src.orden))
+            creados['asignaciones'] += 1
+
+    db.session.commit()
+    return jsonify({'ok': True, 'year': destino, 'year_origen': origen,
+                    'creados': creados, 'resumen': _resumen_year(sid, destino)}), 201
+
+
+@carga_bp.route('/procesos/mover', methods=['POST'])
+@jwt_required()
+@school_required
+def mover_proceso():
+    """Reetiqueta un proceso completo a otro año. Útil cuando se cargaron
+    datos históricos bajo el año equivocado."""
+    sid = _sid()
+    d = request.get_json() or {}
+    desde, hasta = d.get('desde'), d.get('hasta')
+    if not desde or not hasta:
+        return jsonify({'error': 'Faltan "desde" y "hasta"'}), 400
+    desde, hasta = int(desde), int(hasta)
+    if desde == hasta:
+        return jsonify({'error': 'Los años deben ser distintos'}), 400
+
+    destino = _resumen_year(sid, hasta)
+    if destino['docentes'] or destino['filas_demanda']:
+        return jsonify({'error': f'El año {hasta} ya tiene datos; no se puede sobrescribir.'}), 409
+
+    movidos = {}
+    for Model, key in ((CargaDemanda, 'demanda'), (CargaDocente, 'docentes'),
+                       (CargaAsignacion, 'asignaciones')):
+        movidos[key] = Model.query.filter_by(school_id=sid, year=desde)\
+            .update({'year': hasta}, synchronize_session=False)
+    db.session.commit()
+    return jsonify({'ok': True, 'desde': desde, 'hasta': hasta, 'movidos': movidos,
+                    'resumen': _resumen_year(sid, hasta)}), 200
+
+
+@carga_bp.route('/procesos/<int:year>/reiniciar-distribucion', methods=['POST'])
+@jwt_required()
+@school_required
+def reiniciar_distribucion(year):
+    """Borra la distribución del año conservando docentes y demanda,
+    para repartir las horas desde cero."""
+    sid = _sid()
+    borradas = CargaAsignacion.query.filter_by(school_id=sid, year=year)\
+        .delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify({'ok': True, 'year': year, 'asignaciones_borradas': borradas,
+                    'resumen': _resumen_year(sid, year)}), 200
+
+
+@carga_bp.route('/procesos/<int:year>/copiar-distribucion', methods=['POST'])
+@jwt_required()
+@school_required
+def copiar_distribucion(year):
+    """Trae la distribución de otro año como punto de partida, emparejando
+    docentes por nombre y demanda por (asignatura, nivel)."""
+    sid = _sid()
+    d = request.get_json() or {}
+    origen = d.get('year_origen')
+    if not origen:
+        return jsonify({'error': 'Falta year_origen'}), 400
+    origen = int(origen)
+
+    if CargaAsignacion.query.filter_by(school_id=sid, year=year).count():
+        return jsonify({'error': f'El año {year} ya tiene distribución. '
+                                 f'Reinicia la distribución antes de copiar.'}), 409
+
+    docs_dest = {d_.nombre: d_.id for d_ in CargaDocente.query.filter_by(school_id=sid, year=year).all()}
+    dem_dest = {(x.asignatura, x.nivel): x.id for x in CargaDemanda.query.filter_by(school_id=sid, year=year).all()}
+
+    copiadas, omitidas = 0, []
+    for src in CargaAsignacion.query.filter_by(school_id=sid, year=origen)\
+            .order_by(CargaAsignacion.orden, CargaAsignacion.id).all():
+        doc_src = CargaDocente.query.get(src.docente_id)
+        if not doc_src or doc_src.nombre not in docs_dest:
+            omitidas.append(doc_src.nombre if doc_src else '?')
+            continue
+        nuevo_dem = None
+        if src.demanda:
+            nuevo_dem = dem_dest.get((src.demanda.asignatura, src.demanda.nivel))
+        db.session.add(CargaAsignacion(
+            school_id=sid, year=year, docente_id=docs_dest[doc_src.nombre],
+            tipo=src.tipo, demanda_id=nuevo_dem, asignatura_libre=src.asignatura_libre,
+            letras=src.letras, horas=src.horas, orden=src.orden))
+        copiadas += 1
+    db.session.commit()
+    return jsonify({'ok': True, 'year': year, 'year_origen': origen,
+                    'copiadas': copiadas, 'docentes_sin_par': sorted(set(omitidas)),
+                    'resumen': _resumen_year(sid, year)}), 200
+
+
+@carga_bp.route('/procesos/<int:year>', methods=['DELETE'])
+@jwt_required()
+@school_required
+def delete_proceso(year):
+    """Elimina por completo el proceso de un año."""
+    sid = _sid()
+    borrados = {}
+    borrados['asignaciones'] = CargaAsignacion.query.filter_by(school_id=sid, year=year)\
+        .delete(synchronize_session=False)
+    borrados['docentes'] = CargaDocente.query.filter_by(school_id=sid, year=year)\
+        .delete(synchronize_session=False)
+    borrados['demanda'] = CargaDemanda.query.filter_by(school_id=sid, year=year)\
+        .delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify({'ok': True, 'year': year, 'borrados': borrados}), 200
+
+
+@carga_bp.route('/docentes/<int:did>/referencia', methods=['GET'])
+@jwt_required()
+@school_required
+def referencia_docente(did):
+    """Devuelve la carga que tuvo este mismo docente en otro año, para tenerla
+    a la vista al re-repartir (regla: mover de niveles a los docentes)."""
+    sid = _sid()
+    doc = CargaDocente.query.filter_by(id=did, school_id=sid).first_or_404()
+    year_origen = request.args.get('year_origen', type=int) or (doc.year - 1)
+    par = CargaDocente.query.filter_by(school_id=sid, year=year_origen, nombre=doc.nombre).first()
+    if not par:
+        return jsonify({'year_origen': year_origen, 'encontrado': False,
+                        'asignaciones': [], 'horas_contrato': None}), 200
+    info = par.to_dict()
+    return jsonify({
+        'year_origen': year_origen,
+        'encontrado': True,
+        'horas_contrato': info['horas_contrato'],
+        'horas_pedagogicas': info['horas_pedagogicas'],
+        'total_lectivas': info['total_lectivas'],
+        'disponibilidad': info['disponibilidad'],
+        'cambio_jornada': info['horas_contrato'] != doc.horas_contrato,
+        'asignaciones': info['asignaciones'],
+    }), 200

@@ -42,7 +42,9 @@ export default function CargaAcademicaDashboard() {
   const primary = school?.primary_color || '#2563EB';
   const navigate = useNavigate();
 
-  const year = new Date().getFullYear() + 1;
+  const [year, setYear] = useState(null);
+  const [procesos, setProcesos] = useState([]);
+  const [sugerido, setSugerido] = useState(new Date().getFullYear());
   const [tab, setTab] = useState('asignaturas');
   const [data, setData] = useState(null);
   const [demanda, setDemanda] = useState([]);
@@ -50,8 +52,24 @@ export default function CargaAcademicaDashboard() {
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [nuevoDocente, setNuevoDocente] = useState(null);
+  const [showProceso, setShowProceso] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  // Carga la lista de años con datos y fija el año activo
+  const fetchProcesos = useCallback(async () => {
+    const r = await axios.get('/api/carga-academica/procesos');
+    setProcesos(r.data.procesos);
+    setSugerido(r.data.sugerido);
+    setYear(prev => {
+      if (prev !== null) return prev;
+      const abierto = r.data.procesos.find(p => !p.cerrado);
+      return abierto ? abierto.year : (r.data.procesos[0]?.year ?? r.data.sugerido);
+    });
+    return r.data;
+  }, []);
 
   const fetchAll = useCallback(async () => {
+    if (year === null) return;
     try {
       const [d, dm, c] = await Promise.all([
         axios.get(`/api/carga-academica/dashboard?year=${year}`),
@@ -63,16 +81,47 @@ export default function CargaAcademicaDashboard() {
     setLoading(false);
   }, [year]);
 
+  useEffect(() => { fetchProcesos().finally(() => setLoading(false)); }, [fetchProcesos]);
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const recargar = async () => { await fetchProcesos(); await fetchAll(); };
 
   const seed = async () => {
     setSeeding(true);
     try {
       await axios.post('/api/carga-academica/seed-lenguaje', { year });
-      await fetchAll();
+      await recargar();
     } catch (e) { alert(e.response?.data?.error || 'Error al poblar'); }
     setSeeding(false);
   };
+
+  // ── Acciones de proceso ──────────────────────────────────────────
+  const accion = async (fn, confirmMsg) => {
+    if (confirmMsg && !window.confirm(confirmMsg)) return;
+    setBusy(true);
+    try { await fn(); await recargar(); }
+    catch (e) { alert(e.response?.data?.error || 'Error'); }
+    setBusy(false);
+  };
+
+  const iniciarProceso = (destino, origen, copiarDist) => accion(async () => {
+    await axios.post('/api/carga-academica/procesos/iniciar', {
+      year_origen: origen, year_destino: destino, copiar_distribucion: copiarDist,
+    });
+    setYear(destino);
+  });
+
+  const moverAnio = (desde, hasta) => accion(
+    async () => { await axios.post('/api/carga-academica/procesos/mover', { desde, hasta }); setYear(hasta); },
+    `¿Mover todo el proceso ${desde} al año ${hasta}?`);
+
+  const reiniciarDist = () => accion(
+    () => axios.post(`/api/carga-academica/procesos/${year}/reiniciar-distribucion`),
+    `¿Borrar la distribución ${year}? Se conservan docentes y demanda para repartir de nuevo.`);
+
+  const copiarDist = (origen) => accion(
+    () => axios.post(`/api/carga-academica/procesos/${year}/copiar-distribucion`, { year_origen: origen }),
+    `¿Traer la distribución de ${origen} como punto de partida para ${year}?`);
 
   const crearDocente = async () => {
     const d = nuevoDocente;
@@ -106,13 +155,33 @@ export default function CargaAcademicaDashboard() {
   const docentes = data?.docentes || [];
   const departamentos = [...new Set(demanda.map(d => d.departamento).filter(Boolean))];
   const vacio = !demanda.length && !docentes.length;
+  const procActivo = procesos.find(p => p.year === year);
+  const otrosAnios = procesos.filter(p => p.year !== year && p.filas_asignacion > 0).map(p => p.year);
+  const anioBase = procesos.filter(p => p.year < year).map(p => p.year).sort((a, b) => b - a)[0];
+  const btnProc = {
+    padding: '6px 13px', borderRadius: 8, fontSize: 12.5, cursor: busy ? 'default' : 'pointer',
+    border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontWeight: 600,
+    opacity: busy ? 0.5 : 1,
+  };
 
   return (
     <div style={{ maxWidth: 1050, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>📚 Carga Académica {year}</h1>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>
+            📚 Carga Académica {year}
+            {procActivo?.cerrado && (
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                background: '#d1fae5', color: '#065f46', marginLeft: 10,
+                verticalAlign: 'middle' }}>✓ cerrado</span>
+            )}
+            {procActivo && !procActivo.cerrado && !procActivo.en_blanco && (
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                background: '#fef3c7', color: '#92400e', marginLeft: 10,
+                verticalAlign: 'middle' }}>en proceso</span>
+            )}
+          </h1>
           <p style={{ fontSize: 13, color: '#64748b', margin: '3px 0 0' }}>
             Distribución de horas por docente según Tabla Legal MINEDUC
           </p>
@@ -127,22 +196,135 @@ export default function CargaAcademicaDashboard() {
         <button onClick={() => setNuevoDocente({ nombre: '', departamento: departamentos[0] || '', nivel: 'Media', horas_contrato: 44 })}
           style={{ padding: '8px 16px', background: primary, color: '#fff', border: 'none',
             borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Docente</button>
+        <button onClick={() => setShowProceso(v => !v)} title="Gestionar el proceso del año"
+          style={{ padding: '8px 12px', background: showProceso ? '#e2e8f0' : '#f1f5f9',
+            border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+            fontWeight: 600, color: '#475569' }}>⚙️</button>
       </div>
 
+      {/* Selector de año */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+        {procesos.map(p => {
+          const sel = p.year === year;
+          const col = p.cerrado ? '#16a34a' : p.en_blanco ? '#94a3b8' : '#f59e0b';
+          return (
+            <button key={p.year} onClick={() => { setYear(p.year); setData(null); }}
+              style={{
+                padding: '7px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                border: `1px solid ${sel ? primary : '#e2e8f0'}`,
+                background: sel ? `${primary}10` : '#fff',
+                boxShadow: sel ? `0 0 0 2px ${primary}22` : 'none',
+              }}>
+              <span style={{ fontSize: 14, fontWeight: 800,
+                color: sel ? primary : '#0f172a' }}>{p.year}</span>
+              <span style={{ fontSize: 11, color: col, fontWeight: 700, marginLeft: 8 }}>
+                {p.cerrado ? '✓ cerrado' : p.en_blanco ? 'sin repartir' : `${p.cobertura_pct}%`}
+              </span>
+            </button>
+          );
+        })}
+        {!procesos.some(p => p.year === sugerido) && (
+          <button onClick={() => { setYear(sugerido); setData(null); }} style={{
+            padding: '7px 14px', borderRadius: 10, cursor: 'pointer',
+            border: `1px dashed ${primary}`, background: '#fff', color: primary,
+            fontSize: 13, fontWeight: 700 }}>+ Abrir {sugerido}</button>
+        )}
+      </div>
+
+      {/* Panel de gestión del proceso */}
+      {showProceso && (
+        <div className="card" style={{ marginBottom: 18, background: '#f8fafc' }}>
+          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', margin: '0 0 12px',
+            textTransform: 'uppercase', letterSpacing: '0.06em' }}>Proceso {year}</h3>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {otrosAnios.map(o => (
+              <button key={`cp${o}`} disabled={busy || !!data?.detalle_demanda?.length === false}
+                onClick={() => copiarDist(o)} style={btnProc}>
+                ⬇ Traer distribución de {o}
+              </button>
+            ))}
+            <button disabled={busy} onClick={reiniciarDist} style={btnProc}>
+              ↺ Reiniciar distribución {year}
+            </button>
+            {[year - 1, year + 1].map(h => (
+              <button key={`mv${h}`} disabled={busy || procesos.some(p => p.year === h)}
+                onClick={() => moverAnio(year, h)} style={btnProc}
+                title={procesos.some(p => p.year === h) ? `${h} ya tiene datos` : ''}>
+                ↔ Mover este proceso a {h}
+              </button>
+            ))}
+            <button disabled={busy} onClick={() => accion(
+              () => axios.delete(`/api/carga-academica/procesos/${year}`).then(() => setYear(null)),
+              `¿Eliminar por completo el proceso ${year}? Esto borra docentes, demanda y distribución.`
+            )} style={{ ...btnProc, color: '#dc2626', borderColor: '#fecaca', background: '#fef2f2' }}>
+              🗑 Eliminar proceso {year}
+            </button>
+          </div>
+        </div>
+      )}
+
       {vacio && (
-        <div className="card" style={{ textAlign: 'center', padding: 40, marginBottom: 20 }}>
-          <p style={{ fontSize: 15, color: '#475569', margin: '0 0 6px', fontWeight: 600 }}>
-            Aún no hay carga académica {year}
+        <div className="card" style={{ padding: 32, marginBottom: 20 }}>
+          <p style={{ fontSize: 16, color: '#0f172a', margin: '0 0 4px', fontWeight: 700,
+            textAlign: 'center' }}>Abrir el proceso {year}</p>
+          <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 22px', textAlign: 'center' }}>
+            {anioBase
+              ? `Se arrastran los docentes de ${anioBase} manteniendo su jornada contratada, y la demanda de horas por asignatura.`
+              : 'Aún no hay ningún año cargado en el módulo.'}
           </p>
-          <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 18px' }}>
-            Puedo poblar los 18 cursos (7° a IV Medio, letras A/B/C), la demanda del
-            Departamento de Lenguaje y los 6 docentes con su carga 2026 como línea base.
-          </p>
-          <button onClick={seed} disabled={seeding} style={{ padding: '10px 22px', background: primary,
-            color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700,
-            cursor: 'pointer', opacity: seeding ? 0.6 : 1 }}>
-            {seeding ? 'Poblando...' : '⚡ Poblar Departamento de Lenguaje'}
-          </button>
+
+          <div style={{ display: 'grid', gridTemplateColumns: anioBase ? '1fr 1fr' : '1fr',
+            gap: 14, maxWidth: 680, margin: '0 auto' }}>
+            {anioBase && (
+              <>
+                <div style={{ border: `2px solid ${primary}`, borderRadius: 12, padding: 18,
+                  background: `${primary}08` }}>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', margin: '0 0 6px' }}>
+                    Partir en blanco
+                  </p>
+                  <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 14px', lineHeight: 1.5 }}>
+                    Trae docentes y demanda de {anioBase}, pero deja la distribución vacía
+                    para repartir de cero con las reglas nuevas.
+                  </p>
+                  <button disabled={busy} onClick={() => iniciarProceso(year, anioBase, false)}
+                    style={{ width: '100%', padding: '9px 0', background: primary, color: '#fff',
+                      border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
+                      cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
+                    Iniciar {year} en blanco
+                  </button>
+                </div>
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: 18 }}>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', margin: '0 0 6px' }}>
+                    Partir desde {anioBase}
+                  </p>
+                  <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 14px', lineHeight: 1.5 }}>
+                    Copia también la distribución de {anioBase} como borrador, para irla
+                    ajustando y mover docentes de nivel.
+                  </p>
+                  <button disabled={busy} onClick={() => iniciarProceso(year, anioBase, true)}
+                    style={{ width: '100%', padding: '9px 0', background: '#f1f5f9', color: '#374151',
+                      border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontWeight: 700,
+                      cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
+                    Copiar carga {anioBase} → {year}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div style={{ borderTop: '1px solid #f1f5f9', marginTop: 24, paddingTop: 18,
+            textAlign: 'center' }}>
+            <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 10px' }}>
+              {anioBase
+                ? `¿Falta el histórico? Carga el Departamento de Lenguaje en ${year}.`
+                : `Carga el histórico del Departamento de Lenguaje (Word 2026) en ${year}.`}
+            </p>
+            <button onClick={seed} disabled={seeding} style={{ padding: '8px 18px',
+              background: '#fff', color: '#475569', border: '1px solid #e2e8f0', borderRadius: 8,
+              fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: seeding ? 0.6 : 1 }}>
+              {seeding ? 'Poblando...' : `⚡ Poblar histórico de Lenguaje en ${year}`}
+            </button>
+          </div>
         </div>
       )}
 

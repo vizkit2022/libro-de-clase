@@ -50,6 +50,8 @@ export default function CargaDocenteDetail() {
   const [cat, setCat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [ref, setRef] = useState(null);
+  const [showRef, setShowRef] = useState(true);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -66,6 +68,10 @@ export default function CargaDocenteDetail() {
       ]);
       setDemanda(dm.data);
       setCat(c.data);
+      try {
+        const rf = await axios.get(`/api/carga-academica/docentes/${id}/referencia`);
+        setRef(rf.data);
+      } catch { setRef(null); }
     } catch { navigate('/carga-academica'); }
     setLoading(false);
   }, [id, navigate]);
@@ -264,6 +270,47 @@ export default function CargaDocenteDetail() {
             ⚠️ Las actividades no lectivas ({fmtHM(doc.total_actividades_min)}) superan
             las {fmtHM(doc.no_lectivas_min)} disponibles.
           </p>}
+        </div>
+      )}
+
+      {/* Referencia del año anterior */}
+      {ref?.encontrado && (
+        <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, marginBottom: 18,
+          overflow: 'hidden', background: '#fafafa' }}>
+          <div onClick={() => setShowRef(v => !v)} style={{ display: 'flex', alignItems: 'center',
+            gap: 10, padding: '10px 16px', cursor: 'pointer', userSelect: 'none' }}>
+            <span style={{ fontSize: 10, background: '#64748b', color: '#fff', padding: '2px 8px',
+              borderRadius: 4, fontWeight: 800 }}>{ref.year_origen}</span>
+            <span style={{ fontWeight: 700, fontSize: 13, color: '#334155', flex: 1 }}>
+              Carga del año anterior
+            </span>
+            <span style={{ fontSize: 12, color: '#64748b' }}>
+              jornada {ref.horas_contrato} h · {ref.total_lectivas} hrs repartidas
+              {ref.disponibilidad > 0 && ` · ${ref.disponibilidad} disponibilidad`}
+            </span>
+            {ref.cambio_jornada && (
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                background: '#fef3c7', color: '#92400e' }}>jornada cambió</span>
+            )}
+            <span style={{ color: '#94a3b8', fontSize: 15 }}>{showRef ? '▲' : '▼'}</span>
+          </div>
+          {showRef && (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5,
+              background: '#fff', borderTop: '1px solid #e2e8f0' }}>
+              <tbody>
+                {ref.asignaciones.map(a => (
+                  <tr key={a.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '6px 16px', color: '#475569' }}>
+                      {a.asignatura || TIPO_LABEL[a.tipo] || a.tipo}
+                    </td>
+                    <td style={{ padding: '6px 10px', color: '#94a3b8', width: 170 }}>{a.cursos_texto || ''}</td>
+                    <td style={{ padding: '6px 16px', textAlign: 'center', width: 70,
+                      fontWeight: 700, color: '#475569' }}>{a.horas}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
