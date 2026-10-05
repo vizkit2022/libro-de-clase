@@ -244,6 +244,8 @@ def update_docente(did):
             setattr(row, f, d[f] or None if f == 'user_id' else d[f])
     if 'no_lectivas' in d:
         row.no_lectivas_json = json_lib.dumps(d['no_lectivas'])
+    if 'adicionales' in d:
+        row.adicionales_json = json_lib.dumps(d['adicionales'])
     db.session.commit()
     return jsonify(row.to_dict()), 200
 
@@ -389,11 +391,56 @@ def dashboard():
 
 # ── Informe Word (.docx) ──────────────────────────────────────────────
 
+TIPO_ETIQUETA = {
+    'disponibilidad': 'Disponibilidad',
+    'toma_contacto': 'Toma de contacto',
+    'orientacion': 'Orientación / Consejo de curso',
+    'jefatura': 'Trabajo de Jefatura',
+    'jefe_departamento': 'Jefe De Departamento',
+}
+
+
+def _etiqueta_fila(a):
+    """Nombre que lleva una fila de horas lectivas en el informe."""
+    return (a.get('asignatura')
+            or a.get('asignatura_libre')
+            or TIPO_ETIQUETA.get(a.get('tipo'), (a.get('tipo') or '').capitalize()))
+
+
+def _filas_informe(info):
+    """Secciones del informe, en el mismo orden y formato del documento oficial."""
+    acts = info['no_lectivas']
+    total_act = info['total_actividades_min']
+    no_lect = info['no_lectivas_min']
+    return {
+        'cabecera': [
+            ('Docente', info['nombre']),
+            ('Nivel', info['nivel'] or ''),
+            ('Horas cronológicas contrato', str(info['horas_contrato'])),
+            ('Horas pedagógicas en el aula', str(info['horas_pedagogicas'])),
+            ('Horas no Lectivas', fmt_hm(no_lect)),
+            ('Recreo', fmt_hm(info['recreo_min'])),
+        ],
+        'lectivas': [(_etiqueta_fila(a), a.get('cursos_texto') or '',
+                      str(a.get('horas') or ''))
+                     for a in info['asignaciones']],
+        'total_lectivas': str(info['total_lectivas']),
+        'no_lectivas': [(a.get('actividad', ''),
+                         f"{int(a.get('minutos') or 0)} minutos" if a.get('minutos') else '')
+                        for a in acts],
+        'total_no_lectivas': f"{fmt_hm(total_act)} horas",
+        'resta': f"{fmt_hm(no_lect)} – {fmt_hm(total_act)}",
+        'permanencia': fmt_hm(info['permanencia_min']),
+        # Texto libre al pie: no entra en ningún cálculo
+        'adicionales': [(x.get('etiqueta', ''), x.get('valor', ''))
+                        for x in info.get('adicionales', [])],
+    }
+
+
 def _docx_informe(school, docentes, year):
     from docx import Document
-    from docx.shared import Pt, Cm, RGBColor
+    from docx.shared import Pt, Cm
     from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.enum.table import WD_TABLE_ALIGNMENT
     from docx.oxml.ns import qn
     from docx.oxml import OxmlElement
 
@@ -407,40 +454,45 @@ def _docx_informe(school, docentes, year):
         shd.set(qn('w:fill'), color)
         tcPr.append(shd)
 
-    def bold(cell, val=True, size=9):
-        for p in cell.paragraphs:
-            for r in p.runs:
-                r.bold = val
-                r.font.size = Pt(size)
-
     def setcell(cell, text, b=False, fill=None, center=False, size=9):
-        cell.text = str(text) if text is not None else ''
-        if center:
-            cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        bold(cell, b, size)
+        cell.text = '' if text is None else str(text)
+        for p_ in cell.paragraphs:
+            p_.paragraph_format.space_after = Pt(0)
+            if center:
+                p_.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            for r_ in p_.runs:
+                r_.bold = b
+                r_.font.size = Pt(size)
         if fill:
             shade(cell, fill)
 
+    def barra(tabla, texto):
+        """Fila de sección que cruza las tres columnas."""
+        fila = tabla.add_row().cells
+        fila[0].merge(fila[2])
+        setcell(fila[0], texto, b=True, fill=AZUL, center=True, size=10)
+
     doc = Document()
-    for s in doc.sections:
-        s.top_margin = s.bottom_margin = Cm(1.5)
-        s.left_margin = s.right_margin = Cm(2)
+    for sec in doc.sections:
+        sec.top_margin = sec.bottom_margin = Cm(1.4)
+        sec.left_margin = sec.right_margin = Cm(2)
 
     logo_raw = _logo_bytes(school)
+    ANCHOS = [Cm(8.2), Cm(4.0), Cm(4.3)]
 
     for idx, d in enumerate(docentes):
         info = d.to_dict()
+        S = _filas_informe(info)
         if idx > 0:
             doc.add_page_break()
 
-        # Encabezado institucional: logo a la izquierda, datos a la derecha
+        # Encabezado institucional: logo y datos
         cab = doc.add_table(rows=1, cols=2)
-        cab.autofit = False
         c_logo, c_txt = cab.rows[0].cells
-        c_logo.width = Cm(2.2)
+        c_logo.width = Cm(2.3)
         if logo_raw:
             try:
-                c_logo.paragraphs[0].add_run().add_picture(io.BytesIO(logo_raw), height=Cm(1.5))
+                c_logo.paragraphs[0].add_run().add_picture(io.BytesIO(logo_raw), height=Cm(1.6))
             except Exception:
                 pass
         for i, (txt, bold_) in enumerate([
@@ -454,96 +506,220 @@ def _docx_informe(school, docentes, year):
             par = c_txt.paragraphs[0] if i == 0 else c_txt.add_paragraph()
             run = par.add_run(txt)
             run.bold = bold_
-            run.font.size = Pt(10 if bold_ else 9)
+            run.font.size = Pt(11 if bold_ else 9)
             par.paragraph_format.space_after = Pt(0)
 
-        # Cajas CARGA HORARIA / DEPARTAMENTO, como en el formato original
-        cajas = doc.add_table(rows=2, cols=2)
-        cajas.style = 'Table Grid'
-        cajas.autofit = False
-        setcell(cajas.rows[0].cells[0], f'CARGA HORARIA {year}', b=True, fill=AZUL, size=10)
-        setcell(cajas.rows[0].cells[1], '', fill=None)
-        setcell(cajas.rows[1].cells[0], 'DEPARTAMENTO', b=True, fill=AZUL, size=10)
-        setcell(cajas.rows[1].cells[1], info['departamento'] or '', b=True, size=10)
-        for row in cajas.rows:
-            row.cells[0].width = Cm(4.6)
-            row.cells[1].width = Cm(4.0)
-
         doc.add_paragraph()
 
-        # Cabecera del docente
-        tb = doc.add_table(rows=0, cols=2)
-        tb.style = 'Table Grid'
-        tb.alignment = WD_TABLE_ALIGNMENT.CENTER
-        for label, val in [
-            ('Docente', info['nombre']),
-            ('Nivel', info['nivel'] or ''),
-            ('Horas cronológicas contrato', info['horas_contrato']),
-            ('Horas pedagógicas en el aula', info['horas_pedagogicas']),
-            ('Horas no Lectivas', fmt_hm(info['no_lectivas_min'])),
-            ('Recreo', fmt_hm(info['recreo_min'])),
-        ]:
-            row = tb.add_row()
-            setcell(row.cells[0], label, b=True, fill=GRIS)
-            setcell(row.cells[1], val)
-            row.cells[0].width = Cm(6.5)
-            row.cells[1].width = Cm(8.0)
+        # Tabla única con todas las secciones
+        t = doc.add_table(rows=0, cols=3)
+        t.style = 'Table Grid'
 
-        doc.add_paragraph()
+        barra(t, f'CARGA HORARIA {year}')
 
-        # HORAS LECTIVAS
-        tl = doc.add_table(rows=1, cols=3)
-        tl.style = 'Table Grid'
-        hdr = tl.rows[0].cells
-        setcell(hdr[0], 'ASIGNATURAS', b=True, fill=AZUL, center=True)
-        setcell(hdr[1], 'CURSOS', b=True, fill=AZUL, center=True)
-        setcell(hdr[2], 'CANTIDAD DE HORAS', b=True, fill=AZUL, center=True)
+        fila = t.add_row().cells
+        setcell(fila[0], 'DEPARTAMENTO', b=True, fill=AZUL, size=10)
+        fila[1].merge(fila[2])
+        setcell(fila[1], info['departamento'] or '', b=True, size=10)
 
-        for a in info['asignaciones']:
-            row = tl.add_row().cells
-            setcell(row[0], a['asignatura'] or dict(
-                disponibilidad='Disponibilidad', toma_contacto='Toma de contacto',
-                orientacion='Orientación / Consejo de curso', jefatura='Trabajo de jefatura',
-                jefe_departamento='Jefe de Departamento').get(a['tipo'], a['tipo']))
-            setcell(row[1], a['cursos_texto'] or '', center=True)
-            setcell(row[2], a['horas'], center=True)
+        for label, val in S['cabecera']:
+            fila = t.add_row().cells
+            setcell(fila[0], label, b=True, fill=GRIS)
+            fila[1].merge(fila[2])
+            setcell(fila[1], val)
 
-        row = tl.add_row().cells
-        setcell(row[0], 'Total de horas', b=True, fill=GRIS)
-        setcell(row[1], '', fill=GRIS)
-        setcell(row[2], info['total_lectivas'], b=True, fill=GRIS, center=True)
+        barra(t, 'HORAS LECTIVAS')
 
-        row = tl.add_row().cells
-        setcell(row[0], 'Diferencia vs. horas pedagógicas en aula', b=True)
-        setcell(row[1], '', center=True)
-        setcell(row[2], info['diferencia'], b=True, center=True)
+        fila = t.add_row().cells
+        for i, h in enumerate(['ASIGNATURAS', 'CURSOS', 'CANTIDAD DE HORAS']):
+            setcell(fila[i], h, b=True, fill=AZUL, center=True)
 
-        doc.add_paragraph()
+        for nombre, cursos, horas in S['lectivas']:
+            fila = t.add_row().cells
+            setcell(fila[0], nombre)
+            setcell(fila[1], cursos, center=True)
+            setcell(fila[2], horas, center=True)
 
-        # HORAS NO LECTIVAS
-        tn = doc.add_table(rows=1, cols=2)
-        tn.style = 'Table Grid'
-        hdr = tn.rows[0].cells
-        setcell(hdr[0], 'ACTIVIDAD', b=True, fill=AZUL, center=True)
-        setcell(hdr[1], 'TIEMPO (h:mm)', b=True, fill=AZUL, center=True)
+        fila = t.add_row().cells
+        setcell(fila[0], '')
+        setcell(fila[1], 'Total, de horas', b=True, center=True)
+        setcell(fila[2], S['total_lectivas'], b=True, center=True)
 
-        for act in info['no_lectivas']:
-            row = tn.add_row().cells
-            setcell(row[0], act.get('actividad', ''))
-            setcell(row[1], fmt_hm(act.get('minutos', 0)), center=True)
+        barra(t, 'HORAS NO LECTIVAS')
 
-        for label, val, b in [
-            ('Total actividades registradas', fmt_hm(info['total_actividades_min']), True),
-            ('Horas no Lectivas (según Tabla Legal)', fmt_hm(info['no_lectivas_min']), False),
-            ('Permanencia en horas cronológicas', fmt_hm(info['permanencia_min']), True),
-            ('Recreo (según Tabla Legal)', fmt_hm(info['recreo_min']), False),
-        ]:
-            row = tn.add_row().cells
-            setcell(row[0], label, b=b, fill=GRIS if b else None)
-            setcell(row[1], val, b=b, fill=GRIS if b else None, center=True)
+        fila = t.add_row().cells
+        setcell(fila[0], '')
+        setcell(fila[1], '')
+        setcell(fila[2], 'Tiempo', b=True, fill=AZUL, center=True)
+
+
+        for nombre, tiempo in S['no_lectivas']:
+            fila = t.add_row().cells
+            setcell(fila[0], nombre)
+            setcell(fila[1], '')
+            setcell(fila[2], tiempo, b=True, center=True)
+
+        fila = t.add_row().cells
+        setcell(fila[0], '')
+        setcell(fila[1], 'Total', b=True, center=True)
+        setcell(fila[2], S['total_no_lectivas'], b=True, center=True)
+
+        fila = t.add_row().cells
+        setcell(fila[0], '')
+        setcell(fila[1], '')
+        setcell(fila[2], S['resta'], b=True, center=True)
+
+        fila = t.add_row().cells
+        setcell(fila[0], 'Permanencia en horas cronológicas', b=True)
+        setcell(fila[1], '')
+        setcell(fila[2], S['permanencia'], b=True, center=True)
+
+        # Líneas libres al pie, fuera de todo cálculo
+        for etiqueta, valor in S['adicionales']:
+            fila = t.add_row().cells
+            setcell(fila[0], etiqueta, b=True)
+            setcell(fila[1], '')
+            setcell(fila[2], valor, b=True, center=True)
+
+        for row in t.rows:
+            for i, c in enumerate(row.cells[:3]):
+                try:
+                    c.width = ANCHOS[i]
+                except Exception:
+                    pass
 
     buf = io.BytesIO()
     doc.save(buf)
+    buf.seek(0)
+    return buf
+
+
+def _pdf_carga(school, docentes, year):
+    """Mismo informe que el Word, en PDF."""
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import cm
+    from reportlab.lib import colors
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.platypus import (SimpleDocTemplate, Table, TableStyle,
+                                    Paragraph, Spacer, Image, PageBreak)
+    from reportlab.lib.enums import TA_CENTER
+
+    AZUL = colors.HexColor('#8EA9DB')
+    GRIS = colors.HexColor('#D9D9D9')
+
+    buf = io.BytesIO()
+    pdf = SimpleDocTemplate(buf, pagesize=letter, leftMargin=2 * cm,
+                            rightMargin=2 * cm, topMargin=1.4 * cm,
+                            bottomMargin=1.4 * cm)
+    story = []
+    st_h1 = ParagraphStyle('h1', fontName='Helvetica-Bold', fontSize=11, leading=13)
+    st_h2 = ParagraphStyle('h2', fontName='Helvetica', fontSize=9, leading=11)
+    st_cel = ParagraphStyle('cel', fontName='Helvetica', fontSize=9, leading=11)
+    st_celb = ParagraphStyle('celb', fontName='Helvetica-Bold', fontSize=9, leading=11)
+    st_c = ParagraphStyle('c', parent=st_cel, alignment=TA_CENTER)
+    st_cb = ParagraphStyle('cb', parent=st_celb, alignment=TA_CENTER)
+
+    anchos = [pdf.width * 0.50, pdf.width * 0.24, pdf.width * 0.26]
+
+    for idx, d in enumerate(docentes):
+        info = d.to_dict()
+        S = _filas_informe(info)
+        if idx > 0:
+            story.append(PageBreak())
+
+        cab = [Paragraph(school.name if school else 'Colegio', st_h1)]
+        if school and school.rector:
+            cab.append(Paragraph(school.rector, st_h2))
+        cab.append(Paragraph('Coordinación Académica.', st_h2))
+        cab.append(Paragraph(str(year), st_h2))
+        logo = _logo_flowable(school, Image, 1.7 * cm)
+        if logo is not None:
+            head = Table([[logo, cab]], colWidths=[2.3 * cm, None])
+            head.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            story.append(head)
+        else:
+            story.extend(cab)
+        story.append(Spacer(1, 12))
+
+        data, st = [], [
+            ('GRID', (0, 0), (-1, -1), 0.6, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ]
+        f = 0
+
+        def barra(texto):
+            nonlocal f
+            data.append([Paragraph(f'<b>{texto}</b>', st_cb), '', ''])
+            st.extend([('SPAN', (0, f), (2, f)), ('BACKGROUND', (0, f), (2, f), AZUL),
+                       ('ALIGN', (0, f), (2, f), 'CENTER')])
+            f += 1
+
+        barra(f'CARGA HORARIA {year}')
+
+        data.append([Paragraph('<b>DEPARTAMENTO</b>', st_celb),
+                     Paragraph(f"<b>{info['departamento'] or ''}</b>", st_celb), ''])
+        st.extend([('SPAN', (1, f), (2, f)), ('BACKGROUND', (0, f), (0, f), AZUL)])
+        f += 1
+
+        for label, val in S['cabecera']:
+            data.append([Paragraph(f'<b>{label}</b>', st_celb), Paragraph(val, st_cel), ''])
+            st.extend([('SPAN', (1, f), (2, f)), ('BACKGROUND', (0, f), (0, f), GRIS)])
+            f += 1
+
+        barra('HORAS LECTIVAS')
+
+        data.append([Paragraph('<b>ASIGNATURAS</b>', st_cb),
+                     Paragraph('<b>CURSOS</b>', st_cb),
+                     Paragraph('<b>CANTIDAD DE HORAS</b>', st_cb)])
+        st.extend([('BACKGROUND', (0, f), (2, f), AZUL),
+                   ('ALIGN', (0, f), (2, f), 'CENTER')])
+        f += 1
+
+        for nombre, cursos, horas in S['lectivas']:
+            data.append([Paragraph(nombre, st_cel), Paragraph(cursos, st_c),
+                         Paragraph(horas, st_c)])
+            st.append(('ALIGN', (1, f), (2, f), 'CENTER'))
+            f += 1
+
+        data.append(['', Paragraph('<b>Total, de horas</b>', st_cb),
+                     Paragraph(f"<b>{S['total_lectivas']}</b>", st_cb)])
+        st.append(('ALIGN', (1, f), (2, f), 'CENTER'))
+        f += 1
+
+        barra('HORAS NO LECTIVAS')
+
+        data.append(['', '', Paragraph('<b>Tiempo</b>', st_cb)])
+        st.extend([('BACKGROUND', (2, f), (2, f), AZUL),
+                   ('ALIGN', (2, f), (2, f), 'CENTER')])
+        f += 1
+
+        for nombre, tiempo in S['no_lectivas']:
+            data.append([Paragraph(nombre, st_cel), '',
+                         Paragraph(f'<b>{tiempo}</b>', st_cb)])
+            st.append(('ALIGN', (2, f), (2, f), 'CENTER'))
+            f += 1
+
+        for col1, col2, col3 in [
+            ('', '<b>Total</b>', f"<b>{S['total_no_lectivas']}</b>"),
+            ('', '', f"<b>{S['resta']}</b>"),
+            ('<b>Permanencia en horas cronológicas</b>', '', f"<b>{S['permanencia']}</b>"),
+        ] + [(f'<b>{e}</b>', '', f'<b>{v}</b>') for e, v in S['adicionales']]:
+            data.append([Paragraph(col1, st_celb) if col1 else '',
+                         Paragraph(col2, st_cb) if col2 else '',
+                         Paragraph(col3, st_cb) if col3 else ''])
+            st.append(('ALIGN', (1, f), (2, f), 'CENTER'))
+            f += 1
+
+        tabla = Table(data, colWidths=anchos)
+        tabla.setStyle(TableStyle(st))
+        story.append(tabla)
+
+    pdf.build(story)
     buf.seek(0)
     return buf
 
@@ -1635,4 +1811,37 @@ def horarios_departamento_pdf():
     slug = (dep or 'Todos').replace(' ', '_')
     return send_file(out, as_attachment=True,
                      download_name=f'Horarios_{slug}_{year}.pdf',
+                     mimetype='application/pdf')
+
+
+@carga_bp.route('/docentes/<int:did>/informe.pdf', methods=['GET'])
+@jwt_required()
+@school_required
+def informe_docente_pdf(did):
+    doc = CargaDocente.query.filter_by(id=did, school_id=_sid()).first_or_404()
+    school = School.query.get(_sid())
+    buf = _pdf_carga(school, [doc], doc.year)
+    nombre = (doc.nombre or 'docente').replace(' ', '_')
+    return send_file(buf, as_attachment=True,
+                     download_name=f'Carga_{nombre}_{doc.year}.pdf',
+                     mimetype='application/pdf')
+
+
+@carga_bp.route('/informe-departamento.pdf', methods=['GET'])
+@jwt_required()
+@school_required
+def informe_departamento_pdf():
+    sid, year = _sid(), _year()
+    dep = request.args.get('departamento')
+    q = CargaDocente.query.filter_by(school_id=sid, year=year)
+    if dep:
+        q = q.filter_by(departamento=dep)
+    docentes = q.order_by(CargaDocente.orden, CargaDocente.id).all()
+    if not docentes:
+        return jsonify({'error': 'No hay docentes para ese departamento'}), 404
+    school = School.query.get(sid)
+    buf = _pdf_carga(school, docentes, year)
+    slug = (dep or 'Todos').replace(' ', '_')
+    return send_file(buf, as_attachment=True,
+                     download_name=f'Carga_Horaria_{slug}_{year}.pdf',
                      mimetype='application/pdf')

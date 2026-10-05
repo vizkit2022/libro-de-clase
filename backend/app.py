@@ -217,6 +217,15 @@ def run_migrations():
             except Exception:
                 conn.rollback()
 
+        # 4d. Líneas adicionales al pie del informe de carga
+        try:
+            conn.execute(text(
+                "ALTER TABLE carga_docentes ADD COLUMN adicionales_json TEXT"))
+            conn.commit()
+            print("✅ Migración: carga_docentes.adicionales_json agregada")
+        except Exception:
+            conn.rollback()
+
         # 5. Agregar letra a carga_horario_celdas
         try:
             conn.execute(text("ALTER TABLE carga_horario_celdas ADD COLUMN letra VARCHAR(5)"))

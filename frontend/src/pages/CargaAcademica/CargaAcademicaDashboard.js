@@ -183,6 +183,14 @@ export default function CargaAcademicaDashboard() {
     } catch (e) { alert(e.message || 'No se pudo descargar'); }
   };
 
+  const descargarDepartamentoPdf = async (dep) => {
+    try {
+      await descargarArchivo(
+        `/api/carga-academica/informe-departamento.pdf?year=${year}${dep ? `&departamento=${encodeURIComponent(dep)}` : ''}`,
+        `Carga_Horaria_${(dep || 'Todos').replace(/ /g, '_')}_${year}.pdf`);
+    } catch (e) { alert(e.message || 'No se pudo descargar'); }
+  };
+
   const descargarDepartamento = async (dep) => {
     try {
       await descargarArchivo(
@@ -271,6 +279,11 @@ export default function CargaAcademicaDashboard() {
               padding: '8px 14px', background: `${primary}15`, color: primary, border: 'none',
               borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               📄 Word · {dep}
+            </button>
+            <button onClick={() => descargarDepartamentoPdf(dep)} style={{
+              padding: '8px 14px', background: '#fee2e2', color: '#991b1b', border: 'none',
+              borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              📕 PDF · {dep}
             </button>
             <button onClick={() => descargarHorariosDep(dep)} style={{
               padding: '8px 14px', background: '#fef3c7', color: '#92400e', border: 'none',

@@ -135,6 +135,28 @@ export default function CargaDocenteDetail() {
     fetchAll();
   };
 
+  const saveAdicionales = async (lista) => {
+    await axios.put(`/api/carga-academica/docentes/${id}`, { adicionales: lista });
+    fetchAll();
+  };
+
+  const setAdicional = (i, campo, val) => {
+    const lista = [...(doc.adicionales || [])];
+    lista[i] = { ...lista[i], [campo]: val };
+    setDoc({ ...doc, adicionales: lista });
+  };
+
+  const agregarAdicional = (valor) => {
+    if (!valor) return;
+    if (valor === '__libre__') {
+      const etiqueta = window.prompt('Nombre de la línea adicional:');
+      if (!etiqueta || !etiqueta.trim()) return;
+      return saveAdicionales([...(doc.adicionales || []),
+        { etiqueta: etiqueta.trim(), valor: '' }]);
+    }
+    saveAdicionales([...(doc.adicionales || []), { etiqueta: valor, valor: '' }]);
+  };
+
   const setActividad = (i, campo, val) => {
     const lista = [...doc.no_lectivas];
     lista[i] = { ...lista[i], [campo]: campo === 'minutos' ? Number(val) || 0 : val };
@@ -218,6 +240,13 @@ export default function CargaDocenteDetail() {
       { actividad: a.nombre, minutos: a.minutos_default }]);
   };
 
+  const descargarCargaPdf = async () => {
+    try {
+      await descargarArchivo(`/api/carga-academica/docentes/${id}/informe.pdf`,
+        `Carga_${(doc?.nombre || 'docente').replace(/ /g, '_')}_${doc?.year}.pdf`);
+    } catch (e) { showToast(e.message || 'No se pudo descargar', 'error'); }
+  };
+
   const descargarWord = async () => {
     try {
       await descargarArchivo(`/api/carga-academica/docentes/${id}/informe.docx`,
@@ -281,7 +310,7 @@ export default function CargaDocenteDetail() {
         <tr><td class="tot">Total actividades registradas</td><td class="tot" style="text-align:center">${fmtHM(i.total_actividades_min)}</td></tr>
         <tr><td>Horas no Lectivas (según Tabla Legal)</td><td style="text-align:center">${fmtHM(i.no_lectivas_min)}</td></tr>
         <tr><td class="tot">Permanencia en horas cronológicas</td><td class="tot" style="text-align:center">${fmtHM(i.permanencia_min)}</td></tr>
-        <tr><td>Recreo (según Tabla Legal)</td><td style="text-align:center">${fmtHM(i.recreo_min)}</td></tr>
+        ${(i.adicionales || []).map(a => `<tr><td><b>${a.etiqueta || ''}</b></td><td style="text-align:center"><b>${a.valor || ''}</b></td></tr>`).join('')}
       </table>
       <script>window.onload=()=>window.print();<\/script></body></html>`);
     w.document.close();
@@ -313,6 +342,9 @@ export default function CargaDocenteDetail() {
           <button onClick={descargarWord} style={{ padding: '8px 14px', background: `${primary}15`,
             border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer',
             fontWeight: 600, color: primary }}>📄 Word</button>
+          <button onClick={descargarCargaPdf} style={{ padding: '8px 14px', background: '#fee2e2',
+            border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+            fontWeight: 600, color: '#991b1b' }}>📕 PDF</button>
           <button onClick={descargarHorarioPdf} style={{ padding: '8px 14px', background: '#fef3c7',
             border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer',
             fontWeight: 600, color: '#92400e' }}>🗓 Horario PDF</button>
@@ -643,6 +675,30 @@ export default function CargaDocenteDetail() {
               </td>
               <td />
             </tr>
+
+            {/* Líneas libres al pie: texto a mano, fuera de todo cálculo */}
+            {(doc.adicionales || []).map((ad, i) => (
+              <tr key={`ad${i}`} style={{ borderTop: '1px solid #f1f5f9' }}>
+                <td style={{ padding: '5px 8px' }}>
+                  <input style={inp} value={ad.etiqueta || ''}
+                    onChange={e => setAdicional(i, 'etiqueta', e.target.value)}
+                    onBlur={() => saveAdicionales(doc.adicionales)} />
+                </td>
+                <td style={{ padding: '5px 8px', textAlign: 'center', fontSize: 11,
+                  color: '#94a3b8' }}>no suma</td>
+                <td style={{ padding: '5px 8px' }}>
+                  <input style={{ ...inp, textAlign: 'center', fontWeight: 700 }}
+                    placeholder="20 min" value={ad.valor || ''}
+                    onChange={e => setAdicional(i, 'valor', e.target.value)}
+                    onBlur={() => saveAdicionales(doc.adicionales)} />
+                </td>
+                <td style={{ padding: '5px 4px', textAlign: 'center' }}>
+                  <button onClick={() => saveAdicionales(doc.adicionales.filter((_, j) => j !== i))}
+                    style={{ background: '#fee2e2', border: 'none', borderRadius: 5,
+                      cursor: 'pointer', color: '#dc2626', fontSize: 11, padding: '4px 7px' }}>✕</button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
         <div style={{ padding: '10px 14px', borderTop: '1px solid #f1f5f9',
@@ -657,6 +713,20 @@ export default function CargaDocenteDetail() {
                 <option key={a.id} value={a.id}>{a.nombre} ({fmtHM(a.minutos_default)})</option>
               ))}
             <option value="__nueva__">+ Crear nueva actividad…</option>
+          </select>
+
+          <span style={{ color: '#cbd5e1' }}>|</span>
+          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}
+            title="Líneas informativas al pie del informe. No entran en ningún total.">
+            Línea al pie:
+          </span>
+          <select value="" onChange={e => agregarAdicional(e.target.value)}
+            style={{ ...inp, maxWidth: 220, cursor: 'pointer' }}>
+            <option value="">— agregar —</option>
+            {ADICIONALES_SUGERIDOS
+              .filter(x => !(doc.adicionales || []).some(a => a.etiqueta === x))
+              .map(x => <option key={x} value={x}>{x}</option>)}
+            <option value="__libre__">+ Escribir otra…</option>
           </select>
         </div>
       </div>

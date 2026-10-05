@@ -549,6 +549,9 @@ class CargaDocente(db.Model):
     nivel = db.Column(db.String(20), default='Media')   # Básica | Media
     horas_contrato = db.Column(db.Integer, default=44)  # jornada semanal cronológica
     no_lectivas_json = db.Column(db.Text)               # [{actividad, minutos}]
+    # Líneas informativas al pie del informe: [{etiqueta, valor}]. Van después
+    # de la permanencia y NO entran en ningún total — son texto libre
+    adicionales_json = db.Column(db.Text)
     orden = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -562,6 +565,15 @@ class CargaDocente(db.Model):
             return [dict(a) for a in ACTIVIDADES_NO_LECTIVAS_DEFAULT]
         try:
             return _j.loads(self.no_lectivas_json)
+        except Exception:
+            return []
+
+    def adicionales(self):
+        import json as _j
+        if not self.adicionales_json:
+            return []
+        try:
+            return _j.loads(self.adicionales_json)
         except Exception:
             return []
 
@@ -592,6 +604,7 @@ class CargaDocente(db.Model):
             'lectivas_cronologicas_min': legal.get('lectivas_cronologicas_min', 0),
             # Estado de la carga
             'no_lectivas': acts,
+            'adicionales': self.adicionales(),
             'total_actividades_min': total_act_min,
             'permanencia_min': no_lect_min - total_act_min,
             'total_lectivas': total_lectivas,
