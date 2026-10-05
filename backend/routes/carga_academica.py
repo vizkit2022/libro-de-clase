@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt
-from models import (db, School, Course, User, Subject,
+from models import (db, School, Course, User, Subject, CourseSubject,
                     CargaDocente, CargaDemanda, CargaAsignacion,
+                    ActividadNoLectiva, HorarioBloque, HorarioCelda,
+                    DIAS_SEMANA, BLOQUES_DEFAULT,
                     TABLA_LEGAL_MINEDUC, CARGA_TIPOS, MAX_HORAS_DISPONIBILIDAD,
                     ACTIVIDADES_NO_LECTIVAS_DEFAULT, tabla_legal_lookup)
 from datetime import date, datetime
@@ -423,33 +425,56 @@ def _docx_informe(school, docentes, year):
         s.top_margin = s.bottom_margin = Cm(1.5)
         s.left_margin = s.right_margin = Cm(2)
 
+    logo_raw = _logo_bytes(school)
+
     for idx, d in enumerate(docentes):
         info = d.to_dict()
         if idx > 0:
             doc.add_page_break()
 
-        # Encabezado institucional
-        h = doc.add_paragraph()
-        r = h.add_run(school.name if school else 'Colegio')
-        r.bold = True
-        r.font.size = Pt(13)
-        sub = doc.add_paragraph()
-        rs = sub.add_run((school.rector and f'{school.rector}\n' or '') + 'Coordinación Académica')
-        rs.italic = True
-        rs.font.size = Pt(9)
+        # Encabezado institucional: logo a la izquierda, datos a la derecha
+        cab = doc.add_table(rows=1, cols=2)
+        cab.autofit = False
+        c_logo, c_txt = cab.rows[0].cells
+        c_logo.width = Cm(2.2)
+        if logo_raw:
+            try:
+                c_logo.paragraphs[0].add_run().add_picture(io.BytesIO(logo_raw), height=Cm(1.5))
+            except Exception:
+                pass
+        for i, (txt, bold_) in enumerate([
+            (school.name if school else 'Colegio', True),
+            (school.rector if school and school.rector else None, False),
+            ('Coordinación Académica.', False),
+            (str(year), False),
+        ]):
+            if txt is None:
+                continue
+            par = c_txt.paragraphs[0] if i == 0 else c_txt.add_paragraph()
+            run = par.add_run(txt)
+            run.bold = bold_
+            run.font.size = Pt(10 if bold_ else 9)
+            par.paragraph_format.space_after = Pt(0)
 
-        t = doc.add_paragraph()
-        t.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        rt = t.add_run(f'CARGA HORARIA {year}')
-        rt.bold = True
-        rt.font.size = Pt(12)
+        # Cajas CARGA HORARIA / DEPARTAMENTO, como en el formato original
+        cajas = doc.add_table(rows=2, cols=2)
+        cajas.style = 'Table Grid'
+        cajas.autofit = False
+        setcell(cajas.rows[0].cells[0], f'CARGA HORARIA {year}', b=True, fill=AZUL, size=10)
+        setcell(cajas.rows[0].cells[1], '', fill=None)
+        setcell(cajas.rows[1].cells[0], 'DEPARTAMENTO', b=True, fill=AZUL, size=10)
+        setcell(cajas.rows[1].cells[1], info['departamento'] or '', b=True, size=10)
+        for row in cajas.rows:
+            row.cells[0].width = Cm(4.6)
+            row.cells[1].width = Cm(4.0)
+
+        doc.add_paragraph()
 
         # Cabecera del docente
         tb = doc.add_table(rows=0, cols=2)
         tb.style = 'Table Grid'
         tb.alignment = WD_TABLE_ALIGNMENT.CENTER
         for label, val in [
-            ('DEPARTAMENTO', info['departamento'] or ''),
             ('Docente', info['nombre']),
             ('Nivel', info['nivel'] or ''),
             ('Horas cronológicas contrato', info['horas_contrato']),
@@ -460,6 +485,8 @@ def _docx_informe(school, docentes, year):
             row = tb.add_row()
             setcell(row.cells[0], label, b=True, fill=GRIS)
             setcell(row.cells[1], val)
+            row.cells[0].width = Cm(6.5)
+            row.cells[1].width = Cm(8.0)
 
         doc.add_paragraph()
 
@@ -467,7 +494,7 @@ def _docx_informe(school, docentes, year):
         tl = doc.add_table(rows=1, cols=3)
         tl.style = 'Table Grid'
         hdr = tl.rows[0].cells
-        setcell(hdr[0], 'ASIGNATURA', b=True, fill=AZUL, center=True)
+        setcell(hdr[0], 'ASIGNATURAS', b=True, fill=AZUL, center=True)
         setcell(hdr[1], 'CURSOS', b=True, fill=AZUL, center=True)
         setcell(hdr[2], 'CANTIDAD DE HORAS', b=True, fill=AZUL, center=True)
 
@@ -965,3 +992,600 @@ def referencia_docente(did):
         'cambio_jornada': info['horas_contrato'] != doc.horas_contrato,
         'asignaciones': info['asignaciones'],
     }), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  CATÁLOGO DE ACTIVIDADES NO LECTIVAS
+# ══════════════════════════════════════════════════════════════════════
+
+@carga_bp.route('/actividades', methods=['GET'])
+@jwt_required()
+@school_required
+def list_actividades():
+    """Catálogo del colegio. Si está vacío lo siembra con las actividades base."""
+    sid = _sid()
+    if ActividadNoLectiva.query.filter_by(school_id=sid).count() == 0:
+        for i, a in enumerate(ACTIVIDADES_NO_LECTIVAS_DEFAULT):
+            db.session.add(ActividadNoLectiva(
+                school_id=sid, nombre=a['actividad'],
+                minutos_default=a['minutos'], orden=i))
+        db.session.commit()
+    rows = ActividadNoLectiva.query.filter_by(school_id=sid, is_active=True)\
+        .order_by(ActividadNoLectiva.orden, ActividadNoLectiva.nombre).all()
+    return jsonify([r.to_dict() for r in rows]), 200
+
+
+@carga_bp.route('/actividades', methods=['POST'])
+@jwt_required()
+@school_required
+def create_actividad():
+    """Crea una actividad en el catálogo. Reutiliza si el nombre ya existe."""
+    d = request.get_json() or {}
+    nombre = (d.get('nombre') or '').strip()
+    if not nombre:
+        return jsonify({'error': 'El nombre es obligatorio'}), 400
+    ex = ActividadNoLectiva.query.filter_by(school_id=_sid(), nombre=nombre).first()
+    if ex:
+        if not ex.is_active:
+            ex.is_active = True
+            db.session.commit()
+        return jsonify({**ex.to_dict(), 'ya_existia': True}), 200
+    n = ActividadNoLectiva.query.filter_by(school_id=_sid()).count()
+    row = ActividadNoLectiva(school_id=_sid(), nombre=nombre,
+                             minutos_default=d.get('minutos_default', 60), orden=n)
+    db.session.add(row)
+    db.session.commit()
+    return jsonify({**row.to_dict(), 'ya_existia': False}), 201
+
+
+@carga_bp.route('/actividades/<int:aid>', methods=['DELETE'])
+@jwt_required()
+@school_required
+def delete_actividad(aid):
+    row = ActividadNoLectiva.query.filter_by(id=aid, school_id=_sid()).first_or_404()
+    row.is_active = False       # baja lógica: no rompe cargas que ya la usan
+    db.session.commit()
+    return jsonify({'ok': True}), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  PUBLICACIÓN A COURSE_SUBJECT
+#  Vuelca el reparto al libro de clases: una fila por curso real.
+# ══════════════════════════════════════════════════════════════════════
+
+def _asegurar_usuario_docente(doc, school_id):
+    """Devuelve el user_id del docente, creándolo inactivo si hace falta.
+
+    Se crea con is_active=False: sirve para vincular la carga y figurar en el
+    libro, pero no puede entrar al sistema hasta que lo activen.
+    """
+    if doc.user_id:
+        return doc.user_id, False
+    partes = (doc.nombre or '').strip().split()
+    nombre = partes[0] if partes else 'Docente'
+    apellido = ' '.join(partes[1:]) or '—'
+    import unicodedata
+    base = f"{nombre}.{apellido.split()[0] if apellido != '—' else 'docente'}".lower()
+    # Quitar tildes y ñ: el email debe ser ASCII
+    base = unicodedata.normalize('NFKD', base).encode('ascii', 'ignore').decode()
+    base = ''.join(c for c in base.replace(' ', '.') if c.isalnum() or c == '.') or 'docente'
+    email = f"{base}@docente.local"
+    i = 1
+    while User.query.filter_by(email=email).first():
+        i += 1
+        email = f"{base}{i}@docente.local"
+    u = User(school_id=school_id, email=email, first_name=nombre, last_name=apellido,
+             rut=doc.rut, role='profesor', is_active=False)
+    u.set_password(f'cambiar{date.today().year}')
+    db.session.add(u)
+    db.session.flush()
+    doc.user_id = u.id
+    return u.id, True
+
+
+@carga_bp.route('/procesos/<int:year>/publicar', methods=['POST'])
+@jwt_required()
+@school_required
+def publicar_proceso(year):
+    """Expande la carga del año en filas de CourseSubject.
+
+    "Lengua y Literatura · I Medio · A,B,C · 18 h" se convierte en tres filas
+    de 6 h, una por curso real, con su docente. Solo se publican las filas
+    enlazadas al catálogo de asignaturas; disponibilidad, jefatura y demás
+    quedan únicamente en la carga.
+    """
+    sid = _sid()
+    d = request.get_json() or {}
+    reemplazar = bool(d.get('reemplazar', True))
+
+    docentes = CargaDocente.query.filter_by(school_id=sid, year=year).all()
+    if not docentes:
+        return jsonify({'error': f'No hay docentes en el proceso {year}'}), 404
+
+    cursos = Course.query.filter_by(school_id=sid, year=year).all()
+    if not cursos:
+        cursos = Course.query.filter_by(school_id=sid).all()
+    por_nombre = {c.name: c for c in cursos}
+    por_nivel_letra = {(c.level, c.letter): c for c in cursos if c.level and c.letter}
+
+    resultado = {'filas': 0, 'usuarios_creados': 0, 'cursos_no_encontrados': [],
+                 'omitidas_sin_catalogo': 0, 'reemplazadas': 0}
+    publicadas = []
+
+    for doc in docentes:
+        user_id = None
+        for a in doc.asignaciones:
+            if a.tipo != 'asignatura' or not a.demanda:
+                continue
+            dem = a.demanda
+            if not dem.subject_id:
+                resultado['omitidas_sin_catalogo'] += 1
+                continue
+
+            letras = [x.strip() for x in (a.letras or '').split(',') if x.strip()]
+            if dem.por_letra and letras:
+                horas_por_curso = dem.horas_por_grupo
+                objetivos = []
+                for L in letras:
+                    c = por_nivel_letra.get((dem.nivel, L)) or por_nombre.get(f'{dem.nivel} {L}')
+                    if c:
+                        objetivos.append(c)
+                    else:
+                        resultado['cursos_no_encontrados'].append(f'{dem.nivel} {L}')
+            else:
+                # Grupo único (electivos): se cuelga del primer curso del nivel
+                c = por_nivel_letra.get((dem.nivel, 'A')) or por_nombre.get(f'{dem.nivel} A')
+                objetivos = [c] if c else []
+                if not c:
+                    resultado['cursos_no_encontrados'].append(dem.nivel)
+                horas_por_curso = a.horas
+
+            if objetivos and user_id is None:
+                user_id, creado = _asegurar_usuario_docente(doc, sid)
+                if creado:
+                    resultado['usuarios_creados'] += 1
+
+            for c in objetivos:
+                existente = CourseSubject.query.filter_by(
+                    course_id=c.id, subject_id=dem.subject_id).first()
+                if existente:
+                    if reemplazar:
+                        existente.teacher_id = user_id
+                        existente.hours_per_week = horas_por_curso
+                        resultado['reemplazadas'] += 1
+                    publicadas.append(existente)
+                else:
+                    cs = CourseSubject(course_id=c.id, subject_id=dem.subject_id,
+                                       teacher_id=user_id, hours_per_week=horas_por_curso)
+                    db.session.add(cs)
+                    publicadas.append(cs)
+                    resultado['filas'] += 1
+
+    db.session.commit()
+    resultado['cursos_no_encontrados'] = sorted(set(resultado['cursos_no_encontrados']))
+    resultado['total_publicadas'] = len(publicadas)
+    return jsonify({'ok': True, 'year': year, **resultado}), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  HORARIO SEMANAL
+# ══════════════════════════════════════════════════════════════════════
+
+def _bloques(sid, year, crear=True):
+    rows = HorarioBloque.query.filter_by(school_id=sid, year=year)\
+        .order_by(HorarioBloque.orden).all()
+    if not rows and crear:
+        for b in BLOQUES_DEFAULT:
+            db.session.add(HorarioBloque(school_id=sid, year=year, **b))
+        db.session.commit()
+        rows = HorarioBloque.query.filter_by(school_id=sid, year=year)\
+            .order_by(HorarioBloque.orden).all()
+    return rows
+
+
+@carga_bp.route('/horario/bloques', methods=['GET'])
+@jwt_required()
+@school_required
+def get_bloques():
+    return jsonify({
+        'dias': DIAS_SEMANA,
+        'bloques': [b.to_dict() for b in _bloques(_sid(), _year())],
+    }), 200
+
+
+@carga_bp.route('/horario/bloques', methods=['PUT'])
+@jwt_required()
+@school_required
+def set_bloques():
+    """Reemplaza la estructura de bloques del año."""
+    sid, year = _sid(), _year()
+    d = request.get_json() or {}
+    nuevos = d.get('bloques')
+    if not isinstance(nuevos, list) or not nuevos:
+        return jsonify({'error': 'Se requiere una lista de bloques'}), 400
+    HorarioCelda.query.filter_by(school_id=sid, year=year).delete(synchronize_session=False)
+    HorarioBloque.query.filter_by(school_id=sid, year=year).delete(synchronize_session=False)
+    for i, b in enumerate(nuevos):
+        db.session.add(HorarioBloque(
+            school_id=sid, year=year, orden=i,
+            etiqueta=b.get('etiqueta', ''), inicio=b.get('inicio'),
+            fin=b.get('fin'), tipo=b.get('tipo', 'clase')))
+    db.session.commit()
+    return jsonify({'ok': True, 'bloques': [b.to_dict() for b in _bloques(sid, year)]}), 200
+
+
+@carga_bp.route('/docentes/<int:did>/horario', methods=['GET'])
+@jwt_required()
+@school_required
+def get_horario(did):
+    sid = _sid()
+    doc = CargaDocente.query.filter_by(id=did, school_id=sid).first_or_404()
+    bloques = _bloques(sid, doc.year)
+    celdas = HorarioCelda.query.filter_by(school_id=sid, docente_id=did).all()
+
+    # Cuántos bloques de clase tiene puestos vs. sus horas pedagógicas
+    ids_clase = {b.id for b in bloques if b.tipo == 'clase'}
+    puestos = sum(1 for c in celdas if c.asignacion_id and c.bloque_id in ids_clase)
+    info = doc.to_dict()
+
+    return jsonify({
+        'docente': {'id': doc.id, 'nombre': doc.nombre, 'year': doc.year,
+                    'horas_contrato': info['horas_contrato'],
+                    'horas_pedagogicas': info['horas_pedagogicas']},
+        'dias': DIAS_SEMANA,
+        'bloques': [b.to_dict() for b in bloques],
+        'celdas': [c.to_dict() for c in celdas],
+        'asignaciones': info['asignaciones'],
+        'bloques_puestos': puestos,
+        'bloques_faltantes': info['horas_pedagogicas'] - puestos,
+    }), 200
+
+
+@carga_bp.route('/docentes/<int:did>/horario', methods=['PUT'])
+@jwt_required()
+@school_required
+def set_celda(did):
+    """Pone o limpia una celda del horario."""
+    sid = _sid()
+    doc = CargaDocente.query.filter_by(id=did, school_id=sid).first_or_404()
+    d = request.get_json() or {}
+    bloque_id, dia = d.get('bloque_id'), d.get('dia')
+    if bloque_id is None or dia is None:
+        return jsonify({'error': 'Faltan bloque_id y dia'}), 400
+
+    celda = HorarioCelda.query.filter_by(
+        docente_id=did, bloque_id=bloque_id, dia=dia).first()
+
+    asignacion_id = d.get('asignacion_id') or None
+    etiqueta = (d.get('etiqueta_libre') or '').strip() or None
+
+    if not asignacion_id and not etiqueta:
+        if celda:
+            db.session.delete(celda)
+            db.session.commit()
+        return jsonify({'ok': True, 'celda': None}), 200
+
+    if asignacion_id:
+        a = CargaAsignacion.query.filter_by(id=asignacion_id, docente_id=did).first()
+        if not a:
+            return jsonify({'error': 'La asignación no pertenece a este docente'}), 400
+
+    if not celda:
+        celda = HorarioCelda(school_id=sid, year=doc.year, docente_id=did,
+                             bloque_id=bloque_id, dia=dia)
+        db.session.add(celda)
+    celda.asignacion_id = asignacion_id
+    celda.letra = (d.get('letra') or None) if asignacion_id else None
+    celda.etiqueta_libre = None if asignacion_id else etiqueta
+    db.session.commit()
+    return jsonify({'ok': True, 'celda': celda.to_dict()}), 200
+
+
+@carga_bp.route('/docentes/<int:did>/horario/autocompletar', methods=['POST'])
+@jwt_required()
+@school_required
+def autocompletar_horario(did):
+    """Reparte las horas del docente en la grilla.
+
+    Cada asignación por letra se abre en un curso concreto —"8° A,B,C · 18 h"
+    son 6 h en 8°A, 6 en 8°B y 6 en 8°C— porque el docente no puede estar en
+    los tres cursos a la vez. Las horas de un mismo curso se reparten entre
+    días distintos para no amontonarlas.
+    """
+    sid = _sid()
+    doc = CargaDocente.query.filter_by(id=did, school_id=sid).first_or_404()
+    todos = _bloques(sid, doc.year)
+    clases = [b for b in todos if b.tipo == 'clase']
+    contacto = [b for b in todos if b.tipo == 'contacto']
+    if not clases:
+        return jsonify({'error': 'No hay bloques de clase definidos'}), 400
+
+    if (request.get_json() or {}).get('limpiar', True):
+        HorarioCelda.query.filter_by(docente_id=did).delete(synchronize_session=False)
+        db.session.commit()
+
+    ocupadas = {(c.bloque_id, c.dia) for c in
+                HorarioCelda.query.filter_by(docente_id=did).all()}
+    n_dias = len(DIAS_SEMANA)
+    puestas, sin_espacio = 0, 0
+
+    def poner(bloque_id, dia, asignacion_id, letra=None):
+        nonlocal puestas
+        db.session.add(HorarioCelda(
+            school_id=sid, year=doc.year, docente_id=did, bloque_id=bloque_id,
+            dia=dia, asignacion_id=asignacion_id, letra=letra))
+        ocupadas.add((bloque_id, dia))
+        puestas += 1
+
+    def primer_libre(dia, saltar=()):
+        for b in clases:
+            if (b.id, dia) not in ocupadas and b.id not in saltar:
+                return b.id
+        return None
+
+    asigs = sorted(doc.asignaciones, key=lambda x: (x.orden or 0, x.id))
+
+    # 1) Toma de contacto: va en el bloque de contacto, todos los días
+    for a in asigs:
+        if a.tipo != 'toma_contacto' or not contacto:
+            continue
+        # Es una rutina diaria: ocupa el bloque de contacto toda la semana,
+        # aunque en la carga cuente como una sola hora pedagógica
+        b = contacto[0]
+        for dia in range(n_dias):
+            if (b.id, dia) not in ocupadas:
+                poner(b.id, dia, a.id)
+
+    # 2) Unidades a ubicar: (asignación, letra, horas)
+    unidades = []
+    for a in asigs:
+        if a.tipo == 'toma_contacto' and contacto:
+            continue
+        dem = a.demanda
+        letras = [x.strip() for x in (a.letras or '').split(',') if x.strip()]
+        if a.tipo == 'asignatura' and dem and dem.por_letra and letras:
+            for L in letras:
+                unidades.append((a, L, int(dem.horas_por_grupo or 0)))
+        else:
+            unidades.append((a, None, int(a.horas or 0)))
+
+    # 3) Repartir cada unidad entre días distintos, arrancando en días rotados
+    #    para que no se apilen todas al comienzo de la semana
+    inicio_dia = 0
+    for a, letra, horas in unidades:
+        usados = set()
+        for h in range(horas):
+            colocado = False
+            # Primero intenta un día que aún no tenga este curso
+            for intento in range(n_dias * 2):
+                dia = (inicio_dia + h + intento) % n_dias
+                if intento < n_dias and dia in usados:
+                    continue
+                bid = primer_libre(dia)
+                if bid is not None:
+                    poner(bid, dia, a.id, letra)
+                    usados.add(dia)
+                    colocado = True
+                    break
+            if not colocado:
+                sin_espacio += 1
+        inicio_dia = (inicio_dia + 1) % n_dias
+
+    db.session.commit()
+    return jsonify({'ok': True, 'bloques_puestos': puestas,
+                    'sin_espacio': sin_espacio}), 200
+
+
+# ── PDF del horario semanal ───────────────────────────────────────────
+
+TIPO_FILL = {
+    'recreo':   '#D9D9D9',
+    'almuerzo': '#F2F2F2',
+    'contacto': '#FFF2CC',
+    'reunion':  '#E2EFDA',
+}
+
+
+def _logo_bytes(school):
+    """Devuelve los bytes del logo del colegio, que se guarda como data URL."""
+    url = getattr(school, 'logo_url', None) or ''
+    if not url.startswith('data:'):
+        return None
+    try:
+        import base64
+        return base64.b64decode(url.split(',', 1)[1])
+    except Exception:
+        return None
+
+
+def _logo_flowable(school, ImageCls, alto):
+    """Logo como flowable de reportlab, respetando su proporción."""
+    raw = _logo_bytes(school)
+    if not raw:
+        return None
+    try:
+        from reportlab.lib.utils import ImageReader
+        src = io.BytesIO(raw)
+        iw, ih = ImageReader(src).getSize()
+        src.seek(0)
+        return ImageCls(src, width=alto * (iw / ih), height=alto)
+    except Exception:
+        return None
+
+
+def _pdf_horario(school, doc, bloques, celdas, year):
+    from reportlab.lib.pagesizes import landscape, letter
+    from reportlab.lib.units import cm
+    from reportlab.lib import colors
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.platypus import (SimpleDocTemplate, Table, TableStyle,
+                                    Paragraph, Spacer, Image)
+    from reportlab.lib.enums import TA_CENTER
+
+    buf = io.BytesIO()
+    pdf = SimpleDocTemplate(buf, pagesize=landscape(letter),
+                            leftMargin=1.1 * cm, rightMargin=1.1 * cm,
+                            topMargin=0.9 * cm, bottomMargin=0.9 * cm)
+    story = []
+
+    st_col = ParagraphStyle('col', fontName='Helvetica-Bold', fontSize=7.5,
+                            alignment=TA_CENTER, textColor=colors.black, leading=9)
+    st_cel = ParagraphStyle('cel', fontName='Helvetica', fontSize=6.3,
+                            alignment=TA_CENTER, leading=7.4)
+    st_h1 = ParagraphStyle('h1', fontName='Helvetica-Bold', fontSize=11, leading=13)
+    st_h2 = ParagraphStyle('h2', fontName='Helvetica', fontSize=8, leading=10)
+    st_tit = ParagraphStyle('tit', fontName='Helvetica-Bold', fontSize=10.5,
+                            alignment=TA_CENTER, leading=13)
+
+    # Encabezado institucional, con logo si el colegio lo tiene
+    cab = [Paragraph(school.name if school else 'Colegio', st_h1)]
+    if school and school.rector:
+        cab.append(Paragraph(school.rector, st_h2))
+    cab.append(Paragraph('Coordinación Académica', st_h2))
+    cab.append(Paragraph(str(year), st_h2))
+
+    logo = _logo_flowable(school, Image, 1.6 * cm)
+    if logo is not None:
+        head = Table([[logo, cab]], colWidths=[1.9 * cm, None])
+        head.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        story.append(head)
+    else:
+        story.extend(cab)
+
+    story.append(Spacer(1, 6))
+    nivel_txt = {'Media': 'EDUCACIÓN MEDIA', 'Básica': 'EDUCACIÓN BÁSICA'}.get(
+        doc.nivel, (doc.nivel or '').upper())
+    story.append(Paragraph(
+        f"HORARIO {nivel_txt} {(school.name if school else '').upper()}".strip(), st_tit))
+    story.append(Spacer(1, 5))
+
+    info = doc.to_dict(with_asignaciones=False)
+    enc = Table([['DOCENTE', f"{doc.nombre.upper()}  ({info['horas_pedagogicas']} horas)"]],
+                colWidths=[2.6 * cm, 9 * cm])
+    enc.setStyle(TableStyle([
+        ('GRID', (0, 0), (-1, -1), 0.6, colors.black),
+        ('FONTNAME', (0, 0), (0, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(enc)
+    story.append(Spacer(1, 6))
+
+    # Grilla
+    mapa = {(c.bloque_id, c.dia): c for c in celdas}
+    data = [[Paragraph('HORA', st_col)] + [Paragraph(d.upper(), st_col) for d in DIAS_SEMANA]]
+    estilos = [
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#D9D9D9')),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+    ]
+
+    for i, b in enumerate(bloques, start=1):
+        etiqueta = (b.etiqueta or '').strip()
+        rango = f"{b.inicio}–{b.fin}"
+        if b.tipo == 'recreo':
+            izq = f"RECREO<br/>{rango}"
+        elif b.tipo == 'almuerzo':
+            izq = f"ALMUERZO<br/>{rango}"
+        else:
+            izq = f"{etiqueta}<br/>{rango}" if etiqueta else rango
+        fila = [Paragraph(izq, st_col)]
+
+        for dia in range(len(DIAS_SEMANA)):
+            if b.tipo in ('recreo', 'almuerzo'):
+                fila.append(Paragraph('', st_cel))
+                continue
+            c = mapa.get((b.id, dia))
+            fila.append(Paragraph((c.texto() if c else '').upper(), st_cel))
+        data.append(fila)
+
+        fill = TIPO_FILL.get(b.tipo)
+        if fill:
+            estilos.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor(fill)))
+
+    ancho_util = pdf.width
+    col_hora = 2.1 * cm
+    ancho_dia = (ancho_util - col_hora) / len(DIAS_SEMANA)
+    grid = Table(data, colWidths=[col_hora] + [ancho_dia] * len(DIAS_SEMANA),
+                 repeatRows=1)
+    grid.setStyle(TableStyle(estilos))
+    story.append(grid)
+
+    # Pie: resumen de la jornada
+    story.append(Spacer(1, 7))
+    pie = Table([[
+        f"Jornada contratada: {info['horas_contrato']} h",
+        f"Horas en aula: {info['horas_pedagogicas']}",
+        f"No lectivas: {fmt_hm(info['no_lectivas_min'])}",
+        f"Recreo: {fmt_hm(info['recreo_min'])}",
+    ]], colWidths=[pdf.width / 4.0] * 4)
+    pie.setStyle(TableStyle([
+        ('GRID', (0, 0), (-1, -1), 0.4, colors.HexColor('#999999')),
+        ('FONTSIZE', (0, 0), (-1, -1), 7.5),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F2F2F2')),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(pie)
+
+    pdf.build(story)
+    buf.seek(0)
+    return buf
+
+
+@carga_bp.route('/docentes/<int:did>/horario.pdf', methods=['GET'])
+@jwt_required()
+@school_required
+def horario_pdf(did):
+    sid = _sid()
+    doc = CargaDocente.query.filter_by(id=did, school_id=sid).first_or_404()
+    bloques = _bloques(sid, doc.year)
+    celdas = HorarioCelda.query.filter_by(school_id=sid, docente_id=did).all()
+    school = School.query.get(sid)
+    buf = _pdf_horario(school, doc, bloques, celdas, doc.year)
+    nombre = (doc.nombre or 'docente').replace(' ', '_')
+    return send_file(buf, as_attachment=True,
+                     download_name=f'Horario_{nombre}_{doc.year}.pdf',
+                     mimetype='application/pdf')
+
+
+@carga_bp.route('/horarios-departamento.pdf', methods=['GET'])
+@jwt_required()
+@school_required
+def horarios_departamento_pdf():
+    """Un PDF con el horario de todos los docentes del departamento."""
+    from pypdf import PdfWriter
+    sid, year = _sid(), _year()
+    dep = request.args.get('departamento')
+    q = CargaDocente.query.filter_by(school_id=sid, year=year)
+    if dep:
+        q = q.filter_by(departamento=dep)
+    docentes = q.order_by(CargaDocente.orden, CargaDocente.id).all()
+    if not docentes:
+        return jsonify({'error': 'No hay docentes para ese departamento'}), 404
+
+    school = School.query.get(sid)
+    bloques = _bloques(sid, year)
+    writer = PdfWriter()
+    for doc in docentes:
+        celdas = HorarioCelda.query.filter_by(school_id=sid, docente_id=doc.id).all()
+        writer.append(_pdf_horario(school, doc, bloques, celdas, year))
+    out = io.BytesIO()
+    writer.write(out)
+    writer.close()
+    out.seek(0)
+    slug = (dep or 'Todos').replace(' ', '_')
+    return send_file(out, as_attachment=True,
+                     download_name=f'Horarios_{slug}_{year}.pdf',
+                     mimetype='application/pdf')

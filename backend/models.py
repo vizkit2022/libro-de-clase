@@ -705,3 +705,114 @@ class CargaAsignacion(db.Model):
             'horas': self.horas,
             'orden': self.orden,
         }
+
+
+class ActividadNoLectiva(db.Model):
+    """Catálogo de actividades no lectivas del colegio."""
+    __tablename__ = 'carga_actividades_nl'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
+    nombre = db.Column(db.String(200), nullable=False)
+    minutos_default = db.Column(db.Integer, default=60)
+    is_active = db.Column(db.Boolean, default=True)
+    orden = db.Column(db.Integer, default=0)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'school_id': self.school_id, 'nombre': self.nombre,
+            'minutos_default': self.minutos_default, 'is_active': self.is_active,
+            'orden': self.orden,
+        }
+
+
+# ── Horario semanal ───────────────────────────────────────────────────
+
+DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+
+# Estructura por defecto de la jornada, tomada del horario de Educación Media.
+# tipo: clase | recreo | almuerzo | contacto | reunion
+BLOQUES_DEFAULT = [
+    {'orden': 0,  'etiqueta': '0',  'inicio': '08:00', 'fin': '08:10', 'tipo': 'contacto'},
+    {'orden': 1,  'etiqueta': '1',  'inicio': '08:10', 'fin': '08:55', 'tipo': 'clase'},
+    {'orden': 2,  'etiqueta': '2',  'inicio': '08:55', 'fin': '09:40', 'tipo': 'clase'},
+    {'orden': 3,  'etiqueta': '',   'inicio': '09:40', 'fin': '10:00', 'tipo': 'recreo'},
+    {'orden': 4,  'etiqueta': '3',  'inicio': '10:00', 'fin': '10:45', 'tipo': 'clase'},
+    {'orden': 5,  'etiqueta': '4',  'inicio': '10:45', 'fin': '11:30', 'tipo': 'clase'},
+    {'orden': 6,  'etiqueta': '',   'inicio': '11:30', 'fin': '11:50', 'tipo': 'recreo'},
+    {'orden': 7,  'etiqueta': '5',  'inicio': '11:50', 'fin': '12:35', 'tipo': 'clase'},
+    {'orden': 8,  'etiqueta': '6',  'inicio': '12:35', 'fin': '13:20', 'tipo': 'clase'},
+    {'orden': 9,  'etiqueta': '7',  'inicio': '13:20', 'fin': '14:05', 'tipo': 'clase'},
+    {'orden': 10, 'etiqueta': '8',  'inicio': '14:05', 'fin': '14:50', 'tipo': 'clase'},
+    {'orden': 11, 'etiqueta': '9',  'inicio': '14:50', 'fin': '15:35', 'tipo': 'clase'},
+    {'orden': 12, 'etiqueta': '10', 'inicio': '15:35', 'fin': '16:20', 'tipo': 'clase'},
+]
+
+
+class HorarioBloque(db.Model):
+    """Bloque horario del colegio (una fila de la grilla semanal)."""
+    __tablename__ = 'carga_horario_bloques'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    orden = db.Column(db.Integer, default=0)
+    etiqueta = db.Column(db.String(10))               # "1", "2", "" para recreos
+    inicio = db.Column(db.String(5))                  # "08:10"
+    fin = db.Column(db.String(5))                     # "08:55"
+    tipo = db.Column(db.String(20), default='clase')  # clase|recreo|almuerzo|contacto|reunion
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'school_id': self.school_id, 'year': self.year,
+            'orden': self.orden, 'etiqueta': self.etiqueta,
+            'inicio': self.inicio, 'fin': self.fin, 'tipo': self.tipo,
+        }
+
+
+class HorarioCelda(db.Model):
+    """Qué hace un docente en un bloque y día concretos."""
+    __tablename__ = 'carga_horario_celdas'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    docente_id = db.Column(db.Integer, db.ForeignKey('carga_docentes.id'), nullable=False)
+    bloque_id = db.Column(db.Integer, db.ForeignKey('carga_horario_bloques.id'), nullable=False)
+    dia = db.Column(db.Integer, nullable=False)       # 0=Lunes .. 4=Viernes
+    # Qué ocupa la celda: una asignación de la carga, o una etiqueta libre
+    asignacion_id = db.Column(db.Integer, db.ForeignKey('carga_asignaciones.id'), nullable=True)
+    # Letra concreta del curso: una asignación "8° A,B,C" ocupa celdas distintas
+    # para A, para B y para C, porque el docente no puede estar en las tres a la vez
+    letra = db.Column(db.String(5))
+    etiqueta_libre = db.Column(db.String(120))        # ALMUERZO, PERMANENCIA, CONSEJO...
+
+    asignacion = db.relationship('CargaAsignacion', foreign_keys=[asignacion_id])
+    bloque = db.relationship('HorarioBloque', foreign_keys=[bloque_id])
+
+    __table_args__ = (
+        db.UniqueConstraint('docente_id', 'bloque_id', 'dia', name='uq_horario_celda'),
+    )
+
+    def texto(self):
+        if self.asignacion:
+            a = self.asignacion
+            nombre = a.nombre_asignatura()
+            if not nombre:
+                nombre = {
+                    'disponibilidad': 'DISPONIBILIDAD', 'toma_contacto': 'TOMA DE CONTACTO',
+                    'orientacion': 'ORIENTACIÓN', 'jefatura': 'TRABAJO DE JEFATURA',
+                    'jefe_departamento': 'JEFE DE DEPARTAMENTO',
+                }.get(a.tipo, a.tipo.upper())
+            nivel = a.demanda.nivel if a.demanda else ''
+            # Si la celda fija una letra se muestra solo ese curso
+            cursos = self.letra or (a.letras or '').replace(',', ', ')
+            detalle = f"{nivel} {cursos}".strip()
+            return f"{nombre}{(' ' + detalle) if detalle else ''}"
+        return self.etiqueta_libre or ''
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'docente_id': self.docente_id, 'bloque_id': self.bloque_id,
+            'dia': self.dia, 'asignacion_id': self.asignacion_id,
+            'letra': self.letra,
+            'etiqueta_libre': self.etiqueta_libre, 'texto': self.texto(),
+            'tipo': self.asignacion.tipo if self.asignacion else 'libre',
+        }

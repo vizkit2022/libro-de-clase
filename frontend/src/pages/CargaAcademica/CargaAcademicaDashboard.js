@@ -133,6 +133,20 @@ export default function CargaAcademicaDashboard() {
     navigate(`/carga-academica/docentes/${r.data.id}`);
   };
 
+  const publicar = () => accion(async () => {
+    const r = await axios.post(`/api/carga-academica/procesos/${year}/publicar`, {});
+    const d = r.data;
+    let msg = `Publicado: ${d.total_publicadas} filas en el libro de clases`;
+    if (d.usuarios_creados) msg += `\n${d.usuarios_creados} docentes creados como usuario inactivo`;
+    if (d.cursos_no_encontrados?.length) msg += `\nSin curso: ${d.cursos_no_encontrados.join(', ')}`;
+    if (d.omitidas_sin_catalogo) msg += `\n${d.omitidas_sin_catalogo} filas omitidas por no estar en el catálogo`;
+    alert(msg);
+  }, `¿Publicar la carga ${year} al libro de clases?\n\nSe crea una fila por curso real (curso × asignatura × docente × horas) y los docentes sin usuario se crean como profesor inactivo.`);
+
+  const descargarHorariosDep = (dep) => {
+    window.open(`/api/carga-academica/horarios-departamento.pdf?year=${year}${dep ? `&departamento=${encodeURIComponent(dep)}` : ''}`, '_blank');
+  };
+
   const descargarDepartamento = (dep) => {
     window.open(`/api/carga-academica/informe-departamento.docx?year=${year}${dep ? `&departamento=${encodeURIComponent(dep)}` : ''}`, '_blank');
   };
@@ -207,11 +221,18 @@ export default function CargaAcademicaDashboard() {
           </p>
         </div>
         {departamentos.map(dep => (
-          <button key={dep} onClick={() => descargarDepartamento(dep)} style={{
-            padding: '8px 14px', background: `${primary}15`, color: primary, border: 'none',
-            borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-            📄 Word · {dep}
-          </button>
+          <React.Fragment key={dep}>
+            <button onClick={() => descargarDepartamento(dep)} style={{
+              padding: '8px 14px', background: `${primary}15`, color: primary, border: 'none',
+              borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              📄 Word · {dep}
+            </button>
+            <button onClick={() => descargarHorariosDep(dep)} style={{
+              padding: '8px 14px', background: '#fef3c7', color: '#92400e', border: 'none',
+              borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              🗓 Horarios PDF
+            </button>
+          </React.Fragment>
         ))}
         <button onClick={() => setNuevoDocente({ nombre: '', departamento: departamentos[0] || '', nivel: 'Media', horas_contrato: 44 })}
           style={{ padding: '8px 16px', background: primary, color: '#fff', border: 'none',
@@ -263,6 +284,13 @@ export default function CargaAcademicaDashboard() {
                 ⬇ Traer distribución de {o}
               </button>
             ))}
+            <button disabled={busy} onClick={publicar} style={{ ...btnProc,
+              background: r.cobertura_pct >= 100 ? '#dcfce7' : '#fff',
+              borderColor: r.cobertura_pct >= 100 ? '#86efac' : '#e2e8f0',
+              color: r.cobertura_pct >= 100 ? '#15803d' : '#475569', fontWeight: 700 }}
+              title="Vuelca el reparto a CourseSubject, de donde cuelgan Calificaciones y el libro">
+              📤 Publicar {year} al libro de clases
+            </button>
             <button disabled={busy} onClick={reiniciarDist} style={btnProc}>
               ↺ Reiniciar distribución {year}
             </button>

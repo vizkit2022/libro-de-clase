@@ -52,6 +52,10 @@ export default function CargaDocenteDetail() {
   const [toast, setToast] = useState(null);
   const [ref, setRef] = useState(null);
   const [showRef, setShowRef] = useState(true);
+  const [actividades, setActividades] = useState([]);
+  const [vista, setVista] = useState('carga');   // carga | horario
+  const [hor, setHor] = useState(null);
+  const [sel, setSel] = useState(null);          // celda abierta {bloque_id, dia}
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -72,6 +76,10 @@ export default function CargaDocenteDetail() {
         const rf = await axios.get(`/api/carga-academica/docentes/${id}/referencia`);
         setRef(rf.data);
       } catch { setRef(null); }
+      try {
+        const ac = await axios.get('/api/carga-academica/actividades');
+        setActividades(ac.data);
+      } catch { setActividades([]); }
     } catch { navigate('/carga-academica'); }
     setLoading(false);
   }, [id, navigate]);
@@ -130,6 +138,56 @@ export default function CargaDocenteDetail() {
   const setJornada = async (jornada) => {
     await axios.put(`/api/carga-academica/docentes/${id}`, { horas_contrato: Number(jornada) });
     fetchAll();
+  };
+
+  // ── Horario ───────────────────────────────────────────────────────
+  const fetchHorario = useCallback(async () => {
+    const r = await axios.get(`/api/carga-academica/docentes/${id}/horario`);
+    setHor(r.data);
+  }, [id]);
+
+  useEffect(() => { if (vista === 'horario') fetchHorario(); }, [vista, fetchHorario]);
+
+  const setCelda = async (bloque_id, dia, payload) => {
+    await axios.put(`/api/carga-academica/docentes/${id}/horario`, { bloque_id, dia, ...payload });
+    setSel(null);
+    fetchHorario();
+  };
+
+  const autocompletar = async () => {
+    if (!window.confirm('¿Repartir las horas en la grilla? Se reemplaza lo que haya.')) return;
+    const r = await axios.post(`/api/carga-academica/docentes/${id}/horario/autocompletar`, {});
+    showToast(r.data.sin_espacio
+      ? `${r.data.bloques_puestos} bloques puestos, ${r.data.sin_espacio} sin espacio`
+      : `${r.data.bloques_puestos} bloques repartidos`);
+    fetchHorario();
+  };
+
+  const descargarHorarioPdf = () => {
+    window.open(`/api/carga-academica/docentes/${id}/horario.pdf`, '_blank');
+  };
+
+  // Agrega una actividad del catálogo, o crea una nueva al vuelo
+  const agregarActividad = async (valor) => {
+    if (!valor) return;
+    if (valor === '__nueva__') {
+      const nombre = window.prompt('Nombre de la nueva actividad no lectiva:');
+      if (!nombre || !nombre.trim()) return;
+      const min = Number(window.prompt('Minutos por semana:', '60')) || 60;
+      try {
+        const r = await axios.post('/api/carga-academica/actividades',
+          { nombre: nombre.trim(), minutos_default: min });
+        const lista = await axios.get('/api/carga-academica/actividades');
+        setActividades(lista.data);
+        saveNoLectivas([...(doc.no_lectivas || []),
+          { actividad: r.data.nombre, minutos: r.data.minutos_default }]);
+      } catch (e) { showToast(e.response?.data?.error || 'Error', 'error'); }
+      return;
+    }
+    const a = actividades.find(x => String(x.id) === String(valor));
+    if (!a) return;
+    saveNoLectivas([...(doc.no_lectivas || []),
+      { actividad: a.nombre, minutos: a.minutos_default }]);
   };
 
   const descargarWord = () => {
@@ -212,9 +270,21 @@ export default function CargaDocenteDetail() {
           <button onClick={descargarWord} style={{ padding: '8px 14px', background: `${primary}15`,
             border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer',
             fontWeight: 600, color: primary }}>📄 Word</button>
+          <button onClick={descargarHorarioPdf} style={{ padding: '8px 14px', background: '#fef3c7',
+            border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+            fontWeight: 600, color: '#92400e' }}>🗓 Horario PDF</button>
         </div>
       </div>
 
+      {/* Vistas */}
+      <div className="tabs" style={{ marginBottom: 16 }}>
+        {[['carga', '📋 Carga horaria'], ['horario', '🗓 Horario semanal']].map(([k, l]) => (
+          <button key={k} className={`tab ${vista === k ? 'active' : ''}`} onClick={() => setVista(k)}
+            style={vista === k ? { background: primary, color: '#fff' } : {}}>{l}</button>
+        ))}
+      </div>
+
+      {vista === 'carga' && (<>
       {/* Resumen de jornada */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
         <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 16px',
@@ -493,13 +563,127 @@ export default function CargaDocenteDetail() {
             </tr>
           </tbody>
         </table>
-        <div style={{ padding: '10px 14px', borderTop: '1px solid #f1f5f9' }}>
-          <button onClick={() => saveNoLectivas([...(doc.no_lectivas || []), { actividad: '', minutos: 60 }])}
-            style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe',
-              padding: '4px 11px', borderRadius: 6, fontSize: 12, cursor: 'pointer',
-              fontWeight: 600 }}>+ Agregar actividad</button>
+        <div style={{ padding: '10px 14px', borderTop: '1px solid #f1f5f9',
+          display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Agregar:</span>
+          <select value="" onChange={e => agregarActividad(e.target.value)}
+            style={{ ...inp, maxWidth: 300, cursor: 'pointer' }}>
+            <option value="">— elegir del catálogo —</option>
+            {actividades
+              .filter(a => !(doc.no_lectivas || []).some(x => x.actividad === a.nombre))
+              .map(a => (
+                <option key={a.id} value={a.id}>{a.nombre} ({fmtHM(a.minutos_default)})</option>
+              ))}
+            <option value="__nueva__">+ Crear nueva actividad…</option>
+          </select>
         </div>
       </div>
+      </>)}
+
+      {/* ── HORARIO SEMANAL ── */}
+      {vista === 'horario' && (
+        hor ? (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
+              flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <span style={{ fontSize: 13, color: '#475569' }}>
+                  <b>{hor.bloques_puestos}</b> bloques puestos de <b>{doc.horas_pedagogicas}</b> horas en aula
+                </span>
+                {hor.bloques_faltantes !== 0 && (
+                  <span style={{ fontSize: 12, fontWeight: 700, marginLeft: 10,
+                    color: hor.bloques_faltantes > 0 ? '#dc2626' : '#f59e0b' }}>
+                    {hor.bloques_faltantes > 0
+                      ? `faltan ${hor.bloques_faltantes}`
+                      : `sobran ${-hor.bloques_faltantes}`}
+                  </span>
+                )}
+              </div>
+              <button onClick={autocompletar} style={{ padding: '7px 14px', background: primary,
+                color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                cursor: 'pointer' }}>⚡ Autocompletar</button>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11,
+                minWidth: 760 }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...thHor, width: 78 }}>HORA</th>
+                    {hor.dias.map(d => <th key={d} style={thHor}>{d.toUpperCase()}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {hor.bloques.map(b => {
+                    const noClase = b.tipo === 'recreo' || b.tipo === 'almuerzo';
+                    const bg = { recreo: '#e2e8f0', almuerzo: '#f1f5f9',
+                      contacto: '#fef9c3' }[b.tipo] || '#fff';
+                    return (
+                      <tr key={b.id}>
+                        <td style={{ ...tdHor, background: bg === '#fff' ? '#f8fafc' : bg,
+                          fontWeight: 700, textAlign: 'center', fontSize: 10 }}>
+                          {noClase
+                            ? <>{b.tipo === 'recreo' ? 'RECREO' : 'ALMUERZO'}<br />{b.inicio}–{b.fin}</>
+                            : <>{b.etiqueta}<br /><span style={{ fontWeight: 400, color: '#94a3b8' }}>
+                                {b.inicio}–{b.fin}</span></>}
+                        </td>
+                        {hor.dias.map((_, dia) => {
+                          if (noClase) return <td key={dia} style={{ ...tdHor, background: bg }} />;
+                          const celda = hor.celdas.find(c => c.bloque_id === b.id && c.dia === dia);
+                          const abierta = sel && sel.bloque_id === b.id && sel.dia === dia;
+                          return (
+                            <td key={dia} style={{ ...tdHor, background: bg, padding: 0,
+                              position: 'relative' }}>
+                              {abierta ? (
+                                <select autoFocus value={celda?.asignacion_id || ''}
+                                  onBlur={() => setSel(null)}
+                                  onChange={e => {
+                                    const v = e.target.value;
+                                    if (!v) return setCelda(b.id, dia, {});
+                                    const [aid, letra] = v.split('|');
+                                    setCelda(b.id, dia, { asignacion_id: Number(aid), letra: letra || null });
+                                  }}
+                                  style={{ width: '100%', fontSize: 10, padding: 3, border: 'none' }}>
+                                  <option value="">— vacío —</option>
+                                  {hor.asignaciones.flatMap(a => {
+                                    const letras = (a.letras || '').split(',').filter(Boolean);
+                                    if (a.tipo === 'asignatura' && letras.length > 1) {
+                                      return letras.map(L => (
+                                        <option key={`${a.id}|${L}`} value={`${a.id}|${L}`}>
+                                          {a.asignatura} · {a.nivel} {L}
+                                        </option>
+                                      ));
+                                    }
+                                    return [(
+                                      <option key={a.id} value={`${a.id}|`}>
+                                        {a.asignatura || TIPO_LABEL[a.tipo]}
+                                        {a.cursos_texto ? ` · ${a.cursos_texto}` : ''}
+                                      </option>
+                                    )];
+                                  })}
+                                </select>
+                              ) : (
+                                <div onClick={() => setSel({ bloque_id: b.id, dia })}
+                                  style={{ minHeight: 30, padding: '4px 5px', cursor: 'pointer',
+                                    fontSize: 9.5, lineHeight: 1.25, color: '#334155' }}>
+                                  {celda?.texto || ''}
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p style={{ fontSize: 12, color: '#94a3b8', margin: '12px 0 0' }}>
+              Hacé clic en cualquier celda para asignarla. El PDF sale con el botón 🗓 Horario PDF.
+            </p>
+          </div>
+        ) : <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div className="spinner" /></div>
+      )}
 
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, right: 24,
