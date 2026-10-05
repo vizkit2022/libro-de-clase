@@ -2112,12 +2112,13 @@ Omite docentes o asignaturas sobre los que no haya indicación. Sin markdown."""
     return prefs, None
 
 
-def _resolver_reparto(sid, year, prefs):
+def _resolver_reparto(sid, year, prefs, modo='completar'):
     """Reparte las horas de la demanda entre los docentes del año.
 
-    Reglas duras que nunca se rompen: cada docente llega justo a sus horas
-    pedagógicas, ninguna asignatura queda sobreasignada, y un curso no se le
-    da a dos docentes.
+    modo='completar' (por defecto) respeta todo lo ya asignado y solo reparte
+    los cursos que quedaron sin docente, usando las horas libres de cada uno.
+    Las horas de disponibilidad sí se pueden ocupar: eso es justamente lo que
+    significan. modo='rehacer' ignora el reparto actual y lo arma de cero.
     """
     demanda = CargaDemanda.query.filter_by(school_id=sid, year=year)\
         .order_by(CargaDemanda.orden, CargaDemanda.id).all()
@@ -2149,7 +2150,15 @@ def _resolver_reparto(sid, year, prefs):
             for a in prev.asignaciones if a.tipo in TIPOS_ESTRUCTURALES
         ]
 
-    # Capacidad: horas de aula menos lo estructural, que se conserva
+    # Cursos que ya tienen docente: en modo completar no se vuelven a repartir
+    tomadas = {}
+    if modo == 'completar':
+        for d in docentes:
+            for a in d.asignaciones:
+                if a.tipo == 'asignatura' and a.demanda_id:
+                    letras = [x.strip() for x in (a.letras or '').split(',') if x.strip()]
+                    tomadas.setdefault(a.demanda_id, set()).update(letras or ['__unico__'])
+
     estado = {}
     for d in docentes:
         info = d.to_dict()
@@ -2160,13 +2169,32 @@ def _resolver_reparto(sid, year, prefs):
         else:
             heredadas = roles_previos.get(d.nombre, [])
             fijas = sum(f['horas'] for f in heredadas)
+
+        conservadas, ya_usadas = [], 0
+        if modo == 'completar':
+            for a in d.asignaciones:
+                if a.tipo in TIPOS_ESTRUCTURALES:
+                    continue
+                if a.tipo == 'disponibilidad':
+                    continue          # son horas libres: se pueden ocupar
+                conservadas.append({
+                    'tipo': a.tipo, 'demanda_id': a.demanda_id,
+                    'asignatura': a.nombre_asignatura(),
+                    'nivel': a.demanda.nivel if a.demanda else None,
+                    'letras': a.letras, 'horas': int(a.horas or 0),
+                    'existente': True,
+                })
+                ya_usadas += int(a.horas or 0)
+
         estado[d.id] = {
             'docente': d, 'nombre': d.nombre,
-            'capacidad': info['horas_pedagogicas'] - fijas,
-            'libre': info['horas_pedagogicas'] - fijas,
+            'libre': info['horas_pedagogicas'] - fijas - ya_usadas,
             'horas_pedagogicas': info['horas_pedagogicas'],
             'fijas': fijas, 'heredadas': heredadas,
-            'niveles': set(), 'asignaturas': set(), 'unidades': [],
+            'conservadas': conservadas, 'ya_usadas': ya_usadas,
+            'niveles': {c['nivel'] for c in conservadas if c['nivel']},
+            'asignaturas': {c['asignatura'] for c in conservadas},
+            'unidades': [],
         }
 
     # Unidades a repartir: un curso concreto, o el grupo único de un electivo
@@ -2175,10 +2203,13 @@ def _resolver_reparto(sid, year, prefs):
         horas = int(dem.horas_por_grupo or 0)
         if horas <= 0:
             continue
+        ocupadas = tomadas.get(dem.id, set())
         if dem.por_letra:
             for L in [x.strip() for x in (dem.letras or '').split(',') if x.strip()]:
+                if L in ocupadas:
+                    continue          # ese curso ya tiene docente
                 unidades.append({'demanda': dem, 'letra': L, 'horas': horas})
-        else:
+        elif '__unico__' not in ocupadas:
             unidades.append({'demanda': dem, 'letra': None, 'horas': horas})
 
     # Las más pesadas primero: son las más difíciles de encajar al final
@@ -2264,9 +2295,16 @@ def _resolver_reparto(sid, year, prefs):
                 'letras': ','.join(letras) if letras else None,
                 'horas': sum(u['horas'] for u in us),
             })
+        for f in filas:
+            f['existente'] = False
         filas.sort(key=lambda f: (f['asignatura'], f['nivel'] or ''))
+        nuevas = len(filas)
         # Los cargos del año anterior se proponen junto con los ramos
-        filas.extend(est['heredadas'])
+        for h in est['heredadas']:
+            filas.append({**h, 'existente': False})
+            nuevas += 1
+        # Lo que el docente ya tenía se muestra para dar contexto
+        filas = est['conservadas'] + filas
 
         # Lo que sobra va a disponibilidad, con tope
         sobra = est['libre']
@@ -2282,6 +2320,7 @@ def _resolver_reparto(sid, year, prefs):
                     f"las {prefs['max_disponibilidad']} de disponibilidad.")
 
         propuesta.append({
+            'filas_nuevas': nuevas,
             'docente_id': est['docente'].id,
             'docente': est['nombre'],
             'horas_contrato': est['docente'].horas_contrato,
@@ -2292,6 +2331,7 @@ def _resolver_reparto(sid, year, prefs):
             # los tenía cargados, se suman aparte porque no se re-emiten
             'horas_asignadas': (sum(f['horas'] for f in filas)
                                 + (0 if est['heredadas'] else est['fijas'])),
+            'horas_previas': est['ya_usadas'],
             'filas': filas,
         })
 
@@ -2341,7 +2381,8 @@ def sugerir_reparto(year):
     if d.get('rotar_niveles') is not None:
         prefs['rotar_niveles'] = bool(d['rotar_niveles'])
 
-    propuesta, advertencias = _resolver_reparto(sid, year, prefs)
+    modo = 'rehacer' if d.get('modo') == 'rehacer' else 'completar'
+    propuesta, advertencias = _resolver_reparto(sid, year, prefs, modo=modo)
     if propuesta is None:
         return jsonify({'error': advertencias[0]}), 400
 
@@ -2350,7 +2391,7 @@ def sugerir_reparto(year):
                      for f in p['filas'] if f['tipo'] == 'asignatura')
 
     return jsonify({
-        'ok': True, 'year': year,
+        'ok': True, 'year': year, 'modo': modo,
         'propuesta': propuesta,
         'advertencias': advertencias,
         'preferencias': prefs,
@@ -2362,6 +2403,9 @@ def sugerir_reparto(year):
             'docentes': len(propuesta),
             'docentes_cuadrados': sum(
                 1 for p in propuesta if p['horas_asignadas'] == p['horas_pedagogicas']),
+            'filas_nuevas': sum(p['filas_nuevas'] for p in propuesta),
+            'horas_nuevas': sum(f['horas'] for p in propuesta
+                                for f in p['filas'] if not f.get('existente')),
         },
     }), 200
 
@@ -2377,6 +2421,7 @@ def aplicar_sugerencia(year):
     if not isinstance(propuesta, list) or not propuesta:
         return jsonify({'error': 'Falta la propuesta'}), 400
 
+    modo = 'rehacer' if d.get('modo') == 'rehacer' else 'completar'
     ids_validos = {x.id for x in CargaDocente.query.filter_by(school_id=sid, year=year).all()}
     creadas, borradas = 0, 0
 
@@ -2384,17 +2429,26 @@ def aplicar_sugerencia(year):
         did = bloque.get('docente_id')
         if did not in ids_validos:
             continue
-        # El horario cuelga de las asignaciones que se reemplazan
-        viejas = CargaAsignacion.query.filter_by(docente_id=did, year=year)\
-            .filter(~CargaAsignacion.tipo.in_(TIPOS_ESTRUCTURALES)).all()
-        for v in viejas:
+
+        # Completar solo libera la disponibilidad, que son horas sin ocupar.
+        # Rehacer borra todas las asignaturas y las vuelve a armar.
+        q = CargaAsignacion.query.filter_by(docente_id=did, year=year)
+        if modo == 'completar':
+            q = q.filter(CargaAsignacion.tipo == 'disponibilidad')
+        else:
+            q = q.filter(~CargaAsignacion.tipo.in_(TIPOS_ESTRUCTURALES))
+        for v in q.all():
+            # El horario cuelga de las asignaciones que se reemplazan
             HorarioCelda.query.filter_by(asignacion_id=v.id)\
                 .delete(synchronize_session=False)
             db.session.delete(v)
             borradas += 1
+        db.session.flush()
 
         base = CargaAsignacion.query.filter_by(docente_id=did, year=year).count()
         for i, f in enumerate(bloque.get('filas') or []):
+            if f.get('existente'):
+                continue          # ya está en la base, no se duplica
             db.session.add(CargaAsignacion(
                 school_id=sid, year=year, docente_id=did,
                 tipo=f.get('tipo', 'asignatura'),
@@ -2405,6 +2459,6 @@ def aplicar_sugerencia(year):
             creadas += 1
 
     db.session.commit()
-    return jsonify({'ok': True, 'year': year, 'filas_creadas': creadas,
-                    'filas_reemplazadas': borradas,
+    return jsonify({'ok': True, 'year': year, 'modo': modo,
+                    'filas_creadas': creadas, 'filas_reemplazadas': borradas,
                     'resumen': _resumen_year(sid, year)}), 200

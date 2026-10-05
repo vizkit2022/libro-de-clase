@@ -57,6 +57,7 @@ export default function CargaAcademicaDashboard() {
   const [promptOpen, setPromptOpen] = useState(false);
   const [instrucciones, setInstrucciones] = useState('');
   const [rotar, setRotar] = useState(true);
+  const [modoSug, setModoSug] = useState('completar');
   const [pensando, setPensando] = useState(false);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
@@ -181,7 +182,7 @@ export default function CargaAcademicaDashboard() {
     setPensando(true);
     try {
       const r = await axios.post(`/api/carga-academica/procesos/${year}/sugerir`,
-        { instrucciones, rotar_niveles: rotar });
+        { instrucciones, rotar_niveles: rotar, modo: modoSug });
       setSugerencia(r.data);
       setPromptOpen(false);
     } catch (e) {
@@ -192,9 +193,11 @@ export default function CargaAcademicaDashboard() {
 
   const aplicarSugerencia = () => accion(async () => {
     await axios.post(`/api/carga-academica/procesos/${year}/aplicar-sugerencia`,
-      { propuesta: sugerencia.propuesta });
+      { propuesta: sugerencia.propuesta, modo: sugerencia.modo });
     setSugerencia(null);
-  }, `¿Aplicar este reparto a ${year}? Reemplaza las asignaturas actuales de cada docente; los cargos como jefatura se conservan.`);
+  }, sugerencia?.modo === 'rehacer'
+    ? `¿Rehacer el reparto de ${year}? Se borran todas las asignaturas actuales y se reemplazan por esta propuesta. Los cargos como jefatura se conservan.`
+    : `¿Agregar estas ${sugerencia?.resumen?.filas_nuevas || 0} filas a ${year}? Lo que ya asignaste no se toca.`);
 
   const publicar = () => accion(async () => {
     const r = await axios.post(`/api/carga-academica/procesos/${year}/publicar`, {});
@@ -883,11 +886,36 @@ export default function CargaAcademicaDashboard() {
             <h2 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 800 }}>
               ✨ Sugerir reparto {year}
             </h2>
-            <p style={{ margin: '0 0 18px', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
-              Reparte la demanda entre los docentes respetando sus jornadas, sin pasar
-              de {cat?.max_disponibilidad || 3} h de disponibilidad y sin dejar un curso
-              con dos profesores. Primero vas a ver la propuesta.
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
+              Respeta las jornadas, no pasa de {cat?.max_disponibilidad || 3} h de
+              disponibilidad y no deja un curso con dos profesores. Primero vas a ver
+              la propuesta.
             </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
+              {[
+                ['completar', 'Completar lo que falta',
+                 'Respeta todo lo que ya asignaste y solo reparte los cursos sin docente. Las horas de disponibilidad sí se pueden ocupar.'],
+                ['rehacer', 'Rehacer todo el reparto',
+                 'Borra las asignaturas actuales y arma la distribución de cero. Los cargos como jefatura se conservan.'],
+              ].map(([k, titulo, desc]) => (
+                <label key={k} style={{ display: 'flex', gap: 10, padding: '10px 12px',
+                  border: `1px solid ${modoSug === k ? primary : '#e2e8f0'}`,
+                  background: modoSug === k ? `${primary}0A` : '#fff',
+                  borderRadius: 10, cursor: 'pointer' }}>
+                  <input type="radio" name="modoSug" checked={modoSug === k}
+                    onChange={() => setModoSug(k)} style={{ marginTop: 3 }} />
+                  <span>
+                    <span style={{ display: 'block', fontSize: 13, fontWeight: 700,
+                      color: k === 'rehacer' ? '#b45309' : '#0f172a' }}>
+                      {titulo}{k === 'completar' ? ' · recomendado' : ''}
+                    </span>
+                    <span style={{ display: 'block', fontSize: 12, color: '#64748b',
+                      lineHeight: 1.45, marginTop: 2 }}>{desc}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
 
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b',
               textTransform: 'uppercase', marginBottom: 6 }}>
@@ -936,6 +964,12 @@ export default function CargaAcademicaDashboard() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, flex: 1 }}>
                   Propuesta de reparto {year}
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px',
+                    borderRadius: 20, marginLeft: 10, verticalAlign: 'middle',
+                    background: sugerencia.modo === 'rehacer' ? '#fef3c7' : '#dcfce7',
+                    color: sugerencia.modo === 'rehacer' ? '#92400e' : '#15803d' }}>
+                    {sugerencia.modo === 'rehacer' ? 'rehace todo' : 'solo completa'}
+                  </span>
                 </h2>
                 <button onClick={() => setSugerencia(null)} style={{ background: 'none',
                   border: 'none', fontSize: 22, cursor: 'pointer', color: '#94a3b8' }}>×</button>
@@ -946,6 +980,7 @@ export default function CargaAcademicaDashboard() {
                     sugerencia.resumen.sin_repartir === 0 ? '#16a34a' : '#dc2626'],
                   ['Docentes cuadrados', `${sugerencia.resumen.docentes_cuadrados} / ${sugerencia.resumen.docentes}`,
                     sugerencia.resumen.docentes_cuadrados === sugerencia.resumen.docentes ? '#16a34a' : '#f59e0b'],
+                  ['Se agregan', `${sugerencia.resumen.filas_nuevas} filas · ${sugerencia.resumen.horas_nuevas} h`, '#2563eb'],
                 ].map(([l, v, c]) => (
                   <div key={l}>
                     <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: '#94a3b8',
@@ -999,13 +1034,25 @@ export default function CargaAcademicaDashboard() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
                       <tbody>
                         {p.filas.map((f, i) => (
-                          <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
-                            <td style={{ padding: '5px 14px', color: '#334155' }}>{f.asignatura}</td>
-                            <td style={{ padding: '5px 10px', color: '#94a3b8', width: 170 }}>
-                              {f.nivel ? `${f.nivel}${f.letras ? ' ' + f.letras.replace(/,/g, ', ') : ''}` : ''}
+                          <tr key={i} style={{ borderTop: '1px solid #f1f5f9',
+                            background: f.existente ? '#fafafa' : '#f0f9ff' }}>
+                            <td style={{ padding: '5px 14px',
+                              color: f.existente ? '#94a3b8' : '#0f172a',
+                              fontWeight: f.existente ? 400 : 600 }}>
+                              {!f.existente && <span style={{ color: '#2563eb', marginRight: 5,
+                                fontWeight: 800 }}>+</span>}
+                              {f.asignatura}
+                            </td>
+                            <td style={{ padding: '5px 10px', width: 170,
+                              color: f.existente ? '#cbd5e1' : '#64748b' }}>
+                              {f.nivel
+                                ? `${f.nivel}${f.letras ? ' ' + f.letras.replace(/,/g, ', ') : ''}`
+                                : (f.letras || '')}
                             </td>
                             <td style={{ padding: '5px 14px', textAlign: 'right', width: 54,
-                              fontWeight: 700 }}>{f.horas} h</td>
+                              fontWeight: 700, color: f.existente ? '#94a3b8' : '#0f172a' }}>
+                              {f.horas} h
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -1022,10 +1069,14 @@ export default function CargaAcademicaDashboard() {
                   borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                   color: '#475569' }}>Ajustar instrucciones</button>
               <button disabled={busy} onClick={aplicarSugerencia} style={{
-                padding: '9px 20px', background: '#16a34a', color: '#fff', border: 'none',
+                padding: '9px 20px',
+                background: sugerencia.modo === 'rehacer' ? '#d97706' : '#16a34a',
+                color: '#fff', border: 'none',
                 borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
                 opacity: busy ? 0.6 : 1 }}>
-                Aplicar a {year}
+                {sugerencia.modo === 'rehacer'
+                  ? `Rehacer ${year}`
+                  : `Agregar ${sugerencia.resumen.filas_nuevas} filas`}
               </button>
             </div>
           </div>
