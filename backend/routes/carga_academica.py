@@ -1080,7 +1080,7 @@ def iniciar_proceso():
             .delete(synchronize_session=False)
         db.session.commit()
 
-    creados = {'docentes': 0, 'demanda': 0, 'asignaciones': 0}
+    creados = {'docentes': 0, 'demanda': 0, 'asignaciones': 0, 'cursos': 0}
 
     if not origen:
         # Proceso en blanco: no hay nada que copiar
@@ -1132,6 +1132,16 @@ def iniciar_proceso():
             creados['asignaciones'] += 1
 
     db.session.commit()
+
+    # Los cursos van por año: sin crearlos, el año nuevo arranca sin ninguno y
+    # después no hay dónde publicar las horas
+    _, faltan = _cursos_de_la_demanda(sid, destino)
+    for c in faltan:
+        db.session.add(Course(school_id=sid, name=c['nombre'], level=c['nivel'],
+                              letter=c['letra'], year=destino, is_active=True))
+    creados['cursos'] = len(faltan)
+    db.session.commit()
+
     return jsonify({'ok': True, 'year': destino, 'year_origen': origen,
                     'creados': creados, 'resumen': _resumen_year(sid, destino)}), 201
 
@@ -1407,8 +1417,12 @@ def publicar_proceso(year):
         return jsonify({'error': f'No hay docentes en el proceso {year}'}), 404
 
     cursos = Course.query.filter_by(school_id=sid, year=year).all()
+    uso_otro_año = False
     if not cursos:
+        # Mejor publicar en los cursos de otro año que no publicar, pero hay
+        # que decirlo: lo correcto es crear los del año
         cursos = Course.query.filter_by(school_id=sid).all()
+        uso_otro_año = bool(cursos)
     por_nombre = {c.name: c for c in cursos}
     por_nivel_letra = {(c.level, c.letter): c for c in cursos if c.level and c.letter}
 
@@ -1468,6 +1482,10 @@ def publicar_proceso(year):
     db.session.commit()
     resultado['cursos_no_encontrados'] = sorted(set(resultado['cursos_no_encontrados']))
     resultado['total_publicadas'] = len(publicadas)
+    if uso_otro_año:
+        resultado['aviso'] = (f'No hay cursos creados para {year}: se publicó sobre los '
+                              f'cursos de otros años. Creá los cursos del año desde la '
+                              f'pestaña Demanda.')
     return jsonify({'ok': True, 'year': year, **resultado}), 200
 
 
@@ -2462,3 +2480,65 @@ def aplicar_sugerencia(year):
     return jsonify({'ok': True, 'year': year, 'modo': modo,
                     'filas_creadas': creadas, 'filas_reemplazadas': borradas,
                     'resumen': _resumen_year(sid, year)}), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  CURSOS DERIVADOS DE LA DEMANDA
+#  La demanda ya dice qué cursos existen: "I Medio · A,B,C" son tres.
+#  Sin el curso creado, publicar al libro de clases no encuentra dónde
+#  colgar las horas.
+# ══════════════════════════════════════════════════════════════════════
+
+def _cursos_de_la_demanda(sid, year):
+    """(nivel, letra) que la demanda da por existentes, y cuáles faltan."""
+    demanda = CargaDemanda.query.filter_by(school_id=sid, year=year).all()
+    implicados = {}
+    for d in demanda:
+        if d.por_letra:
+            for L in [x.strip() for x in (d.letras or '').split(',') if x.strip()]:
+                implicados.setdefault((d.nivel, L), []).append(d.nombre())
+        else:
+            # Un electivo de nivel se cuelga del primer curso al publicar
+            implicados.setdefault((d.nivel, 'A'), []).append(d.nombre())
+
+    existentes = Course.query.filter_by(school_id=sid, year=year).all()
+    por_clave = {(c.level, c.letter) for c in existentes if c.level and c.letter}
+    por_nombre = {c.name for c in existentes}
+
+    faltan = []
+    for (nivel, letra), asignaturas in sorted(implicados.items()):
+        nombre = f'{nivel} {letra}'
+        if (nivel, letra) in por_clave or nombre in por_nombre:
+            continue
+        faltan.append({'nivel': nivel, 'letra': letra, 'nombre': nombre,
+                       'asignaturas': sorted(set(asignaturas))})
+    return implicados, faltan
+
+
+@carga_bp.route('/cursos-demanda', methods=['GET'])
+@jwt_required()
+@school_required
+def cursos_demanda():
+    sid, year = _sid(), _year()
+    implicados, faltan = _cursos_de_la_demanda(sid, year)
+    return jsonify({
+        'year': year,
+        'implicados': len(implicados),
+        'existentes': len(implicados) - len(faltan),
+        'faltan': faltan,
+    }), 200
+
+
+@carga_bp.route('/cursos-demanda', methods=['POST'])
+@jwt_required()
+@school_required
+def crear_cursos_demanda():
+    """Crea los cursos que la demanda da por existentes y todavía no están."""
+    sid, year = _sid(), _year()
+    _, faltan = _cursos_de_la_demanda(sid, year)
+    for c in faltan:
+        db.session.add(Course(school_id=sid, name=c['nombre'], level=c['nivel'],
+                              letter=c['letra'], year=year, is_active=True))
+    db.session.commit()
+    return jsonify({'ok': True, 'year': year, 'creados': len(faltan),
+                    'cursos': [c['nombre'] for c in faltan]}), 201

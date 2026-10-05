@@ -52,6 +52,7 @@ export default function CargaAcademicaDashboard() {
   const [cat, setCat] = useState(null);
   const [asignaturas, setAsignaturas] = useState([]);
   const [cobertura, setCobertura] = useState([]);
+  const [cursosDem, setCursosDem] = useState(null);   // cursos que pide la demanda
   const [abiertas, setAbiertas] = useState({});   // acordeón: asignatura y nivel
   const [sugerencia, setSugerencia] = useState(null);   // propuesta a revisar
   const [promptOpen, setPromptOpen] = useState(false);
@@ -97,6 +98,10 @@ export default function CargaAcademicaDashboard() {
         const cob = await axios.get(`/api/carga-academica/demanda/cobertura?year=${year}`);
         setCobertura(Array.isArray(cob.data) ? cob.data : []);
       } catch { setCobertura([]); }
+      try {
+        const cd = await axios.get(`/api/carga-academica/cursos-demanda?year=${year}`);
+        setCursosDem(cd.data);
+      } catch { setCursosDem(null); }
     } catch {
       // Año sin datos o error de red: se parte de cero, nunca con lo anterior
       setData(null); setDemanda([]);
@@ -253,6 +258,11 @@ export default function CargaAcademicaDashboard() {
     }
     await patchDemanda(filaId, { subject_id: valor ? Number(valor) : null });
   };
+
+  const crearCursosFaltantes = () => accion(async () => {
+    const r = await axios.post(`/api/carga-academica/cursos-demanda?year=${year}`);
+    alert(`Se crearon ${r.data.creados} cursos:\n${r.data.cursos.join(', ')}`);
+  }, `¿Crear los ${cursosDem?.faltan?.length || 0} cursos que la demanda da por existentes?`);
 
   const addDemanda = async () => {
     await axios.post('/api/carga-academica/demanda', {
@@ -799,6 +809,33 @@ export default function CargaAcademicaDashboard() {
                   border: 'none', padding: '5px 12px', borderRadius: 6, fontSize: 12,
                   cursor: 'pointer', fontWeight: 700 }}>+ Fila</button>
               </div>
+              {cursosDem && cursosDem.faltan.length > 0 && (
+                <div style={{ margin: '12px 18px', background: '#fffbeb',
+                  border: '1px solid #fde68a', borderRadius: 10, padding: '12px 16px',
+                  display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 280 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#92400e', margin: 0 }}>
+                      Faltan {cursosDem.faltan.length} cursos que esta demanda da por existentes
+                    </p>
+                    <p style={{ fontSize: 12, color: '#92400e', margin: '3px 0 0',
+                      lineHeight: 1.5 }}>
+                      {cursosDem.faltan.map(c => c.nombre).join(', ')}.
+                      {' '}Sin ellos, publicar al libro de clases no encuentra dónde colgar las horas.
+                    </p>
+                  </div>
+                  <button disabled={busy} onClick={crearCursosFaltantes} style={{
+                    padding: '8px 16px', background: '#d97706', color: '#fff', border: 'none',
+                    borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                    whiteSpace: 'nowrap', opacity: busy ? 0.6 : 1 }}>
+                    Crear los cursos
+                  </button>
+                </div>
+              )}
+              {cursosDem && cursosDem.faltan.length === 0 && cursosDem.implicados > 0 && (
+                <p style={{ margin: '10px 18px 0', fontSize: 12, color: '#15803d' }}>
+                  ✓ Los {cursosDem.implicados} cursos de esta demanda ya existen.
+                </p>
+              )}
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
