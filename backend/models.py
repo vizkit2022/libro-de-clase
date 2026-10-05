@@ -14,7 +14,7 @@ class School(db.Model):
     email = db.Column(db.String(100))
     website = db.Column(db.String(200))
     rector = db.Column(db.String(200))
-    logo_url = db.Column(db.String(500))
+    logo_url = db.Column(db.Text)   # data URL base64: no cabe en VARCHAR
     primary_color = db.Column(db.String(7), default='#2563EB')
     secondary_color = db.Column(db.String(7), default='#1E40AF')
     accent_color = db.Column(db.String(7), default='#3B82F6')

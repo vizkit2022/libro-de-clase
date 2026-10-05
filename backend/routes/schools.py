@@ -61,7 +61,8 @@ def update_school(school_id):
 @jwt_required()
 def upload_logo(school_id):
     claims = get_jwt()
-    if claims.get('role') not in ['admin', 'directivo']:
+    # El super_admin también administra colegios desde su panel
+    if claims.get('role') not in ['admin', 'directivo', 'super_admin']:
         return jsonify({'error': 'Sin permisos'}), 403
     school = School.query.get_or_404(school_id)
 
@@ -69,9 +70,21 @@ def upload_logo(school_id):
     if not file:
         return jsonify({'error': 'No se envió ningún archivo'}), 400
 
-    # Leer y convertir a data URL (base64) para almacenar sin sistema de archivos
+    raw = file.read()
+    if not raw:
+        return jsonify({'error': 'El archivo está vacío'}), 400
+
+    MAX_BYTES = 2 * 1024 * 1024
+    if len(raw) > MAX_BYTES:
+        return jsonify({'error': f'El logo pesa {len(raw) // 1024} KB. '
+                                 f'El máximo es {MAX_BYTES // 1024} KB.'}), 400
+
     mime = file.content_type or 'image/png'
-    data = base64.b64encode(file.read()).decode('utf-8')
+    if not mime.startswith('image/'):
+        return jsonify({'error': f'El archivo debe ser una imagen (llegó {mime})'}), 400
+
+    # Se guarda como data URL para no depender del sistema de archivos
+    data = base64.b64encode(raw).decode('utf-8')
     logo_url = f"data:{mime};base64,{data}"
 
     school.logo_url = logo_url

@@ -805,11 +805,22 @@ def iniciar_proceso():
 
     existente = _resumen_year(sid, destino)
     if existente['docentes'] or existente['filas_demanda']:
-        return jsonify({
-            'error': f'El año {destino} ya tiene datos. Usa "reiniciar distribución" '
-                     f'o elimina el proceso antes de volver a abrirlo.',
-            'resumen': existente,
-        }), 409
+        if not bool(d.get('reemplazar', False)):
+            return jsonify({
+                'error': f'El año {destino} ya tiene datos.',
+                'sugerencia': 'Volvé a enviarlo con reemplazar=true para rehacerlo, '
+                              'o usá "reiniciar distribución" si querés conservar '
+                              'docentes y demanda.',
+                'resumen': existente,
+            }), 409
+        # Rehacer: se borra el año destino antes de reconstruirlo
+        CargaAsignacion.query.filter_by(school_id=sid, year=destino)\
+            .delete(synchronize_session=False)
+        CargaDocente.query.filter_by(school_id=sid, year=destino)\
+            .delete(synchronize_session=False)
+        CargaDemanda.query.filter_by(school_id=sid, year=destino)\
+            .delete(synchronize_session=False)
+        db.session.commit()
 
     creados = {'docentes': 0, 'demanda': 0, 'asignaciones': 0}
 
@@ -884,7 +895,16 @@ def mover_proceso():
 
     destino = _resumen_year(sid, hasta)
     if destino['docentes'] or destino['filas_demanda']:
-        return jsonify({'error': f'El año {hasta} ya tiene datos; no se puede sobrescribir.'}), 409
+        if not bool(d.get('reemplazar', False)):
+            return jsonify({
+                'error': f'El año {hasta} ya tiene datos; no se puede sobrescribir.',
+                'sugerencia': 'Enviá reemplazar=true para borrar el año destino primero.',
+                'resumen': destino,
+            }), 409
+        for Model in (CargaAsignacion, CargaDocente, CargaDemanda):
+            Model.query.filter_by(school_id=sid, year=hasta)\
+                .delete(synchronize_session=False)
+        db.session.commit()
 
     movidos = {}
     for Model, key in ((CargaDemanda, 'demanda'), (CargaDocente, 'docentes'),
@@ -903,6 +923,9 @@ def reiniciar_distribucion(year):
     """Borra la distribución del año conservando docentes y demanda,
     para repartir las horas desde cero."""
     sid = _sid()
+    # El horario cuelga de las asignaciones: si se borran, queda huérfano
+    HorarioCelda.query.filter_by(school_id=sid, year=year)\
+        .delete(synchronize_session=False)
     borradas = CargaAsignacion.query.filter_by(school_id=sid, year=year)\
         .delete(synchronize_session=False)
     db.session.commit()
@@ -963,6 +986,8 @@ def delete_proceso(year):
     borrados['docentes'] = CargaDocente.query.filter_by(school_id=sid, year=year)\
         .delete(synchronize_session=False)
     borrados['demanda'] = CargaDemanda.query.filter_by(school_id=sid, year=year)\
+        .delete(synchronize_session=False)
+    borrados['horario'] = HorarioCelda.query.filter_by(school_id=sid, year=year)\
         .delete(synchronize_session=False)
     db.session.commit()
     return jsonify({'ok': True, 'year': year, 'borrados': borrados}), 200

@@ -195,6 +195,16 @@ def run_migrations():
             except Exception:
                 conn.rollback()
 
+        # 4b. schools.logo_url a TEXT: el logo se guarda como data URL base64
+        #     y no cabe en el VARCHAR(500) original
+        if is_postgres:
+            try:
+                conn.execute(text("ALTER TABLE schools ALTER COLUMN logo_url TYPE TEXT"))
+                conn.commit()
+                print("✅ Migración: schools.logo_url ahora es TEXT")
+            except Exception:
+                conn.rollback()
+
         # 5. Agregar letra a carga_horario_celdas
         try:
             conn.execute(text("ALTER TABLE carga_horario_celdas ADD COLUMN letra VARCHAR(5)"))

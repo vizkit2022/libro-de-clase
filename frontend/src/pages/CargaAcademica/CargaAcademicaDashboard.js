@@ -106,16 +106,31 @@ export default function CargaAcademicaDashboard() {
     setBusy(false);
   };
 
-  const iniciarProceso = (destino, origen, copiarDist) => accion(async () => {
+  const iniciarProceso = (destino, origen, copiarDist, reemplazar = false) => accion(async () => {
     await axios.post('/api/carga-academica/procesos/iniciar', {
-      year_origen: origen, year_destino: destino, copiar_distribucion: copiarDist,
+      year_origen: origen, year_destino: destino,
+      copiar_distribucion: copiarDist, reemplazar,
     });
     setYear(destino);
   });
 
-  const moverAnio = (desde, hasta) => accion(
-    async () => { await axios.post('/api/carga-academica/procesos/mover', { desde, hasta }); setYear(hasta); },
-    `¿Mover todo el proceso ${desde} al año ${hasta}?`);
+  const moverAnio = (desde, hasta) => accion(async () => {
+    const ocupado = procesos.some(p => p.year === hasta);
+    if (ocupado && !window.confirm(
+      `El año ${hasta} ya tiene datos y se van a borrar para recibir el proceso ${desde}. ¿Seguir?`)) return;
+    if (!ocupado && !window.confirm(`¿Mover todo el proceso ${desde} al año ${hasta}?`)) return;
+    await axios.post('/api/carga-academica/procesos/mover',
+      { desde, hasta, reemplazar: ocupado });
+    setYear(hasta);
+  });
+
+  // Abrir un año cualquiera, exista o no en la lista
+  const abrirOtroAnio = () => {
+    const v = window.prompt('¿Qué año querés abrir?', String(sugerido));
+    const n = Number(v);
+    if (!n || n < 2000 || n > 2100) return;
+    setYear(n); setData(null); setShowProceso(false);
+  };
 
   const reiniciarDist = () => accion(
     () => axios.post(`/api/carga-academica/procesos/${year}/reiniciar-distribucion`),
@@ -192,6 +207,10 @@ export default function CargaAcademicaDashboard() {
   const procActivo = procesos.find(p => p.year === year);
   const otrosAnios = procesos.filter(p => p.year !== year && p.filas_asignacion > 0).map(p => p.year);
   const anioBase = procesos.filter(p => p.year < year).map(p => p.year).sort((a, b) => b - a)[0];
+  const seccProc = {
+    fontSize: 11, fontWeight: 700, color: '#64748b', margin: '0 0 6px',
+    textTransform: 'uppercase', letterSpacing: '0.04em',
+  };
   const btnProc = {
     padding: '6px 13px', borderRadius: 8, fontSize: 12.5, cursor: busy ? 'default' : 'pointer',
     border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontWeight: 600,
@@ -270,44 +289,106 @@ export default function CargaAcademicaDashboard() {
             border: `1px dashed ${primary}`, background: '#fff', color: primary,
             fontSize: 13, fontWeight: 700 }}>+ Abrir {sugerido}</button>
         )}
+        <button onClick={abrirOtroAnio} title="Abrir cualquier otro año" style={{
+          padding: '7px 12px', borderRadius: 10, cursor: 'pointer',
+          border: '1px dashed #cbd5e1', background: '#fff', color: '#64748b',
+          fontSize: 13, fontWeight: 600 }}>+ Otro año…</button>
       </div>
+
+      {/* Aviso: el año está completo igual que el anterior, probablemente por un
+          seed repetido. Ofrece vaciarlo para armarlo de verdad. */}
+      {!showProceso && procActivo?.cerrado && anioBase && (
+        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10,
+          padding: '12px 16px', marginBottom: 18, display: 'flex', alignItems: 'center',
+          gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#1e3a8a', margin: 0 }}>
+              El proceso {year} ya viene repartido al 100%
+            </p>
+            <p style={{ fontSize: 12, color: '#1d4ed8', margin: '3px 0 0' }}>
+              Si querés armar {year} de cero manteniendo docentes, jornadas y demanda,
+              vaciá el reparto. El histórico de {anioBase} no se toca.
+            </p>
+          </div>
+          <button disabled={busy} onClick={reiniciarDist} style={{
+            padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none',
+            borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            opacity: busy ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+            ↺ Vaciar reparto de {year}
+          </button>
+        </div>
+      )}
 
       {/* Panel de gestión del proceso */}
       {showProceso && (
         <div className="card" style={{ marginBottom: 18, background: '#f8fafc' }}>
-          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', margin: '0 0 12px',
+          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', margin: '0 0 4px',
             textTransform: 'uppercase', letterSpacing: '0.06em' }}>Proceso {year}</h3>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {otrosAnios.map(o => (
-              <button key={`cp${o}`} disabled={busy || !!data?.detalle_demanda?.length === false}
-                onClick={() => copiarDist(o)} style={btnProc}>
-                ⬇ Traer distribución de {o}
+          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 14px' }}>
+            {procActivo
+              ? `${procActivo.docentes} docentes · ${procActivo.total_asignado} de ${procActivo.total_demanda} h repartidas`
+              : 'Este año todavía no existe.'}
+          </p>
+
+          {/* Empezar de nuevo */}
+          <p style={seccProc}>Empezar de nuevo</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+            <button disabled={busy || !procActivo} onClick={reiniciarDist}
+              style={{ ...btnProc, borderColor: '#bfdbfe', background: '#eff6ff',
+                color: '#1d4ed8', fontWeight: 700 }}
+              title="Conserva docentes, jornadas y demanda. Solo borra el reparto.">
+              ↺ Vaciar el reparto de {year} y partir de cero
+            </button>
+            {anioBase && (
+              <button disabled={busy} onClick={() => iniciarProceso(year, anioBase, false, true)}
+                style={btnProc}
+                title={`Borra ${year} y lo reconstruye con los docentes y la demanda de ${anioBase}`}>
+                ⟳ Rehacer {year} desde {anioBase}
               </button>
-            ))}
-            <button disabled={busy} onClick={publicar} style={{ ...btnProc,
-              background: r.cobertura_pct >= 100 ? '#dcfce7' : '#fff',
-              borderColor: r.cobertura_pct >= 100 ? '#86efac' : '#e2e8f0',
-              color: r.cobertura_pct >= 100 ? '#15803d' : '#475569', fontWeight: 700 }}
-              title="Vuelca el reparto a CourseSubject, de donde cuelgan Calificaciones y el libro">
-              📤 Publicar {year} al libro de clases
-            </button>
-            <button disabled={busy} onClick={reiniciarDist} style={btnProc}>
-              ↺ Reiniciar distribución {year}
-            </button>
-            {[year - 1, year + 1].map(h => (
-              <button key={`mv${h}`} disabled={busy || procesos.some(p => p.year === h)}
-                onClick={() => moverAnio(year, h)} style={btnProc}
-                title={procesos.some(p => p.year === h) ? `${h} ya tiene datos` : ''}>
-                ↔ Mover este proceso a {h}
-              </button>
-            ))}
-            <button disabled={busy} onClick={() => accion(
-              () => axios.delete(`/api/carga-academica/procesos/${year}`).then(() => setYear(null)),
-              `¿Eliminar por completo el proceso ${year}? Esto borra docentes, demanda y distribución.`
-            )} style={{ ...btnProc, color: '#dc2626', borderColor: '#fecaca', background: '#fef2f2' }}>
-              🗑 Eliminar proceso {year}
-            </button>
+            )}
           </div>
+
+          {/* Traer de otro año */}
+          {otrosAnios.length > 0 && (
+            <>
+              <p style={seccProc}>Traer el reparto de otro año</p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                {otrosAnios.map(o => (
+                  <button key={`cp${o}`} disabled={busy || !procActivo}
+                    onClick={() => copiarDist(o)} style={btnProc}
+                    title={!procActivo ? 'Primero abrí el año' : `Copia la distribución de ${o}`}>
+                    ⬇ Traer distribución de {o}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Reetiquetar */}
+          <p style={seccProc}>Cambiar de año</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+            {[year - 1, year + 1].map(h => {
+              const ocupado = procesos.some(p => p.year === h);
+              return (
+                <button key={`mv${h}`} disabled={busy || !procActivo}
+                  onClick={() => moverAnio(year, h)} style={btnProc}
+                  title={ocupado
+                    ? `${h} ya tiene datos: se borrarán para recibir este proceso`
+                    : `Reetiqueta el proceso ${year} como ${h}`}>
+                  ↔ Mover a {h}{ocupado ? ' (reemplaza)' : ''}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Destructivo */}
+          <p style={seccProc}>Eliminar</p>
+          <button disabled={busy || !procActivo} onClick={() => accion(
+            () => axios.delete(`/api/carga-academica/procesos/${year}`).then(() => setYear(null)),
+            `¿Eliminar por completo el proceso ${year}? Borra docentes, demanda, reparto y horarios.`
+          )} style={{ ...btnProc, color: '#dc2626', borderColor: '#fecaca', background: '#fef2f2' }}>
+            🗑 Eliminar proceso {year}
+          </button>
         </div>
       )}
 
