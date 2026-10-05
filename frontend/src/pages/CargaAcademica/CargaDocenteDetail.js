@@ -189,6 +189,21 @@ export default function CargaDocenteDetail() {
     fetchAll();
   };
 
+  // Estado de reparto de una asignatura: sirve para teñir el botón ⓘ
+  const estadoCobertura = (demandaId) => {
+    const c = cobertura.find(x => x.id === demandaId);
+    if (!c || !Array.isArray(c.asignados)) return null;
+    const conflicto = (c.letras_en_conflicto || []).length > 0;
+    const excedida = c.horas_faltantes < 0;
+    return {
+      ...c,
+      conflicto,
+      excedida,
+      grave: conflicto || excedida,
+      incompleta: c.horas_faltantes > 0,
+    };
+  };
+
   // ── Horario ───────────────────────────────────────────────────────
   const fetchHorario = useCallback(async () => {
     const r = await axios.get(`/api/carga-academica/docentes/${id}/horario`);
@@ -591,80 +606,34 @@ export default function CargaDocenteDetail() {
                         x => x.id === a.id ? { ...x, horas: e.target.value } : x) })} />
                   </td>
                   <td style={{ padding: '5px 4px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                    {a.demanda_id && (
-                      <button
-                        title="Ver quién más tiene esta asignatura"
-                        onClick={() => setDetalleAbierto(detalleAbierto === a.id ? null : a.id)}
-                        style={{ background: detalleAbierto === a.id ? '#dbeafe' : '#f1f5f9',
-                          border: 'none', borderRadius: 5, cursor: 'pointer',
-                          color: '#475569', fontSize: 11, padding: '4px 7px', marginRight: 4 }}>
-                        ⓘ
-                      </button>
-                    )}
+                    {a.demanda_id && (() => {
+                      const est = estadoCobertura(a.demanda_id);
+                      const grave = est?.grave;
+                      const falta = est?.incompleta;
+                      return (
+                        <button
+                          title={grave
+                            ? (est.conflicto
+                              ? `Dos docentes en ${est.letras_en_conflicto.join(', ')}`
+                              : `Excedida en ${-est.horas_faltantes} h`)
+                            : falta ? `Faltan ${est.horas_faltantes} h por repartir`
+                            : 'Ver quién tiene esta asignatura'}
+                          onClick={() => setDetalleAbierto(a.id)}
+                          style={{
+                            background: grave ? '#dc2626' : falta ? '#fef3c7' : '#f1f5f9',
+                            border: grave ? 'none' : `1px solid ${falta ? '#fcd34d' : '#e2e8f0'}`,
+                            borderRadius: 5, cursor: 'pointer',
+                            color: grave ? '#fff' : falta ? '#92400e' : '#475569',
+                            fontSize: 11, fontWeight: 700,
+                            padding: '4px 7px', marginRight: 4,
+                          }}>
+                          {grave ? '⚠' : 'ⓘ'}
+                        </button>
+                      );
+                    })()}
                     <button onClick={() => delFila(a.id)} style={{ background: '#fee2e2', border: 'none',
                       borderRadius: 5, cursor: 'pointer', color: '#dc2626', fontSize: 11,
                       padding: '4px 7px' }}>✕</button>
-                  </td>
-                </tr>
-              );
-            })}
-            {/* Detalle: reparto de la asignatura entre todos los docentes */}
-            {(doc.asignaciones || []).filter(a => a.id === detalleAbierto).map(a => {
-              const c = cobertura.find(y => y.id === a.demanda_id);
-              if (!c) return null;
-              if (!Array.isArray(c.asignados)) return null;
-              const color = c.estado === 'completa' ? '#16a34a'
-                : c.estado === 'sobreasignada' ? '#dc2626' : '#f59e0b';
-              return (
-                <tr key={`det${a.id}`}>
-                  <td colSpan={4} style={{ padding: '10px 14px', background: '#f8fafc',
-                    borderTop: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10,
-                      marginBottom: 8, flexWrap: 'wrap' }}>
-                      <b style={{ fontSize: 13, color: '#0f172a' }}>
-                        {c.asignatura} · {c.nivel}
-                      </b>
-                      <span style={{ fontSize: 12, fontWeight: 700, color }}>
-                        {c.horas_asignadas} de {c.horas_totales} h
-                        {c.horas_faltantes > 0 ? ` · faltan ${c.horas_faltantes}`
-                          : c.horas_faltantes < 0 ? ` · excedida en ${-c.horas_faltantes}`
-                          : ' · completa'}
-                      </span>
-                      {c.por_letra && (c.letras_libres || []).length > 0 && (
-                        <span style={{ fontSize: 12, color: '#16a34a' }}>
-                          libres: {(c.letras_libres || []).join(', ')}
-                        </span>
-                      )}
-                      {(c.letras_en_conflicto || []).length > 0 && (
-                        <span style={{ fontSize: 12, color: '#dc2626', fontWeight: 700 }}>
-                          ⚠ dos docentes en {(c.letras_en_conflicto || []).join(', ')}
-                        </span>
-                      )}
-                    </div>
-                    {c.asignados.length === 0 ? (
-                      <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>
-                        Todavía no la tiene nadie.
-                      </p>
-                    ) : (
-                      <table style={{ borderCollapse: 'collapse', fontSize: 12 }}>
-                        <tbody>
-                          {c.asignados.map(x => (
-                            <tr key={x.asignacion_id}
-                              style={{ fontWeight: x.docente_id === doc.id ? 700 : 400 }}>
-                              <td style={{ padding: '2px 14px 2px 0', color: '#334155' }}>
-                                {x.docente}{x.docente_id === doc.id ? ' (este docente)' : ''}
-                              </td>
-                              <td style={{ padding: '2px 14px 2px 0', color: '#64748b' }}>
-                                {x.letras ? `${c.nivel} ${x.letras.replace(/,/g, ', ')}` : 'grupo único'}
-                              </td>
-                              <td style={{ padding: '2px 0', fontWeight: 700, color: '#0f172a' }}>
-                                {x.horas} h
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
                   </td>
                 </tr>
               );
@@ -955,6 +924,173 @@ export default function CargaDocenteDetail() {
           </div>
         ) : <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div className="spinner" /></div>
       )}
+
+      {/* Modal: reparto de una asignatura entre todos los docentes */}
+      {detalleAbierto && (() => {
+        const fila = (doc.asignaciones || []).find(a => a.id === detalleAbierto);
+        const c = fila && estadoCobertura(fila.demanda_id);
+        if (!c) return null;
+        const color = c.grave ? '#dc2626' : c.incompleta ? '#d97706' : '#16a34a';
+        const fondo = c.grave ? '#fef2f2' : c.incompleta ? '#fffbeb' : '#f0fdf4';
+        return (
+          <div onClick={() => setDetalleAbierto(null)} style={{
+            position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 2000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: '#fff', borderRadius: 16, width: 560, maxWidth: '95vw',
+              maxHeight: '85vh', overflow: 'auto',
+              boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
+
+              {/* Cabecera con el veredicto */}
+              <div style={{ background: fondo, padding: '18px 22px',
+                borderBottom: `1px solid ${color}33`, borderRadius: '16px 16px 0 0' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <span style={{ fontSize: 22, lineHeight: 1 }}>
+                    {c.grave ? '⚠️' : c.incompleta ? '⏳' : '✅'}
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0f172a' }}>
+                      {c.asignatura}
+                    </h2>
+                    <p style={{ margin: '2px 0 0', fontSize: 13, color: '#64748b' }}>{c.nivel}</p>
+                  </div>
+                  <button onClick={() => setDetalleAbierto(null)} style={{
+                    background: 'none', border: 'none', fontSize: 20, cursor: 'pointer',
+                    color: '#94a3b8', lineHeight: 1 }}>×</button>
+                </div>
+
+                <p style={{ margin: '12px 0 0', fontSize: 14, fontWeight: 700, color }}>
+                  {c.horas_asignadas} de {c.horas_totales} h repartidas
+                  {c.horas_faltantes > 0 ? ` · faltan ${c.horas_faltantes} h`
+                    : c.horas_faltantes < 0 ? ` · excedida en ${-c.horas_faltantes} h`
+                    : ' · completa'}
+                </p>
+
+                {c.conflicto && (
+                  <p style={{ margin: '8px 0 0', fontSize: 13, color: '#991b1b',
+                    background: '#fee2e2', padding: '8px 12px', borderRadius: 8 }}>
+                    Hay <b>dos docentes</b> en {c.nivel}{' '}
+                    <b>{c.letras_en_conflicto.join(', ')}</b>. Sacá el curso a uno de los dos.
+                  </p>
+                )}
+                {!c.conflicto && c.excedida && (
+                  <p style={{ margin: '8px 0 0', fontSize: 13, color: '#991b1b',
+                    background: '#fee2e2', padding: '8px 12px', borderRadius: 8 }}>
+                    Se repartieron más horas de las que pide el plan.
+                    Revisá las horas de cada docente más abajo.
+                  </p>
+                )}
+                {c.por_letra && (c.letras_libres || []).length > 0 && (
+                  <p style={{ margin: '8px 0 0', fontSize: 13, color: '#15803d',
+                    background: '#dcfce7', padding: '8px 12px', borderRadius: 8 }}>
+                    Sin docente todavía: {c.nivel}{' '}
+                    <b>{c.letras_libres.join(', ')}</b>
+                  </p>
+                )}
+              </div>
+
+              {/* Reparto actual */}
+              <div style={{ padding: '18px 22px' }}>
+                <p style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8',
+                  textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 0 10px' }}>
+                  Quién la tiene
+                </p>
+                {c.asignados.length === 0 ? (
+                  <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
+                    Todavía no la tiene nadie.
+                  </p>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <tbody>
+                      {c.asignados.map(x => {
+                        const suyo = x.docente_id === doc.id;
+                        const letras = (x.letras || '').split(',').filter(Boolean);
+                        const choca = letras.some(L => (c.letras_en_conflicto || []).includes(L));
+                        return (
+                          <tr key={x.asignacion_id} style={{ borderTop: '1px solid #f1f5f9',
+                            background: suyo ? '#eff6ff' : 'transparent' }}>
+                            <td style={{ padding: '8px 10px', fontWeight: suyo ? 700 : 500,
+                              color: '#0f172a' }}>
+                              {x.docente}
+                              {suyo && <span style={{ fontSize: 11, color: primary,
+                                fontWeight: 700, marginLeft: 6 }}>este docente</span>}
+                            </td>
+                            <td style={{ padding: '8px 10px', color: choca ? '#dc2626' : '#64748b',
+                              fontWeight: choca ? 700 : 400 }}>
+                              {x.letras ? `${c.nivel} ${x.letras.replace(/,/g, ', ')}` : 'grupo único'}
+                              {choca && ' ⚠'}
+                            </td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right',
+                              fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                              {x.horas} h
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      <tr style={{ borderTop: '2px solid #e2e8f0', background: '#f8fafc' }}>
+                        <td colSpan={2} style={{ padding: '8px 10px', fontWeight: 800 }}>
+                          Total repartido
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right',
+                          fontWeight: 900, color }}>
+                          {c.horas_asignadas} h
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colSpan={2} style={{ padding: '6px 10px', color: '#64748b' }}>
+                          Lo que pide el plan
+                        </td>
+                        <td style={{ padding: '6px 10px', textAlign: 'right',
+                          fontWeight: 700, color: '#64748b' }}>
+                          {c.horas_totales} h
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                )}
+
+                {c.por_letra && (
+                  <>
+                    <p style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8',
+                      textTransform: 'uppercase', letterSpacing: '.06em',
+                      margin: '20px 0 10px' }}>
+                      Curso por curso
+                    </p>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {(c.letras_demanda || []).map(L => {
+                        const quienes = (c.por_letra_detalle || {})[L] || [];
+                        const col = quienes.length > 1 ? '#dc2626'
+                          : quienes.length === 1 ? '#16a34a' : '#94a3b8';
+                        return (
+                          <div key={L} style={{ border: `1px solid ${col}44`,
+                            background: `${col}0D`, borderRadius: 8, padding: '8px 12px',
+                            minWidth: 120 }}>
+                            <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: '#0f172a' }}>
+                              {c.nivel} {L}
+                            </p>
+                            <p style={{ margin: '3px 0 0', fontSize: 11, color: col,
+                              fontWeight: 600, lineHeight: 1.35 }}>
+                              {quienes.length === 0 ? 'sin docente'
+                                : quienes.map(q => q.docente).join(' + ')}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div style={{ padding: '0 22px 20px', textAlign: 'right' }}>
+                <button onClick={() => setDetalleAbierto(null)} style={{
+                  padding: '8px 20px', background: '#f1f5f9', border: 'none',
+                  borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  color: '#475569' }}>Cerrar</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, right: 24,

@@ -7,7 +7,7 @@
  * renderizar, dejando la pantalla en blanco.
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 
@@ -185,6 +185,46 @@ describe('Carga Académica monta sin lanzar', () => {
       '/carga-academica/docentes/:id');
 
     expect(await screen.findByText('Daniela Villanueva')).toBeTruthy();
+    expect(errores.filter(e => /not defined|is not a function|Cannot read/.test(e))).toEqual([]);
+  });
+
+  test('el botón se pone en alerta y el modal nombra el conflicto', async () => {
+    // Dos docentes en los mismos cursos y 6 h de más
+    const chocada = {
+      ...COBERTURA[0],
+      horas_asignadas: 15, horas_faltantes: -6, estado: 'sobreasignada',
+      asignados: [
+        ...COBERTURA[0].asignados,
+        { asignacion_id: 9, docente_id: 11, docente: 'Dominique Solar',
+          letras: 'A,B', horas: 6 },
+      ],
+      por_letra_detalle: {
+        A: [{ docente_id: 8, docente: 'Daniela Villanueva', horas: 3 },
+             { docente_id: 11, docente: 'Dominique Solar', horas: 3 }],
+        B: [{ docente_id: 9, docente: 'Daniela Carreño', horas: 3 },
+             { docente_id: 11, docente: 'Dominique Solar', horas: 3 }],
+        C: [{ docente_id: 8, docente: 'Daniela Villanueva', horas: 3 }],
+      },
+      letras_libres: [], letras_en_conflicto: ['A', 'B'],
+    };
+    axios.get.mockImplementation(url => Promise.resolve({
+      data: url.includes('/demanda/cobertura') ? [chocada] : responder(url),
+    }));
+
+    envolver(<CargaDocenteDetail />, '/carga-academica/docentes/8',
+      '/carga-academica/docentes/:id');
+
+    // El botón avisa del problema antes de abrirlo
+    const alerta = await screen.findByTitle('Dos docentes en A, B');
+    expect(alerta.textContent).toBe('⚠');
+
+    fireEvent.click(alerta);
+
+    // El modal dice qué pasa y a quién
+    expect(await screen.findByText(/excedida en 6 h/)).toBeTruthy();
+    expect(screen.getByText('Dominique Solar')).toBeTruthy();
+    expect(screen.getAllByText(/Daniela Villanueva \+ Dominique Solar/).length)
+      .toBeGreaterThan(0);
     expect(errores.filter(e => /not defined|is not a function|Cannot read/.test(e))).toEqual([]);
   });
 
