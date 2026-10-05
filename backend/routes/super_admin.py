@@ -162,6 +162,23 @@ def update_school(school_id):
         school.subscription_expires_at = datetime.fromisoformat(data['subscription_expires_at'])
 
     db.session.commit()
+
+    # Crear usuario admin adicional si se proporcionan datos
+    admin_email = data.get('admin_email', '').strip()
+    if admin_email:
+        if User.query.filter_by(email=admin_email).first():
+            return jsonify({'error': f'El email {admin_email} ya está registrado'}), 400
+        admin = User(
+            school_id=school.id,
+            email=admin_email,
+            first_name=data.get('admin_first_name', 'Administrador'),
+            last_name=data.get('admin_last_name', school.name),
+            role=data.get('admin_role', 'admin'),
+        )
+        admin.set_password(data.get('admin_password', 'colegio123'))
+        db.session.add(admin)
+        db.session.commit()
+
     return jsonify(school.to_dict()), 200
 
 

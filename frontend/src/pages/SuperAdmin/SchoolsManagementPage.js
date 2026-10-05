@@ -143,7 +143,7 @@ export function SchoolFormPage() {
     name: '', rut: '', address: '', phone: '', email: '', website: '',
     rector: '', plan: 'free',
     primary_color: '#2563EB', secondary_color: '#1E40AF', accent_color: '#3B82F6',
-    admin_email: '', admin_first_name: '', admin_last_name: '', admin_password: 'colegio123',
+    admin_email: '', admin_first_name: '', admin_last_name: '', admin_password: 'colegio123', admin_role: 'admin',
   });
 
   useEffect(() => {
@@ -237,22 +237,35 @@ export function SchoolFormPage() {
           </div>
         </div>
 
-        {/* Admin inicial (solo al crear) */}
-        {isNew && (
-          <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>👤 Administrador Inicial (opcional)</h3>
-            <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>Crea el primer usuario admin del colegio</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-              <div style={{ gridColumn: '1/-1' }}>
-                <Field label="Email del Admin" field="admin_email" type="email" placeholder="admin@colegio.cl"
-                  value={form.admin_email} onChange={handleChange} />
-              </div>
-              <Field label="Nombre" field="admin_first_name" placeholder="Juan" value={form.admin_first_name} onChange={handleChange} />
-              <Field label="Apellido" field="admin_last_name" placeholder="González" value={form.admin_last_name} onChange={handleChange} />
-              <Field label="Contraseña inicial" field="admin_password" placeholder="colegio123" value={form.admin_password} onChange={handleChange} />
+        {/* Crear usuario admin — disponible al crear Y al editar */}
+        <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>
+            👤 {isNew ? 'Administrador Inicial' : 'Crear Usuario para este Colegio'} <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: 13 }}>(opcional)</span>
+          </h3>
+          <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>
+            {isNew ? 'Crea el primer usuario admin del colegio.' : 'Si dejas el email en blanco, no se crea ningún usuario.'}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
+            <div style={{ gridColumn: '1/-1' }}>
+              <Field label="Email" field="admin_email" type="email" placeholder="admin@colegio.cl"
+                value={form.admin_email} onChange={handleChange} />
+            </div>
+            <Field label="Nombre" field="admin_first_name" placeholder="Juan" value={form.admin_first_name} onChange={handleChange} />
+            <Field label="Apellido" field="admin_last_name" placeholder="González" value={form.admin_last_name} onChange={handleChange} />
+            <Field label="Contraseña inicial" field="admin_password" placeholder="colegio123" value={form.admin_password} onChange={handleChange} />
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#64748b', textTransform:'uppercase', marginBottom:6 }}>Rol</label>
+              <select
+                value={form.admin_role || 'admin'}
+                onChange={e => handleChange({ target: { name: 'admin_role', value: e.target.value } })}
+                style={{ width:'100%', padding:'9px 12px', border:'1px solid #e2e8f0', borderRadius:8, fontSize:14 }}>
+                <option value="admin">Admin</option>
+                <option value="directivo">Directivo</option>
+                <option value="profesor">Profesor</option>
+              </select>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Colores */}
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
