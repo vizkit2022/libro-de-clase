@@ -613,6 +613,9 @@ class CargaDemanda(db.Model):
     school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
     year = db.Column(db.Integer, nullable=False, default=2027)
     departamento = db.Column(db.String(120))
+    # FK al catálogo global de asignaturas del colegio
+    subject_id = db.Column(db.Integer, db.ForeignKey('subjects.id'), nullable=True)
+    # Etiqueta: espejo del nombre de la Subject, o texto libre si aún no existe
     asignatura = db.Column(db.String(200), nullable=False)
     nivel = db.Column(db.String(40), nullable=False)      # 7° Básico | I Medio | ...
     # por_letra=True  -> se dicta en cada letra (A,B,C): total = horas_por_grupo * n_letras
@@ -621,6 +624,12 @@ class CargaDemanda(db.Model):
     letras = db.Column(db.String(40), default='A,B,C')
     horas_por_grupo = db.Column(db.Integer, default=0)
     orden = db.Column(db.Integer, default=0)
+
+    subject = db.relationship('Subject', foreign_keys=[subject_id])
+
+    def nombre(self):
+        """Nombre vigente: manda el catálogo si está enlazado."""
+        return self.subject.name if self.subject else (self.asignatura or '')
 
     def n_letras(self):
         if not self.por_letra:
@@ -636,7 +645,9 @@ class CargaDemanda(db.Model):
             'school_id': self.school_id,
             'year': self.year,
             'departamento': self.departamento,
-            'asignatura': self.asignatura,
+            'subject_id': self.subject_id,
+            'asignatura': self.nombre(),
+            'en_catalogo': self.subject_id is not None,
             'nivel': self.nivel,
             'por_letra': bool(self.por_letra),
             'letras': self.letras,
@@ -666,7 +677,7 @@ class CargaAsignacion(db.Model):
 
     def nombre_asignatura(self):
         if self.demanda:
-            return self.demanda.asignatura
+            return self.demanda.nombre()
         return self.asignatura_libre or ''
 
     def nombre_cursos(self):

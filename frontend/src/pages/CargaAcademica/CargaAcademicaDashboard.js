@@ -49,6 +49,7 @@ export default function CargaAcademicaDashboard() {
   const [data, setData] = useState(null);
   const [demanda, setDemanda] = useState([]);
   const [cat, setCat] = useState(null);
+  const [asignaturas, setAsignaturas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [nuevoDocente, setNuevoDocente] = useState(null);
@@ -71,12 +72,13 @@ export default function CargaAcademicaDashboard() {
   const fetchAll = useCallback(async () => {
     if (year === null) return;
     try {
-      const [d, dm, c] = await Promise.all([
+      const [d, dm, c, asg] = await Promise.all([
         axios.get(`/api/carga-academica/dashboard?year=${year}`),
         axios.get(`/api/carga-academica/demanda?year=${year}`),
         axios.get('/api/carga-academica/catalogos'),
+        axios.get('/api/carga-academica/asignaturas'),
       ]);
-      setData(d.data); setDemanda(dm.data); setCat(c.data);
+      setData(d.data); setDemanda(dm.data); setCat(c.data); setAsignaturas(asg.data);
     } catch { /* módulo aún sin datos */ }
     setLoading(false);
   }, [year]);
@@ -140,9 +142,27 @@ export default function CargaAcademicaDashboard() {
     fetchAll();
   };
 
+  // Selector de asignatura: elige del catálogo o crea una nueva al vuelo
+  const onPickAsignatura = async (filaId, valor) => {
+    if (valor === '__nueva__') {
+      const nombre = window.prompt('Nombre de la nueva asignatura:');
+      if (!nombre || !nombre.trim()) return;
+      try {
+        const r = await axios.post('/api/carga-academica/asignaturas', { name: nombre.trim() });
+        const lista = await axios.get('/api/carga-academica/asignaturas');
+        setAsignaturas(lista.data);
+        await patchDemanda(filaId, { subject_id: r.data.id });
+      } catch (e) { alert(e.response?.data?.error || 'No se pudo crear la asignatura'); }
+      return;
+    }
+    await patchDemanda(filaId, { subject_id: valor ? Number(valor) : null });
+  };
+
   const addDemanda = async () => {
     await axios.post('/api/carga-academica/demanda', {
-      year, departamento: departamentos[0] || 'General', asignatura: 'Nueva asignatura',
+      year, departamento: departamentos[0] || 'General',
+      subject_id: asignaturas[0]?.id || null,
+      asignatura: asignaturas[0]?.name || 'Nueva asignatura',
       nivel: cat?.niveles?.[0] || 'I Medio', por_letra: true, letras: 'A,B,C',
       horas_por_grupo: 0, orden: demanda.length,
     });
@@ -517,8 +537,19 @@ export default function CargaAcademicaDashboard() {
                           onBlur={e => patchDemanda(d.id, { departamento: e.target.value })} />
                       </td>
                       <td style={{ padding: '4px 6px' }}>
-                        <input style={inp} defaultValue={d.asignatura}
-                          onBlur={e => patchDemanda(d.id, { asignatura: e.target.value })} />
+                        <select
+                          style={{ ...inp, borderColor: d.en_catalogo ? '#e2e8f0' : '#fbbf24' }}
+                          value={d.subject_id || ''}
+                          title={d.en_catalogo ? '' : 'Esta fila no está enlazada al catálogo'}
+                          onChange={e => onPickAsignatura(d.id, e.target.value)}>
+                          {!d.en_catalogo && (
+                            <option value="">⚠ {d.asignatura} (fuera del catálogo)</option>
+                          )}
+                          {asignaturas.map(a => (
+                            <option key={a.id} value={a.id}>{a.name}</option>
+                          ))}
+                          <option value="__nueva__">+ Crear nueva asignatura…</option>
+                        </select>
                       </td>
                       <td style={{ padding: '4px 6px', width: 115 }}>
                         <select style={inp} value={d.nivel}

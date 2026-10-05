@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt
-from models import (db, School, Course, User,
+from models import (db, School, Course, User, Subject,
                     CargaDocente, CargaDemanda, CargaAsignacion,
                     TABLA_LEGAL_MINEDUC, CARGA_TIPOS, MAX_HORAS_DISPONIBILIDAD,
                     ACTIVIDADES_NO_LECTIVAS_DEFAULT, tabla_legal_lookup)
@@ -70,6 +70,43 @@ def tabla_legal_row(jornada):
     return jsonify(r), 200
 
 
+# ── Asignaturas (catálogo global del colegio) ─────────────────────────
+
+@carga_bp.route('/asignaturas', methods=['GET'])
+@jwt_required()
+@school_required
+def list_asignaturas():
+    """Catálogo de asignaturas del colegio, para el selector de la demanda."""
+    rows = Subject.query.filter_by(school_id=_sid(), is_active=True)\
+        .order_by(Subject.name).all()
+    return jsonify([r.to_dict() for r in rows]), 200
+
+
+@carga_bp.route('/asignaturas', methods=['POST'])
+@jwt_required()
+@school_required
+def create_asignatura():
+    """Crea una asignatura en el catálogo global sin salir del módulo.
+    Si ya existe una con el mismo nombre, la devuelve en vez de duplicar."""
+    d = request.get_json() or {}
+    nombre = (d.get('name') or '').strip()
+    if not nombre:
+        return jsonify({'error': 'El nombre es obligatorio'}), 400
+
+    existente = Subject.query.filter_by(school_id=_sid(), name=nombre).first()
+    if existente:
+        if not existente.is_active:
+            existente.is_active = True
+            db.session.commit()
+        return jsonify({**existente.to_dict(), 'ya_existia': True}), 200
+
+    subj = Subject(school_id=_sid(), name=nombre, code=d.get('code'),
+                   color=d.get('color', '#6366F1'), is_active=True)
+    db.session.add(subj)
+    db.session.commit()
+    return jsonify({**subj.to_dict(), 'ya_existia': False}), 201
+
+
 # ── Demanda ───────────────────────────────────────────────────────────
 
 @carga_bp.route('/demanda', methods=['GET'])
@@ -89,11 +126,19 @@ def list_demanda():
 @school_required
 def create_demanda():
     d = request.get_json()
+    subject_id = d.get('subject_id') or None
+    etiqueta = d.get('asignatura')
+    if subject_id:
+        subj = Subject.query.filter_by(id=subject_id, school_id=_sid()).first()
+        if not subj:
+            return jsonify({'error': 'La asignatura no existe en este colegio'}), 400
+        etiqueta = subj.name
     row = CargaDemanda(
         school_id=_sid(),
         year=d.get('year', _year()),
         departamento=d.get('departamento'),
-        asignatura=d['asignatura'],
+        subject_id=subject_id,
+        asignatura=etiqueta,
         nivel=d['nivel'],
         por_letra=d.get('por_letra', True),
         letras=d.get('letras', 'A,B,C'),
@@ -115,6 +160,16 @@ def update_demanda(rid):
               'horas_por_grupo', 'orden']:
         if f in d:
             setattr(row, f, d[f])
+    if 'subject_id' in d:
+        sid_new = d['subject_id'] or None
+        if sid_new:
+            subj = Subject.query.filter_by(id=sid_new, school_id=_sid()).first()
+            if not subj:
+                return jsonify({'error': 'La asignatura no existe en este colegio'}), 400
+            row.subject_id = subj.id
+            row.asignatura = subj.name   # la etiqueta sigue al catálogo
+        else:
+            row.subject_id = None
     db.session.commit()
     return jsonify(row.to_dict()), 200
 
@@ -513,7 +568,7 @@ def seed_lenguaje():
     body = request.get_json(silent=True) or {}
     year = body.get('year') or 2026
     LETRAS = ['A', 'B', 'C']
-    creados = {'cursos': 0, 'demanda': 0, 'docentes': 0, 'asignaciones': 0}
+    creados = {'cursos': 0, 'asignaturas': 0, 'demanda': 0, 'docentes': 0, 'asignaciones': 0}
 
     # 1) Cursos: 6 niveles × A,B,C
     for nivel in NIVELES:
@@ -546,9 +601,22 @@ def seed_lenguaje():
             ('Electivo: Taller de lectura y escritura especializada', 'III Medio', False, 6),
             ('Electivo: Taller de Literatura',                        'IV Medio',  False, 6),
         ]
+        # Las asignaturas se crean en el catálogo global del colegio
+        subj_ids = {}
+        for asig in dict.fromkeys(a for a, _, _, _ in demanda_rows):
+            subj = Subject.query.filter_by(school_id=sid, name=asig).first()
+            if not subj:
+                subj = Subject(school_id=sid, name=asig, is_active=True,
+                               color='#6366F1')
+                db.session.add(subj)
+                db.session.flush()
+                creados['asignaturas'] += 1
+            subj_ids[asig] = subj.id
+
         for i, (asig, nivel, por_letra, horas) in enumerate(demanda_rows):
             db.session.add(CargaDemanda(
-                school_id=sid, year=year, departamento=DEP, asignatura=asig,
+                school_id=sid, year=year, departamento=DEP,
+                subject_id=subj_ids[asig], asignatura=asig,
                 nivel=nivel, por_letra=por_letra,
                 letras='A,B,C' if por_letra else '', horas_por_grupo=horas, orden=i))
             creados['demanda'] += 1
@@ -732,6 +800,7 @@ def iniciar_proceso():
                 .order_by(CargaDemanda.orden, CargaDemanda.id).all():
             nueva = CargaDemanda(
                 school_id=sid, year=destino, departamento=src.departamento,
+                subject_id=src.subject_id,
                 asignatura=src.asignatura, nivel=src.nivel, por_letra=src.por_letra,
                 letras=src.letras, horas_por_grupo=src.horas_por_grupo, orden=src.orden)
             db.session.add(nueva)

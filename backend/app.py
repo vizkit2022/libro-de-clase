@@ -184,6 +184,17 @@ def run_migrations():
                 except Exception:
                     conn.rollback()
 
+        # 4. Agregar subject_id a carga_demanda (enlace al catálogo de asignaturas)
+        for col, definition in [('subject_id', 'INTEGER')]:
+            try:
+                conn.execute(text(
+                    f"ALTER TABLE carga_demanda ADD COLUMN {col} {definition}"
+                ))
+                conn.commit()
+                print(f"✅ Migración: carga_demanda.{col} agregada")
+            except Exception:
+                conn.rollback()
+
         # La tabla convivencia_bitacora se crea automáticamente por db.create_all()
 
 
