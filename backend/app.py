@@ -226,6 +226,15 @@ def run_migrations():
         except Exception:
             conn.rollback()
 
+        # 4e. Bajada institucional del colegio
+        try:
+            conn.execute(text(
+                "ALTER TABLE schools ADD COLUMN subtitulo VARCHAR(200)"))
+            conn.commit()
+            print("✅ Migración: schools.subtitulo agregada")
+        except Exception:
+            conn.rollback()
+
         # 5. Agregar letra a carga_horario_celdas
         try:
             conn.execute(text("ALTER TABLE carga_horario_celdas ADD COLUMN letra VARCHAR(5)"))

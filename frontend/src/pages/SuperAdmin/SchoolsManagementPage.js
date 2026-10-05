@@ -141,7 +141,7 @@ export function SchoolFormPage() {
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: '', rut: '', address: '', phone: '', email: '', website: '',
-    rector: '', plan: 'free',
+    rector: '', subtitulo: '', plan: 'free',
     primary_color: '#2563EB', secondary_color: '#1E40AF', accent_color: '#3B82F6',
     admin_email: '', admin_first_name: '', admin_last_name: '', admin_password: 'colegio123', admin_role: 'admin',
   });
@@ -210,6 +210,8 @@ export function SchoolFormPage() {
             </div>
             <div style={{ gridColumn: '1/-1' }}>
               <Field label="Rector/a" field="rector" placeholder="Nombre del rector" value={form.rector} onChange={handleChange} />
+              <Field label="Bajada institucional" field="subtitulo"
+                placeholder="Institución Teresiana" value={form.subtitulo} onChange={handleChange} />
             </div>
           </div>
 
@@ -386,7 +388,7 @@ export function SchoolDetailPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: '#64748b', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1 }}>Información</h3>
-          {[['RUT', school.rut], ['Email', school.email], ['Teléfono', school.phone], ['Rector/a', school.rector], ['Dirección', school.address]].map(([k, v]) => (
+          {[['RUT', school.rut], ['Email', school.email], ['Teléfono', school.phone], ['Rector/a', school.rector], ['Bajada', school.subtitulo], ['Dirección', school.address]].map(([k, v]) => (
             v ? <div key={k} style={{ display: 'flex', gap: 8, marginBottom: 10, fontSize: 14 }}>
               <span style={{ color: '#94a3b8', minWidth: 80 }}>{k}:</span>
               <span style={{ color: '#374151', fontWeight: 500 }}>{v}</span>

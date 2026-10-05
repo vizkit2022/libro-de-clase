@@ -33,7 +33,8 @@ def create_school():
         name=data['name'], rut=data.get('rut'),
         address=data.get('address'), phone=data.get('phone'),
         email=data.get('email'), website=data.get('website'),
-        rector=data.get('rector'), primary_color=data.get('primary_color', '#2563EB'),
+        rector=data.get('rector'), subtitulo=data.get('subtitulo'),
+        primary_color=data.get('primary_color', '#2563EB'),
         secondary_color=data.get('secondary_color', '#1E40AF'),
         accent_color=data.get('accent_color', '#3B82F6')
     )
@@ -50,7 +51,7 @@ def update_school(school_id):
     school = School.query.get_or_404(school_id)
     data = request.get_json()
     for field in ['name', 'rut', 'address', 'phone', 'email', 'website',
-                  'rector', 'logo_url', 'primary_color', 'secondary_color', 'accent_color']:
+                  'rector', 'subtitulo', 'logo_url', 'primary_color', 'secondary_color', 'accent_color']:
         if field in data:
             setattr(school, field, data[field])
     db.session.commit()

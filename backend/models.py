@@ -14,6 +14,9 @@ class School(db.Model):
     email = db.Column(db.String(100))
     website = db.Column(db.String(200))
     rector = db.Column(db.String(200))
+    # Bajada institucional: sostenedor, congregación o red a la que pertenece.
+    # Sale bajo el nombre del colegio en los informes.
+    subtitulo = db.Column(db.String(200))
     logo_url = db.Column(db.Text)   # data URL base64: no cabe en VARCHAR
     primary_color = db.Column(db.String(7), default='#2563EB')
     secondary_color = db.Column(db.String(7), default='#1E40AF')
@@ -37,6 +40,7 @@ class School(db.Model):
             'id': self.id, 'name': self.name, 'rut': self.rut,
             'address': self.address, 'phone': self.phone, 'email': self.email,
             'website': self.website, 'rector': self.rector,
+            'subtitulo': self.subtitulo,
             'logo_url': self.logo_url, 'primary_color': self.primary_color,
             'secondary_color': self.secondary_color, 'accent_color': self.accent_color,
             'is_active': self.is_active,

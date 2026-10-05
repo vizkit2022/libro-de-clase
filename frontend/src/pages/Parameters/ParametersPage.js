@@ -75,6 +75,13 @@ export default function ParametersPage() {
                 <input value={form.rector || ''} onChange={e => setForm({...form, rector: e.target.value})} placeholder="Carmen González" />
               </div>
               <div className="form-group">
+                <label>Bajada institucional</label>
+                <input value={form.subtitulo || ''} onChange={e => setForm({...form, subtitulo: e.target.value})} placeholder="Institución Teresiana" />
+                <small style={{ color: '#94a3b8', fontSize: 12 }}>
+                  Sostenedor o red del colegio. Sale bajo el nombre en los informes.
+                </small>
+              </div>
+              <div className="form-group">
                 <label>Teléfono</label>
                 <input value={form.phone || ''} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+56 2 1234 5678" />
               </div>

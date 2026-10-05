@@ -298,7 +298,7 @@ export default function CargaDocenteDetail() {
         ${school?.logo_url ? `<img src="${school.logo_url}" class="logo">` : ''}
         <div>
           <h1>${school?.name || 'Colegio'}</h1>
-          <p class="sub">${school?.rector ? school.rector + '<br>' : ''}Coordinación Académica.<br>${i.year}</p>
+          <p class="sub">${(school?.subtitulo || school?.rector) ? (school.subtitulo || school.rector) + '<br>' : ''}Coordinación Académica.<br>${i.year}</p>
         </div>
       </div>
       <table class="cajas">

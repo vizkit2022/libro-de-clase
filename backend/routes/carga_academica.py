@@ -497,7 +497,7 @@ def _docx_informe(school, docentes, year):
                 pass
         for i, (txt, bold_) in enumerate([
             (school.name if school else 'Colegio', True),
-            (school.rector if school and school.rector else None, False),
+            (_bajada(school), False),
             ('Coordinación Académica.', False),
             (str(year), False),
         ]):
@@ -628,8 +628,9 @@ def _pdf_carga(school, docentes, year):
             story.append(PageBreak())
 
         cab = [Paragraph(school.name if school else 'Colegio', st_h1)]
-        if school and school.rector:
-            cab.append(Paragraph(school.rector, st_h2))
+        bajada = _bajada(school)
+        if bajada:
+            cab.append(Paragraph(bajada, st_h2))
         cab.append(Paragraph('Coordinación Académica.', st_h2))
         cab.append(Paragraph(str(year), st_h2))
         logo = _logo_flowable(school, Image, 1.7 * cm)
@@ -1609,6 +1610,17 @@ TIPO_FILL = {
 }
 
 
+def _bajada(school):
+    """Bajada institucional bajo el nombre del colegio.
+
+    Cae en rector solo por compatibilidad: antes de existir este campo los
+    informes usaban rector para esa línea.
+    """
+    if not school:
+        return None
+    return getattr(school, 'subtitulo', None) or school.rector or None
+
+
 def _logo_bytes(school):
     """Devuelve los bytes del logo del colegio, que se guarda como data URL."""
     url = getattr(school, 'logo_url', None) or ''
@@ -1662,8 +1674,9 @@ def _pdf_horario(school, doc, bloques, celdas, year):
 
     # Encabezado institucional, con logo si el colegio lo tiene
     cab = [Paragraph(school.name if school else 'Colegio', st_h1)]
-    if school and school.rector:
-        cab.append(Paragraph(school.rector, st_h2))
+    bajada = _bajada(school)
+    if bajada:
+        cab.append(Paragraph(bajada, st_h2))
     cab.append(Paragraph('Coordinación Académica', st_h2))
     cab.append(Paragraph(str(year), st_h2))
 
