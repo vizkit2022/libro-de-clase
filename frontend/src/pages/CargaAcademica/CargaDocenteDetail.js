@@ -68,6 +68,8 @@ export default function CargaDocenteDetail() {
   const [showRef, setShowRef] = useState(true);
   const [actividades, setActividades] = useState([]);      // no lectivas
   const [actLectivas, setActLectivas] = useState([]);      // lectivas
+  const [cobertura, setCobertura] = useState([]);          // quién cubre qué
+  const [detalleAbierto, setDetalleAbierto] = useState(null);
   const [vista, setVista] = useState('carga');   // carga | horario
   const [hor, setHor] = useState(null);
   const [sel, setSel] = useState(null);          // celda abierta {bloque_id, dia}
@@ -87,6 +89,12 @@ export default function CargaDocenteDetail() {
       ]);
       setDemanda(dm.data);
       setCat(c.data);
+      // Apoyo para repartir: si no está disponible la ficha igual debe cargar
+      try {
+        const cob = await axios.get(
+          `/api/carga-academica/demanda/cobertura?year=${d.data.year}`);
+        setCobertura(Array.isArray(cob.data) ? cob.data : []);
+      } catch { setCobertura([]); }
       try {
         const rf = await axios.get(`/api/carga-academica/docentes/${id}/referencia`);
         setRef(rf.data);
@@ -500,11 +508,26 @@ export default function CargaDocenteDetail() {
                       <select style={inp} value={a.demanda_id || ''}
                         onChange={e => onPickDemanda(a, e.target.value)}>
                         <option value="">— elegir asignatura —</option>
-                        {demanda.map(x => (
-                          <option key={x.id} value={x.id}>
-                            {x.asignatura} · {x.nivel} ({x.horas_totales} h)
-                          </option>
-                        ))}
+                        {demanda.map(x => {
+                          const c = cobertura.find(y => y.id === x.id);
+                          // Lo que este docente ya puso en esa fila no cuenta
+                          // como ocupado para él mismo
+                          const mio = (doc.asignaciones || [])
+                            .filter(y => y.demanda_id === x.id && y.id !== a.id)
+                            .reduce((n, y) => n + Number(y.horas || 0), 0);
+                          const otros = (c?.asignados || [])
+                            .filter(y => y.docente_id !== doc.id)
+                            .reduce((n, y) => n + (y.horas || 0), 0);
+                          const quedan = x.horas_totales - otros - mio;
+                          return (
+                            <option key={x.id} value={x.id}>
+                              {x.asignatura} · {x.nivel} — {
+                                quedan > 0 ? `quedan ${quedan} de ${x.horas_totales} h`
+                                : quedan === 0 ? `completa (${x.horas_totales} h)`
+                                : `excedida en ${-quedan} h`}
+                            </option>
+                          );
+                        })}
                       </select>
                     ) : (
                       <select style={inp}
@@ -527,17 +550,29 @@ export default function CargaDocenteDetail() {
                       <div style={{ display: 'flex', gap: 6 }}>
                         {(d.letras || 'A,B,C').split(',').map(L => {
                           const sel = (a.letras || '').split(',').includes(L);
+                          const cob = cobertura.find(y => y.id === a.demanda_id);
+                          // Otros docentes que ya tienen esta letra
+                          const otros = ((cob?.por_letra_detalle || {})[L] || [])
+                            .filter(x => x.docente_id !== doc.id);
+                          const ocupada = otros.length > 0;
+                          const bg = sel ? primary : ocupada ? '#fde68a' : '#fff';
+                          const bd = sel ? primary : ocupada ? '#f59e0b' : '#e2e8f0';
+                          const fg = sel ? '#fff' : ocupada ? '#92400e' : '#94a3b8';
                           return (
-                            <button key={L} onClick={() => {
-                              const cur = (a.letras || '').split(',').filter(Boolean);
-                              const next = sel ? cur.filter(x => x !== L) : [...cur, L].sort();
-                              onChangeLetras(a, next.join(','));
-                            }} style={{
-                              width: 28, height: 28, borderRadius: 6, cursor: 'pointer',
-                              border: `1px solid ${sel ? primary : '#e2e8f0'}`,
-                              background: sel ? primary : '#fff',
-                              color: sel ? '#fff' : '#94a3b8', fontWeight: 700, fontSize: 12,
-                            }}>{L}</button>
+                            <button key={L}
+                              title={ocupada
+                                ? `${d.nivel} ${L} ya está con ${otros.map(x => x.docente).join(', ')}`
+                                : sel ? `${d.nivel} ${L} — asignado a este docente`
+                                : `${d.nivel} ${L} está libre`}
+                              onClick={() => {
+                                const cur = (a.letras || '').split(',').filter(Boolean);
+                                const next = sel ? cur.filter(x => x !== L) : [...cur, L].sort();
+                                onChangeLetras(a, next.join(','));
+                              }} style={{
+                                width: 28, height: 28, borderRadius: 6, cursor: 'pointer',
+                                border: `1px solid ${bd}`, background: bg, color: fg,
+                                fontWeight: 700, fontSize: 12,
+                              }}>{L}</button>
                           );
                         })}
                       </div>
@@ -555,10 +590,81 @@ export default function CargaDocenteDetail() {
                       onChange={e => setDoc({ ...doc, asignaciones: doc.asignaciones.map(
                         x => x.id === a.id ? { ...x, horas: e.target.value } : x) })} />
                   </td>
-                  <td style={{ padding: '5px 4px', textAlign: 'center' }}>
+                  <td style={{ padding: '5px 4px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                    {a.demanda_id && (
+                      <button
+                        title="Ver quién más tiene esta asignatura"
+                        onClick={() => setDetalleAbierto(detalleAbierto === a.id ? null : a.id)}
+                        style={{ background: detalleAbierto === a.id ? '#dbeafe' : '#f1f5f9',
+                          border: 'none', borderRadius: 5, cursor: 'pointer',
+                          color: '#475569', fontSize: 11, padding: '4px 7px', marginRight: 4 }}>
+                        ⓘ
+                      </button>
+                    )}
                     <button onClick={() => delFila(a.id)} style={{ background: '#fee2e2', border: 'none',
                       borderRadius: 5, cursor: 'pointer', color: '#dc2626', fontSize: 11,
                       padding: '4px 7px' }}>✕</button>
+                  </td>
+                </tr>
+              );
+            })}
+            {/* Detalle: reparto de la asignatura entre todos los docentes */}
+            {(doc.asignaciones || []).filter(a => a.id === detalleAbierto).map(a => {
+              const c = cobertura.find(y => y.id === a.demanda_id);
+              if (!c) return null;
+              if (!Array.isArray(c.asignados)) return null;
+              const color = c.estado === 'completa' ? '#16a34a'
+                : c.estado === 'sobreasignada' ? '#dc2626' : '#f59e0b';
+              return (
+                <tr key={`det${a.id}`}>
+                  <td colSpan={4} style={{ padding: '10px 14px', background: '#f8fafc',
+                    borderTop: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10,
+                      marginBottom: 8, flexWrap: 'wrap' }}>
+                      <b style={{ fontSize: 13, color: '#0f172a' }}>
+                        {c.asignatura} · {c.nivel}
+                      </b>
+                      <span style={{ fontSize: 12, fontWeight: 700, color }}>
+                        {c.horas_asignadas} de {c.horas_totales} h
+                        {c.horas_faltantes > 0 ? ` · faltan ${c.horas_faltantes}`
+                          : c.horas_faltantes < 0 ? ` · excedida en ${-c.horas_faltantes}`
+                          : ' · completa'}
+                      </span>
+                      {c.por_letra && (c.letras_libres || []).length > 0 && (
+                        <span style={{ fontSize: 12, color: '#16a34a' }}>
+                          libres: {(c.letras_libres || []).join(', ')}
+                        </span>
+                      )}
+                      {(c.letras_en_conflicto || []).length > 0 && (
+                        <span style={{ fontSize: 12, color: '#dc2626', fontWeight: 700 }}>
+                          ⚠ dos docentes en {(c.letras_en_conflicto || []).join(', ')}
+                        </span>
+                      )}
+                    </div>
+                    {c.asignados.length === 0 ? (
+                      <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>
+                        Todavía no la tiene nadie.
+                      </p>
+                    ) : (
+                      <table style={{ borderCollapse: 'collapse', fontSize: 12 }}>
+                        <tbody>
+                          {c.asignados.map(x => (
+                            <tr key={x.asignacion_id}
+                              style={{ fontWeight: x.docente_id === doc.id ? 700 : 400 }}>
+                              <td style={{ padding: '2px 14px 2px 0', color: '#334155' }}>
+                                {x.docente}{x.docente_id === doc.id ? ' (este docente)' : ''}
+                              </td>
+                              <td style={{ padding: '2px 14px 2px 0', color: '#64748b' }}>
+                                {x.letras ? `${c.nivel} ${x.letras.replace(/,/g, ', ')}` : 'grupo único'}
+                              </td>
+                              <td style={{ padding: '2px 0', fontWeight: 700, color: '#0f172a' }}>
+                                {x.horas} h
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
                   </td>
                 </tr>
               );

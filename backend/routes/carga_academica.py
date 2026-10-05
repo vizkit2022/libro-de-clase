@@ -1937,3 +1937,71 @@ def informe_departamento_pdf():
     return send_file(buf, as_attachment=True,
                      download_name=f'Carga_Horaria_{slug}_{year}.pdf',
                      mimetype='application/pdf')
+
+
+@carga_bp.route('/demanda/cobertura', methods=['GET'])
+@jwt_required()
+@school_required
+def cobertura_demanda():
+    """Quién cubre cada fila de demanda y cuánto queda por repartir.
+
+    Alimenta la vista del docente mientras se asigna: sin esto se ve que una
+    asignatura está excedida pero no a quién ni en qué curso.
+    """
+    sid, year = _sid(), _year()
+    demanda = CargaDemanda.query.filter_by(school_id=sid, year=year)\
+        .order_by(CargaDemanda.orden, CargaDemanda.id).all()
+    docentes = {d.id: d.nombre for d in
+                CargaDocente.query.filter_by(school_id=sid, year=year).all()}
+    asigs = CargaAsignacion.query.filter_by(school_id=sid, year=year)\
+        .filter(CargaAsignacion.demanda_id.isnot(None)).all()
+
+    por_demanda = {}
+    for a in asigs:
+        por_demanda.setdefault(a.demanda_id, []).append(a)
+
+    salida = []
+    for d in demanda:
+        filas = por_demanda.get(d.id, [])
+        asignadas = sum(int(a.horas or 0) for a in filas)
+        total = d.horas_totales()
+
+        letras_demanda = ([x.strip() for x in (d.letras or '').split(',') if x.strip()]
+                          if d.por_letra else [])
+        # Quién toma cada letra del nivel
+        letras = {L: [] for L in letras_demanda}
+        asignados = []
+        for a in filas:
+            nombre = docentes.get(a.docente_id, '—')
+            propias = [x.strip() for x in (a.letras or '').split(',') if x.strip()]
+            asignados.append({
+                'asignacion_id': a.id, 'docente_id': a.docente_id, 'docente': nombre,
+                'letras': a.letras or '', 'horas': int(a.horas or 0),
+            })
+            for L in propias:
+                letras.setdefault(L, []).append({
+                    'docente_id': a.docente_id, 'docente': nombre,
+                    'horas': int(d.horas_por_grupo or 0),
+                })
+
+        salida.append({
+            'id': d.id,
+            'asignatura': d.nombre(),
+            'nivel': d.nivel,
+            'departamento': d.departamento,
+            'por_letra': bool(d.por_letra),
+            'letras_demanda': letras_demanda,
+            'horas_por_grupo': int(d.horas_por_grupo or 0),
+            'horas_totales': total,
+            'horas_asignadas': asignadas,
+            'horas_faltantes': total - asignadas,
+            'estado': ('completa' if asignadas == total
+                       else 'sobreasignada' if asignadas > total else 'incompleta'),
+            'asignados': asignados,
+            # Por letra: quién la tiene. Vacío = libre, más de uno = choque
+            'por_letra_detalle': letras,
+            'letras_libres': sorted([L for L, v in letras.items() if not v]),
+            'letras_en_conflicto': sorted([L for L, v in letras.items() if len(v) > 1]),
+        })
+
+    return jsonify(salida), 200

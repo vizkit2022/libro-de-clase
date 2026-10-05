@@ -40,6 +40,22 @@ const DEMANDA = [{
   horas_totales: 9, subject_id: 4, en_catalogo: true, year: 2027,
 }];
 
+const COBERTURA = [{
+  id: 7, asignatura: 'Lengua y Literatura', nivel: 'III Medio', departamento: 'Lenguaje',
+  por_letra: true, letras_demanda: ['A', 'B', 'C'], horas_por_grupo: 3,
+  horas_totales: 9, horas_asignadas: 9, horas_faltantes: 0, estado: 'completa',
+  asignados: [
+    { asignacion_id: 1, docente_id: 8, docente: 'Daniela Villanueva', letras: 'A,C', horas: 6 },
+    { asignacion_id: 5, docente_id: 9, docente: 'Daniela Carreño', letras: 'B', horas: 3 },
+  ],
+  por_letra_detalle: {
+    A: [{ docente_id: 8, docente: 'Daniela Villanueva', horas: 3 }],
+    B: [{ docente_id: 9, docente: 'Daniela Carreño', horas: 3 }],
+    C: [{ docente_id: 8, docente: 'Daniela Villanueva', horas: 3 }],
+  },
+  letras_libres: [], letras_en_conflicto: [],
+}];
+
 const CATALOGOS = {
   niveles: ['7° Básico', 'III Medio'], tipos: ['asignatura'], max_disponibilidad: 3,
   actividades_default: [], tabla_legal: [{ jornada: 44, horas_pedagogicas: 38 }],
@@ -103,6 +119,7 @@ function responder(url) {
   if (url.includes('/actividades?ambito=lectiva')) return ACTIVIDADES_L;
   if (url.includes('/actividades')) return ACTIVIDADES_NL;
   if (url.includes('/docentes/')) return DOCENTE;
+  if (url.includes('/demanda/cobertura')) return COBERTURA;
   if (url.includes('/demanda')) return DEMANDA;
   if (url.includes('/catalogos')) return CATALOGOS;
   if (url.includes('/asignaturas')) return [{ id: 4, name: 'Lengua y Literatura' }];
@@ -152,6 +169,22 @@ describe('Carga Académica monta sin lanzar', () => {
     expect((await screen.findAllByText('12:30')).length).toBeGreaterThan(0);
     // Línea libre del pie
     await waitFor(() => expect(screen.getByDisplayValue('20 min')).toBeTruthy());
+    expect(errores.filter(e => /not defined|is not a function|Cannot read/.test(e))).toEqual([]);
+  });
+
+  test('la ficha carga aunque falle el endpoint de cobertura', async () => {
+    // Pasa durante un deploy a medias: frontend nuevo contra backend viejo.
+    // La cobertura es información de apoyo y no debe tumbar la pantalla.
+    axios.get.mockImplementation(url => (
+      url.includes('/demanda/cobertura')
+        ? Promise.reject(new Error('404'))
+        : Promise.resolve({ data: responder(url) })
+    ));
+
+    envolver(<CargaDocenteDetail />, '/carga-academica/docentes/8',
+      '/carga-academica/docentes/:id');
+
+    expect(await screen.findByText('Daniela Villanueva')).toBeTruthy();
     expect(errores.filter(e => /not defined|is not a function|Cannot read/.test(e))).toEqual([]);
   });
 
