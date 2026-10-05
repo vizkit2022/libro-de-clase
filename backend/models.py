@@ -474,3 +474,223 @@ class ConvivenciaBitacora(db.Model):
             'created_by_id': self.created_by_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  CARGA ACADÉMICA
+# ══════════════════════════════════════════════════════════════════════
+
+# Tabla Legal MINEDUC — proporción 65/35, Arts. 69 y 80, DFL N°1/1996
+# jornada_semanal (horas cronológicas) -> (horas_pedagogicas, recreo_min, no_lectivas_min)
+# Invariante: jornada*60 == horas_pedagogicas*45 + recreo_min + no_lectivas_min
+TABLA_LEGAL_MINEDUC = {
+    44: (38, 180, 750), 43: (37, 176, 739), 42: (36, 172, 728), 41: (35, 168, 717),
+    40: (35, 164, 661), 39: (34, 160, 650), 38: (33, 155, 640), 37: (32, 151, 629),
+    36: (31, 147, 618), 35: (30, 143, 607), 34: (29, 139, 596), 33: (29, 135, 540),
+    32: (28, 131, 529), 31: (27, 127, 518), 30: (26, 123, 507), 29: (25, 119, 496),
+    28: (24, 115, 485), 27: (23, 110, 475), 26: (22, 106, 464), 25: (22, 102, 408),
+    24: (21, 98, 397),  23: (20, 94, 386),  22: (19, 90, 375),  21: (18, 86, 364),
+    20: (17, 82, 353),  19: (16, 78, 342),  18: (16, 74, 286),  17: (15, 70, 275),
+    16: (14, 65, 265),  15: (13, 61, 254),  14: (12, 57, 243),  13: (11, 53, 232),
+    12: (10, 49, 221),  11: (10, 45, 165),  10: (9, 41, 154),   9:  (8, 37, 143),
+    8:  (7, 33, 132),   7:  (6, 29, 121),   6:  (5, 25, 110),   5:  (4, 20, 100),
+    4:  (3, 16, 89),    3:  (3, 12, 33),    2:  (2, 8, 22),     1:  (1, 4, 11),
+}
+
+# Tipos de fila en la carga lectiva
+CARGA_TIPOS = [
+    'asignatura',        # ramo real, consume demanda
+    'jefe_departamento',
+    'disponibilidad',    # regla: máximo 3 h/semana
+    'toma_contacto',
+    'orientacion',
+    'jefatura',
+    'otro',
+]
+
+# Actividades no lectivas por defecto (minutos)
+ACTIVIDADES_NO_LECTIVAS_DEFAULT = [
+    {'actividad': 'Consejo de profesores',   'minutos': 60},
+    {'actividad': 'Reunión de departamento', 'minutos': 60},
+    {'actividad': 'Reunión de ciclo',        'minutos': 60},
+    {'actividad': 'Trabajo de jefatura',     'minutos': 120},
+    {'actividad': 'Atención de apoderados',  'minutos': 90},
+]
+
+MAX_HORAS_DISPONIBILIDAD = 3
+
+
+def tabla_legal_lookup(jornada):
+    """Devuelve dict con los valores legales de una jornada semanal."""
+    row = TABLA_LEGAL_MINEDUC.get(int(jornada or 0))
+    if not row:
+        return None
+    ped, recreo_min, no_lect_min = row
+    return {
+        'jornada': int(jornada),
+        'horas_pedagogicas': ped,
+        'lectivas_cronologicas_min': ped * 45,
+        'recreo_min': recreo_min,
+        'no_lectivas_min': no_lect_min,
+    }
+
+
+class CargaDocente(db.Model):
+    """Docente dentro del módulo de Carga Académica (no requiere login)."""
+    __tablename__ = 'carga_docentes'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
+    year = db.Column(db.Integer, nullable=False, default=2027)
+    nombre = db.Column(db.String(200), nullable=False)
+    rut = db.Column(db.String(20))
+    # Vínculo opcional a un usuario del sistema
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    departamento = db.Column(db.String(120))
+    nivel = db.Column(db.String(20), default='Media')   # Básica | Media
+    horas_contrato = db.Column(db.Integer, default=44)  # jornada semanal cronológica
+    no_lectivas_json = db.Column(db.Text)               # [{actividad, minutos}]
+    orden = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    asignaciones = db.relationship('CargaAsignacion', backref='docente', lazy=True,
+                                   cascade='all, delete-orphan',
+                                   order_by='CargaAsignacion.orden')
+
+    def no_lectivas(self):
+        import json as _j
+        if not self.no_lectivas_json:
+            return [dict(a) for a in ACTIVIDADES_NO_LECTIVAS_DEFAULT]
+        try:
+            return _j.loads(self.no_lectivas_json)
+        except Exception:
+            return []
+
+    def to_dict(self, with_asignaciones=True):
+        legal = tabla_legal_lookup(self.horas_contrato) or {}
+        acts = self.no_lectivas()
+        total_act_min = sum(int(a.get('minutos') or 0) for a in acts)
+        asigs = sorted(self.asignaciones, key=lambda a: (a.orden or 0, a.id))
+        total_lectivas = sum(int(a.horas or 0) for a in asigs)
+        disponibilidad = sum(int(a.horas or 0) for a in asigs if a.tipo == 'disponibilidad')
+        horas_ped = legal.get('horas_pedagogicas', 0)
+        no_lect_min = legal.get('no_lectivas_min', 0)
+        d = {
+            'id': self.id,
+            'school_id': self.school_id,
+            'year': self.year,
+            'nombre': self.nombre,
+            'rut': self.rut,
+            'user_id': self.user_id,
+            'departamento': self.departamento,
+            'nivel': self.nivel,
+            'horas_contrato': self.horas_contrato,
+            'orden': self.orden,
+            # Derivados de la Tabla Legal
+            'horas_pedagogicas': horas_ped,
+            'recreo_min': legal.get('recreo_min', 0),
+            'no_lectivas_min': no_lect_min,
+            'lectivas_cronologicas_min': legal.get('lectivas_cronologicas_min', 0),
+            # Estado de la carga
+            'no_lectivas': acts,
+            'total_actividades_min': total_act_min,
+            'permanencia_min': no_lect_min - total_act_min,
+            'total_lectivas': total_lectivas,
+            'diferencia': total_lectivas - horas_ped,
+            'disponibilidad': disponibilidad,
+            'completo': (total_lectivas == horas_ped) and horas_ped > 0,
+            'excede_disponibilidad': disponibilidad > MAX_HORAS_DISPONIBILIDAD,
+            'excede_no_lectivas': total_act_min > no_lect_min,
+        }
+        if with_asignaciones:
+            d['asignaciones'] = [a.to_dict() for a in asigs]
+        return d
+
+
+class CargaDemanda(db.Model):
+    """Demanda de horas: cuántas horas necesita una asignatura en un nivel."""
+    __tablename__ = 'carga_demanda'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
+    year = db.Column(db.Integer, nullable=False, default=2027)
+    departamento = db.Column(db.String(120))
+    asignatura = db.Column(db.String(200), nullable=False)
+    nivel = db.Column(db.String(40), nullable=False)      # 7° Básico | I Medio | ...
+    # por_letra=True  -> se dicta en cada letra (A,B,C): total = horas_por_grupo * n_letras
+    # por_letra=False -> grupo único por nivel (electivos): total = horas_por_grupo
+    por_letra = db.Column(db.Boolean, default=True)
+    letras = db.Column(db.String(40), default='A,B,C')
+    horas_por_grupo = db.Column(db.Integer, default=0)
+    orden = db.Column(db.Integer, default=0)
+
+    def n_letras(self):
+        if not self.por_letra:
+            return 1
+        return len([x for x in (self.letras or '').split(',') if x.strip()]) or 1
+
+    def horas_totales(self):
+        return int(self.horas_por_grupo or 0) * self.n_letras()
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'school_id': self.school_id,
+            'year': self.year,
+            'departamento': self.departamento,
+            'asignatura': self.asignatura,
+            'nivel': self.nivel,
+            'por_letra': bool(self.por_letra),
+            'letras': self.letras,
+            'horas_por_grupo': self.horas_por_grupo,
+            'n_letras': self.n_letras(),
+            'horas_totales': self.horas_totales(),
+            'orden': self.orden,
+        }
+
+
+class CargaAsignacion(db.Model):
+    """Una fila de horas lectivas asignadas a un docente."""
+    __tablename__ = 'carga_asignaciones'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
+    year = db.Column(db.Integer, nullable=False, default=2027)
+    docente_id = db.Column(db.Integer, db.ForeignKey('carga_docentes.id'), nullable=False)
+    tipo = db.Column(db.String(30), default='asignatura')
+    # Si tipo == 'asignatura' debería apuntar a una fila de demanda
+    demanda_id = db.Column(db.Integer, db.ForeignKey('carga_demanda.id'), nullable=True)
+    asignatura_libre = db.Column(db.String(200))   # usado cuando no hay demanda_id
+    letras = db.Column(db.String(40))              # "A,B,C" — qué letras cubre este docente
+    horas = db.Column(db.Integer, default=0)
+    orden = db.Column(db.Integer, default=0)
+
+    demanda = db.relationship('CargaDemanda', foreign_keys=[demanda_id])
+
+    def nombre_asignatura(self):
+        if self.demanda:
+            return self.demanda.asignatura
+        return self.asignatura_libre or ''
+
+    def nombre_cursos(self):
+        """Texto tipo 'I Medio A, B, C' para el informe."""
+        if self.demanda:
+            nivel = self.demanda.nivel
+            if self.letras:
+                return f"{nivel} {self.letras.replace(',', ', ')}"
+            return nivel
+        return self.letras or ''
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'school_id': self.school_id,
+            'year': self.year,
+            'docente_id': self.docente_id,
+            'tipo': self.tipo,
+            'demanda_id': self.demanda_id,
+            'asignatura_libre': self.asignatura_libre,
+            'asignatura': self.nombre_asignatura(),
+            'nivel': self.demanda.nivel if self.demanda else None,
+            'letras': self.letras,
+            'cursos_texto': self.nombre_cursos(),
+            'horas': self.horas,
+            'orden': self.orden,
+        }

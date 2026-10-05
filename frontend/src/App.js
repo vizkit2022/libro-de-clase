@@ -20,6 +20,8 @@ import ProfesorPage from './pages/Profesor/ProfesorPage';
 import ConvivenciaDashboard from './pages/Convivencia/ConvivenciaDashboard';
 import ConvivenciaCasosPage, { ConvivenciaCasoForm } from './pages/Convivencia/ConvivenciaCasosPage';
 import ConvivenciaCasoDetail from './pages/Convivencia/ConvivenciaCasoDetail';
+import CargaAcademicaDashboard from './pages/CargaAcademica/CargaAcademicaDashboard';
+import CargaDocenteDetail from './pages/CargaAcademica/CargaDocenteDetail';
 
 // Super Admin
 import SuperAdminLayout from './pages/SuperAdmin/SuperAdminLayout';
@@ -103,6 +105,9 @@ export default function App() {
             <Route path="convivencia/casos/nuevo" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoForm /></PrivateRoute>} />
             <Route path="convivencia/casos/:id" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoDetail /></PrivateRoute>} />
             <Route path="convivencia/casos/:id/editar" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoForm /></PrivateRoute>} />
+            {/* Módulo Carga Académica */}
+            <Route path="carga-academica" element={<PrivateRoute roles={['admin','directivo']}><CargaAcademicaDashboard /></PrivateRoute>} />
+            <Route path="carga-academica/docentes/:id" element={<PrivateRoute roles={['admin','directivo']}><CargaDocenteDetail /></PrivateRoute>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
