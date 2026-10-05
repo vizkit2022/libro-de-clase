@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from models import (db, School, Course, User, Subject, CourseSubject,
                     CargaDocente, CargaDemanda, CargaAsignacion,
                     ActividadNoLectiva, HorarioBloque, HorarioCelda,
+                    ACTIVIDADES_LECTIVAS_DEFAULT,
                     DIAS_SEMANA, BLOQUES_DEFAULT,
                     TABLA_LEGAL_MINEDUC, CARGA_TIPOS, MAX_HORAS_DISPONIBILIDAD,
                     ACTIVIDADES_NO_LECTIVAS_DEFAULT, tabla_legal_lookup)
@@ -1027,16 +1028,32 @@ def referencia_docente(did):
 @jwt_required()
 @school_required
 def list_actividades():
-    """Catálogo del colegio. Si está vacío lo siembra con las actividades base."""
+    """Catálogo del colegio. Siembra las actividades base que falten.
+
+    Acepta ?ambito=lectiva o ?ambito=no_lectiva para filtrar.
+    """
     sid = _sid()
-    if ActividadNoLectiva.query.filter_by(school_id=sid).count() == 0:
-        for i, a in enumerate(ACTIVIDADES_NO_LECTIVAS_DEFAULT):
+
+    def sembrar(nombre, ambito, tipo=None, minutos=60, orden=0):
+        if not ActividadNoLectiva.query.filter_by(
+                school_id=sid, nombre=nombre, ambito=ambito).first():
             db.session.add(ActividadNoLectiva(
-                school_id=sid, nombre=a['actividad'],
-                minutos_default=a['minutos'], orden=i))
-        db.session.commit()
-    rows = ActividadNoLectiva.query.filter_by(school_id=sid, is_active=True)\
-        .order_by(ActividadNoLectiva.orden, ActividadNoLectiva.nombre).all()
+                school_id=sid, nombre=nombre, ambito=ambito, tipo=tipo,
+                minutos_default=minutos, orden=orden))
+
+    if ActividadNoLectiva.query.filter_by(school_id=sid, ambito='no_lectiva').count() == 0:
+        for i, a in enumerate(ACTIVIDADES_NO_LECTIVAS_DEFAULT):
+            sembrar(a['actividad'], 'no_lectiva', minutos=a['minutos'], orden=i)
+    if ActividadNoLectiva.query.filter_by(school_id=sid, ambito='lectiva').count() == 0:
+        for i, a in enumerate(ACTIVIDADES_LECTIVAS_DEFAULT):
+            sembrar(a['nombre'], 'lectiva', tipo=a['tipo'], orden=i)
+    db.session.commit()
+
+    q = ActividadNoLectiva.query.filter_by(school_id=sid, is_active=True)
+    ambito = request.args.get('ambito')
+    if ambito:
+        q = q.filter_by(ambito=ambito)
+    rows = q.order_by(ActividadNoLectiva.orden, ActividadNoLectiva.nombre).all()
     return jsonify([r.to_dict() for r in rows]), 200
 
 
@@ -1049,14 +1066,19 @@ def create_actividad():
     nombre = (d.get('nombre') or '').strip()
     if not nombre:
         return jsonify({'error': 'El nombre es obligatorio'}), 400
-    ex = ActividadNoLectiva.query.filter_by(school_id=_sid(), nombre=nombre).first()
+    ambito = d.get('ambito', 'no_lectiva')
+    ex = ActividadNoLectiva.query.filter_by(
+        school_id=_sid(), nombre=nombre, ambito=ambito).first()
     if ex:
         if not ex.is_active:
             ex.is_active = True
             db.session.commit()
         return jsonify({**ex.to_dict(), 'ya_existia': True}), 200
-    n = ActividadNoLectiva.query.filter_by(school_id=_sid()).count()
-    row = ActividadNoLectiva(school_id=_sid(), nombre=nombre,
+    n = ActividadNoLectiva.query.filter_by(school_id=_sid(), ambito=ambito).count()
+    row = ActividadNoLectiva(school_id=_sid(), nombre=nombre, ambito=ambito,
+                             # Las lectivas nuevas entran como 'otro': no heredan
+                             # reglas como el tope de disponibilidad
+                             tipo=d.get('tipo') or ('otro' if ambito == 'lectiva' else None),
                              minutos_default=d.get('minutos_default', 60), orden=n)
     db.session.add(row)
     db.session.commit()

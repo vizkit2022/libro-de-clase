@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import descargarArchivo from './descargar';
 
 const TIPO_LABEL = {
   asignatura:        'Asignatura',
@@ -52,7 +53,8 @@ export default function CargaDocenteDetail() {
   const [toast, setToast] = useState(null);
   const [ref, setRef] = useState(null);
   const [showRef, setShowRef] = useState(true);
-  const [actividades, setActividades] = useState([]);
+  const [actividades, setActividades] = useState([]);      // no lectivas
+  const [actLectivas, setActLectivas] = useState([]);      // lectivas
   const [vista, setVista] = useState('carga');   // carga | horario
   const [hor, setHor] = useState(null);
   const [sel, setSel] = useState(null);          // celda abierta {bloque_id, dia}
@@ -77,9 +79,13 @@ export default function CargaDocenteDetail() {
         setRef(rf.data);
       } catch { setRef(null); }
       try {
-        const ac = await axios.get('/api/carga-academica/actividades');
-        setActividades(ac.data);
-      } catch { setActividades([]); }
+        const [anl, al] = await Promise.all([
+          axios.get('/api/carga-academica/actividades?ambito=no_lectiva'),
+          axios.get('/api/carga-academica/actividades?ambito=lectiva'),
+        ]);
+        setActividades(anl.data);
+        setActLectivas(al.data);
+      } catch { setActividades([]); setActLectivas([]); }
     } catch { navigate('/carga-academica'); }
     setLoading(false);
   }, [id, navigate]);
@@ -163,8 +169,30 @@ export default function CargaDocenteDetail() {
     fetchHorario();
   };
 
-  const descargarHorarioPdf = () => {
-    window.open(`/api/carga-academica/docentes/${id}/horario.pdf`, '_blank');
+  const descargarHorarioPdf = async () => {
+    try {
+      await descargarArchivo(`/api/carga-academica/docentes/${id}/horario.pdf`,
+        `Horario_${(doc?.nombre || 'docente').replace(/ /g, '_')}_${doc?.year}.pdf`);
+    } catch (e) { showToast(e.message || 'No se pudo descargar', 'error'); }
+  };
+
+  // Cambia qué actividad lectiva es una fila, desde el catálogo
+  const onPickLectiva = async (a, valor) => {
+    if (valor === '__nueva__') {
+      const nombre = window.prompt('Nombre de la nueva actividad lectiva:');
+      if (!nombre || !nombre.trim()) return;
+      try {
+        const r = await axios.post('/api/carga-academica/actividades',
+          { nombre: nombre.trim(), ambito: 'lectiva' });
+        const lista = await axios.get('/api/carga-academica/actividades?ambito=lectiva');
+        setActLectivas(lista.data);
+        await patchFila(a.id, { tipo: r.data.tipo || 'otro', asignatura_libre: r.data.nombre });
+      } catch (e) { showToast(e.response?.data?.error || 'Error', 'error'); }
+      return;
+    }
+    const act = actLectivas.find(x => String(x.id) === String(valor));
+    if (!act) return;
+    await patchFila(a.id, { tipo: act.tipo || 'otro', asignatura_libre: act.nombre });
   };
 
   // Agrega una actividad del catálogo, o crea una nueva al vuelo
@@ -190,8 +218,11 @@ export default function CargaDocenteDetail() {
       { actividad: a.nombre, minutos: a.minutos_default }]);
   };
 
-  const descargarWord = () => {
-    window.open(`/api/carga-academica/docentes/${id}/informe.docx`, '_blank');
+  const descargarWord = async () => {
+    try {
+      await descargarArchivo(`/api/carga-academica/docentes/${id}/informe.docx`,
+        `Carga_${(doc?.nombre || 'docente').replace(/ /g, '_')}_${doc?.year}.docx`);
+    } catch (e) { showToast(e.message || 'No se pudo descargar', 'error'); }
   };
 
   const imprimir = () => {
@@ -207,8 +238,13 @@ export default function CargaDocenteDetail() {
       <title>Carga Horaria ${i.year} — ${i.nombre}</title><style>
       *{box-sizing:border-box;margin:0;padding:0}
       body{font-family:Arial,sans-serif;font-size:11pt;padding:24px;color:#000}
-      h1{font-size:13pt;margin-bottom:2px} .sub{font-style:italic;font-size:9pt;color:#555;margin-bottom:12px}
-      h2{font-size:12pt;text-align:center;margin:10px 0 14px}
+      h1{font-size:12pt;margin-bottom:1px} .sub{font-size:9pt;color:#444;line-height:1.3}
+      .cab{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+      .logo{height:52px;width:auto}
+      .cajas{width:auto;margin-bottom:12px}
+      .cajas td{border:1px solid #999;padding:4px 10px;font-size:10pt}
+      .caja{background:#8EA9DB;font-weight:700;white-space:nowrap}
+      .dep{font-weight:700;min-width:90px}
       table{width:100%;border-collapse:collapse;margin-bottom:14px}
       td,th{border:1px solid #999;padding:5px 8px;font-size:10pt}
       th{background:#8EA9DB;font-weight:700;text-align:center}
@@ -216,11 +252,18 @@ export default function CargaDocenteDetail() {
       .tot{background:#D9D9D9;font-weight:700}
       @media print{body{padding:10px}}
       </style></head><body>
-      <h1>${school?.name || 'Colegio'}</h1>
-      <p class="sub">${school?.rector ? school.rector + '<br>' : ''}Coordinación Académica</p>
-      <h2>CARGA HORARIA ${i.year}</h2>
+      <div class="cab">
+        ${school?.logo_url ? `<img src="${school.logo_url}" class="logo">` : ''}
+        <div>
+          <h1>${school?.name || 'Colegio'}</h1>
+          <p class="sub">${school?.rector ? school.rector + '<br>' : ''}Coordinación Académica.<br>${i.year}</p>
+        </div>
+      </div>
+      <table class="cajas">
+        <tr><td class="caja">CARGA HORARIA ${i.year}</td><td></td></tr>
+        <tr><td class="caja">DEPARTAMENTO</td><td class="dep">${i.departamento || ''}</td></tr>
+      </table>
       <table>
-        <tr><td class="lbl">DEPARTAMENTO</td><td>${i.departamento || ''}</td></tr>
         <tr><td class="lbl">Docente</td><td>${i.nombre}</td></tr>
         <tr><td class="lbl">Nivel</td><td>${i.nivel || ''}</td></tr>
         <tr><td class="lbl">Horas cronológicas contrato</td><td>${i.horas_contrato}</td></tr>
@@ -228,7 +271,7 @@ export default function CargaDocenteDetail() {
         <tr><td class="lbl">Horas no Lectivas</td><td>${fmtHM(i.no_lectivas_min)}</td></tr>
         <tr><td class="lbl">Recreo</td><td>${fmtHM(i.recreo_min)}</td></tr>
       </table>
-      <table><tr><th>ASIGNATURA</th><th>CURSOS</th><th>CANTIDAD DE HORAS</th></tr>
+      <table><tr><th>ASIGNATURAS</th><th>CURSOS</th><th>CANTIDAD DE HORAS</th></tr>
         ${filas}
         <tr><td class="tot">Total de horas</td><td class="tot"></td><td class="tot" style="text-align:center">${i.total_lectivas}</td></tr>
         <tr><td><b>Diferencia vs. horas pedagógicas en aula</b></td><td></td><td style="text-align:center"><b>${i.diferencia}</b></td></tr>
@@ -419,7 +462,19 @@ export default function CargaDocenteDetail() {
                         ))}
                       </select>
                     ) : (
-                      <span style={{ fontWeight: 600, color: '#374151' }}>{TIPO_LABEL[a.tipo] || a.tipo}</span>
+                      <select style={inp}
+                        value={(actLectivas.find(x =>
+                          x.nombre === a.asignatura_libre ||
+                          (!a.asignatura_libre && x.tipo === a.tipo))?.id) || ''}
+                        onChange={e => onPickLectiva(a, e.target.value)}>
+                        <option value="">
+                          {a.asignatura_libre || TIPO_LABEL[a.tipo] || a.tipo}
+                        </option>
+                        {actLectivas.map(x => (
+                          <option key={x.id} value={x.id}>{x.nombre}</option>
+                        ))}
+                        <option value="__nueva__">+ Crear nueva actividad…</option>
+                      </select>
                     )}
                   </td>
                   <td style={{ padding: '5px 8px' }}>
@@ -482,16 +537,43 @@ export default function CargaDocenteDetail() {
             </tr>
           </tbody>
         </table>
-        <div style={{ padding: '10px 14px', display: 'flex', gap: 7, flexWrap: 'wrap',
-          borderTop: '1px solid #f1f5f9' }}>
-          {['asignatura', 'disponibilidad', 'toma_contacto', 'orientacion', 'jefatura', 'jefe_departamento'].map(t => (
-            <button key={t} onClick={() => addFila(t)} style={{
-              background: t === 'asignatura' ? `${primary}15` : '#f8fafc',
-              color: t === 'asignatura' ? primary : '#64748b',
-              border: `1px solid ${t === 'asignatura' ? primary + '40' : '#e2e8f0'}`,
-              padding: '4px 11px', borderRadius: 6, fontSize: 12, cursor: 'pointer', fontWeight: 600,
-            }}>+ {TIPO_LABEL[t]}</button>
-          ))}
+        <div style={{ padding: '10px 14px', display: 'flex', gap: 10, flexWrap: 'wrap',
+          alignItems: 'center', borderTop: '1px solid #f1f5f9' }}>
+          <button onClick={() => addFila('asignatura')} style={{
+            background: `${primary}15`, color: primary, border: `1px solid ${primary}40`,
+            padding: '5px 13px', borderRadius: 6, fontSize: 12, cursor: 'pointer',
+            fontWeight: 700 }}>+ Asignatura</button>
+          <span style={{ color: '#cbd5e1' }}>|</span>
+          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Actividad lectiva:</span>
+          <select value="" style={{ ...inp, maxWidth: 260, cursor: 'pointer' }}
+            onChange={async e => {
+              const v = e.target.value;
+              if (!v) return;
+              if (v === '__nueva__') {
+                const nombre = window.prompt('Nombre de la nueva actividad lectiva:');
+                if (!nombre || !nombre.trim()) return;
+                const r = await axios.post('/api/carga-academica/actividades',
+                  { nombre: nombre.trim(), ambito: 'lectiva' });
+                const lista = await axios.get('/api/carga-academica/actividades?ambito=lectiva');
+                setActLectivas(lista.data);
+                await axios.post(`/api/carga-academica/docentes/${id}/asignaciones`, {
+                  tipo: r.data.tipo || 'otro', asignatura_libre: r.data.nombre,
+                  horas: 0, orden: (doc.asignaciones?.length || 0),
+                });
+                return fetchAll();
+              }
+              const act = actLectivas.find(x => String(x.id) === String(v));
+              if (!act) return;
+              await axios.post(`/api/carga-academica/docentes/${id}/asignaciones`, {
+                tipo: act.tipo || 'otro', asignatura_libre: act.nombre,
+                horas: 0, orden: (doc.asignaciones?.length || 0),
+              });
+              fetchAll();
+            }}>
+            <option value="">— agregar del catálogo —</option>
+            {actLectivas.map(x => <option key={x.id} value={x.id}>{x.nombre}</option>)}
+            <option value="__nueva__">+ Crear nueva actividad…</option>
+          </select>
         </div>
       </div>
 

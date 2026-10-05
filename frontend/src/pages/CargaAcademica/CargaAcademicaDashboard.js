@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import descargarArchivo from './descargar';
 
 const fmtHM = (min) => {
   const m = Math.round(min || 0);
@@ -55,6 +56,9 @@ export default function CargaAcademicaDashboard() {
   const [nuevoDocente, setNuevoDocente] = useState(null);
   const [showProceso, setShowProceso] = useState(false);
   const [busy, setBusy] = useState(false);
+  // true mientras se traen los datos del año elegido: sin esto se alcanzaba a
+  // renderizar la demanda del año anterior junto a un dashboard aún en null
+  const [cargandoAnio, setCargandoAnio] = useState(true);
 
   // Carga la lista de años con datos y fija el año activo
   const fetchProcesos = useCallback(async () => {
@@ -71,6 +75,7 @@ export default function CargaAcademicaDashboard() {
 
   const fetchAll = useCallback(async () => {
     if (year === null) return;
+    setCargandoAnio(true);
     try {
       const [d, dm, c, asg] = await Promise.all([
         axios.get(`/api/carga-academica/dashboard?year=${year}`),
@@ -79,7 +84,11 @@ export default function CargaAcademicaDashboard() {
         axios.get('/api/carga-academica/asignaturas'),
       ]);
       setData(d.data); setDemanda(dm.data); setCat(c.data); setAsignaturas(asg.data);
-    } catch { /* módulo aún sin datos */ }
+    } catch {
+      // Año sin datos o error de red: se parte de cero, nunca con lo anterior
+      setData(null); setDemanda([]);
+    }
+    setCargandoAnio(false);
     setLoading(false);
   }, [year]);
 
@@ -87,6 +96,14 @@ export default function CargaAcademicaDashboard() {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const recargar = async () => { await fetchProcesos(); await fetchAll(); };
+
+  // Al cambiar de año hay que soltar TODO lo del año anterior
+  const cambiarAnio = (y) => {
+    setYear(y);
+    setData(null);
+    setDemanda([]);
+    setCargandoAnio(true);
+  };
 
   const seed = async () => {
     setSeeding(true);
@@ -129,7 +146,7 @@ export default function CargaAcademicaDashboard() {
     const v = window.prompt('¿Qué año querés abrir?', String(sugerido));
     const n = Number(v);
     if (!n || n < 2000 || n > 2100) return;
-    setYear(n); setData(null); setShowProceso(false);
+    cambiarAnio(n); setShowProceso(false);
   };
 
   const reiniciarDist = () => accion(
@@ -158,12 +175,20 @@ export default function CargaAcademicaDashboard() {
     alert(msg);
   }, `¿Publicar la carga ${year} al libro de clases?\n\nSe crea una fila por curso real (curso × asignatura × docente × horas) y los docentes sin usuario se crean como profesor inactivo.`);
 
-  const descargarHorariosDep = (dep) => {
-    window.open(`/api/carga-academica/horarios-departamento.pdf?year=${year}${dep ? `&departamento=${encodeURIComponent(dep)}` : ''}`, '_blank');
+  const descargarHorariosDep = async (dep) => {
+    try {
+      await descargarArchivo(
+        `/api/carga-academica/horarios-departamento.pdf?year=${year}${dep ? `&departamento=${encodeURIComponent(dep)}` : ''}`,
+        `Horarios_${(dep || 'Todos').replace(/ /g, '_')}_${year}.pdf`);
+    } catch (e) { alert(e.message || 'No se pudo descargar'); }
   };
 
-  const descargarDepartamento = (dep) => {
-    window.open(`/api/carga-academica/informe-departamento.docx?year=${year}${dep ? `&departamento=${encodeURIComponent(dep)}` : ''}`, '_blank');
+  const descargarDepartamento = async (dep) => {
+    try {
+      await descargarArchivo(
+        `/api/carga-academica/informe-departamento.docx?year=${year}${dep ? `&departamento=${encodeURIComponent(dep)}` : ''}`,
+        `Carga_Horaria_${(dep || 'Todos').replace(/ /g, '_')}_${year}.docx`);
+    } catch (e) { alert(e.message || 'No se pudo descargar'); }
   };
 
   const patchDemanda = async (id, payload) => {
@@ -204,6 +229,7 @@ export default function CargaAcademicaDashboard() {
   const docentes = data?.docentes || [];
   const departamentos = [...new Set(demanda.map(d => d.departamento).filter(Boolean))];
   const vacio = !demanda.length && !docentes.length;
+  const alertas = data?.alertas || [];
   const procActivo = procesos.find(p => p.year === year);
   const otrosAnios = procesos.filter(p => p.year !== year && p.filas_asignacion > 0).map(p => p.year);
   const anioBase = procesos.filter(p => p.year < year).map(p => p.year).sort((a, b) => b - a)[0];
@@ -268,7 +294,7 @@ export default function CargaAcademicaDashboard() {
           const sel = p.year === year;
           const col = p.cerrado ? '#16a34a' : p.en_blanco ? '#94a3b8' : '#f59e0b';
           return (
-            <button key={p.year} onClick={() => { setYear(p.year); setData(null); }}
+            <button key={p.year} onClick={() => cambiarAnio(p.year)}
               style={{
                 padding: '7px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
                 border: `1px solid ${sel ? primary : '#e2e8f0'}`,
@@ -284,7 +310,7 @@ export default function CargaAcademicaDashboard() {
           );
         })}
         {!procesos.some(p => p.year === sugerido) && (
-          <button onClick={() => { setYear(sugerido); setData(null); }} style={{
+          <button onClick={() => cambiarAnio(sugerido)} style={{
             padding: '7px 14px', borderRadius: 10, cursor: 'pointer',
             border: `1px dashed ${primary}`, background: '#fff', color: primary,
             fontSize: 13, fontWeight: 700 }}>+ Abrir {sugerido}</button>
@@ -392,7 +418,14 @@ export default function CargaAcademicaDashboard() {
         </div>
       )}
 
-      {vacio && (
+      {cargandoAnio && (
+        <div className="card" style={{ display: 'flex', justifyContent: 'center',
+          padding: 50, marginBottom: 20 }}>
+          <div className="spinner" />
+        </div>
+      )}
+
+      {!cargandoAnio && vacio && (
         <div className="card" style={{ padding: 32, marginBottom: 20 }}>
           <p style={{ fontSize: 16, color: '#0f172a', margin: '0 0 4px', fontWeight: 700,
             textAlign: 'center' }}>Abrir el proceso {year}</p>
@@ -457,7 +490,7 @@ export default function CargaAcademicaDashboard() {
         </div>
       )}
 
-      {!vacio && (
+      {!cargandoAnio && !vacio && (
         <>
           {/* Resumen */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
@@ -469,17 +502,17 @@ export default function CargaAcademicaDashboard() {
             <StatBox label="Docentes cuadrados" value={`${r.docentes_completos}/${r.docentes_total}`}
               sub="carga = jornada legal"
               color={r.docentes_completos === r.docentes_total ? '#16a34a' : '#f59e0b'} />
-            <StatBox label="Alertas" value={data.alertas.length}
-              sub="descuadres y reglas" color={data.alertas.length ? '#dc2626' : '#16a34a'} />
+            <StatBox label="Alertas" value={alertas.length}
+              sub="descuadres y reglas" color={alertas.length ? '#dc2626' : '#16a34a'} />
           </div>
 
           {/* Alertas */}
-          {data.alertas.length > 0 && (
+          {alertas.length > 0 && (
             <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10,
               padding: '12px 16px', marginBottom: 18 }}>
               <p style={{ fontSize: 12, fontWeight: 800, color: '#92400e', margin: '0 0 6px',
                 textTransform: 'uppercase', letterSpacing: '0.05em' }}>Revisar</p>
-              {data.alertas.map((a, i) => (
+              {alertas.map((a, i) => (
                 <p key={i} style={{ fontSize: 13, color: '#92400e', margin: '3px 0' }}>• {a.mensaje}</p>
               ))}
             </div>
@@ -503,7 +536,7 @@ export default function CargaAcademicaDashboard() {
               <div className="card" style={{ marginBottom: 16 }}>
                 <h3 style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', margin: '0 0 16px',
                   textTransform: 'uppercase', letterSpacing: '0.06em' }}>Cobertura por asignatura</h3>
-                {data.por_asignatura.map(a => {
+                {(data?.por_asignatura || []).map(a => {
                   const full = a.horas_faltantes === 0;
                   const over = a.horas_faltantes < 0;
                   const color = over ? '#dc2626' : full ? '#16a34a' : '#f59e0b';
@@ -538,7 +571,7 @@ export default function CargaAcademicaDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.detalle_demanda.map(d => {
+                    {(data?.detalle_demanda || []).map(d => {
                       const col = d.estado === 'completa' ? '#16a34a'
                         : d.estado === 'sobreasignada' ? '#dc2626' : '#f59e0b';
                       return (

@@ -707,12 +707,29 @@ class CargaAsignacion(db.Model):
         }
 
 
+# Actividades que ocupan horas lectivas pero no son una asignatura.
+# Van en la tabla HORAS LECTIVAS del informe, bajo los ramos.
+ACTIVIDADES_LECTIVAS_DEFAULT = [
+    {'nombre': 'Disponibilidad',               'tipo': 'disponibilidad'},
+    {'nombre': 'Toma de contacto',             'tipo': 'toma_contacto'},
+    {'nombre': 'Orientación / Consejo de curso', 'tipo': 'orientacion'},
+    {'nombre': 'Trabajo de Jefatura',          'tipo': 'jefatura'},
+    {'nombre': 'Jefe de Departamento',         'tipo': 'jefe_departamento'},
+]
+
+
 class ActividadNoLectiva(db.Model):
-    """Catálogo de actividades no lectivas del colegio."""
+    """Catálogo de actividades del colegio, lectivas y no lectivas."""
     __tablename__ = 'carga_actividades_nl'
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
     nombre = db.Column(db.String(200), nullable=False)
+    # lectiva   -> ocupa horas de aula (Disponibilidad, Jefatura, ...)
+    # no_lectiva-> ocupa tiempo administrativo (Consejo de profesores, ...)
+    ambito = db.Column(db.String(20), default='no_lectiva')
+    # Para las lectivas: tipo canónico, del que dependen reglas como el
+    # máximo de 3 h de disponibilidad
+    tipo = db.Column(db.String(30))
     minutos_default = db.Column(db.Integer, default=60)
     is_active = db.Column(db.Boolean, default=True)
     orden = db.Column(db.Integer, default=0)
@@ -720,6 +737,7 @@ class ActividadNoLectiva(db.Model):
     def to_dict(self):
         return {
             'id': self.id, 'school_id': self.school_id, 'nombre': self.nombre,
+            'ambito': self.ambito or 'no_lectiva', 'tipo': self.tipo,
             'minutos_default': self.minutos_default, 'is_active': self.is_active,
             'orden': self.orden,
         }
