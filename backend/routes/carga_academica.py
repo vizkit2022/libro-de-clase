@@ -438,14 +438,22 @@ def _filas_informe(info):
 
 
 def _docx_informe(school, docentes, year):
+    """Informe de carga en Word, replicando el documento oficial del colegio."""
     from docx import Document
-    from docx.shared import Pt, Cm
+    from docx.shared import Pt, Cm, RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.enum.table import WD_TABLE_ALIGNMENT
     from docx.oxml.ns import qn
     from docx.oxml import OxmlElement
 
-    AZUL = '8EA9DB'
-    GRIS = 'D9D9D9'
+    # Paleta del documento original (tema Office, azul énfasis 1)
+    AZUL = 'B4C6E7'        # barras de sección y encabezados de columna
+    AZUL_CLARO = 'D9E2F3'  # etiqueta DEPARTAMENTO
+    FUENTE = 'Calibri'
+    BASE = 11              # el original está en 11 pt
+
+    # Anchos: suman 16,6 cm, el ancho útil de la hoja
+    ANCHOS = [Cm(9.3), Cm(3.6), Cm(3.7)]
 
     def shade(cell, color):
         tcPr = cell._tc.get_or_add_tcPr()
@@ -454,31 +462,75 @@ def _docx_informe(school, docentes, year):
         shd.set(qn('w:fill'), color)
         tcPr.append(shd)
 
-    def setcell(cell, text, b=False, fill=None, center=False, size=9):
+    def margenes(tabla, top=50, bottom=50, left=110, right=110):
+        """Aire dentro de las celdas, en twips. Es lo que da la altura de fila."""
+        tblPr = tabla._tbl.tblPr
+        mar = OxmlElement('w:tblCellMar')
+        for lado, val in (('top', top), ('left', left),
+                          ('bottom', bottom), ('right', right)):
+            el = OxmlElement(f'w:{lado}')
+            el.set(qn('w:w'), str(val))
+            el.set(qn('w:type'), 'dxa')
+            mar.append(el)
+        tblPr.append(mar)
+
+    def setcell(cell, text, b=False, fill=None, center=False, size=BASE):
         cell.text = '' if text is None else str(text)
-        for p_ in cell.paragraphs:
-            p_.paragraph_format.space_after = Pt(0)
+        for par in cell.paragraphs:
+            par.paragraph_format.space_after = Pt(0)
+            par.paragraph_format.space_before = Pt(0)
             if center:
-                p_.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            for r_ in p_.runs:
-                r_.bold = b
-                r_.font.size = Pt(size)
+                par.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            for run in par.runs:
+                run.bold = b
+                run.font.name = FUENTE
+                run.font.size = Pt(size)
+                run.font.color.rgb = RGBColor(0, 0, 0)
         if fill:
             shade(cell, fill)
+
+    def anchos(tabla, medidas=None):
+        """Fija el ancho de columna en la grilla de la tabla.
+
+        No basta con asignar cell.width: en las filas fusionadas las tres
+        celdas son el mismo objeto, así que se pisan entre sí y Word termina
+        repartiendo las columnas por su cuenta. Hay que escribir el tblGrid y
+        poner el layout en fijo.
+        """
+        medidas = medidas or ANCHOS
+        tabla.autofit = False
+        layout = OxmlElement('w:tblLayout')
+        layout.set(qn('w:type'), 'fixed')
+        tabla._tbl.tblPr.append(layout)
+
+        grid = tabla._tbl.find(qn('w:tblGrid'))
+        if grid is not None:
+            for gc, ancho in zip(grid.findall(qn('w:gridCol')), medidas):
+                gc.set(qn('w:w'), str(int(ancho.cm * 567)))   # cm a twips
+
+        for row in tabla.rows:
+            celdas = row.cells[:3]
+            # Saltar filas fusionadas: ahí las celdas son el mismo elemento
+            if len({id(c._tc) for c in celdas}) != len(celdas):
+                continue
+            for i, c in enumerate(celdas):
+                c.width = medidas[i]
 
     def barra(tabla, texto):
         """Fila de sección que cruza las tres columnas."""
         fila = tabla.add_row().cells
         fila[0].merge(fila[2])
-        setcell(fila[0], texto, b=True, fill=AZUL, center=True, size=10)
+        setcell(fila[0], texto, b=True, fill=AZUL, center=True)
 
     doc = Document()
+    estilo = doc.styles['Normal']
+    estilo.font.name = FUENTE
+    estilo.font.size = Pt(BASE)
     for sec in doc.sections:
-        sec.top_margin = sec.bottom_margin = Cm(1.4)
-        sec.left_margin = sec.right_margin = Cm(2)
+        sec.top_margin = sec.bottom_margin = Cm(1.6)
+        sec.left_margin = sec.right_margin = Cm(2.2)
 
     logo_raw = _logo_bytes(school)
-    ANCHOS = [Cm(8.2), Cm(4.0), Cm(4.3)]
 
     for idx, d in enumerate(docentes):
         info = d.to_dict()
@@ -486,13 +538,17 @@ def _docx_informe(school, docentes, year):
         if idx > 0:
             doc.add_page_break()
 
-        # Encabezado institucional: logo y datos
+        # ── Encabezado institucional: logo y datos ──────────────────
         cab = doc.add_table(rows=1, cols=2)
+        cab.autofit = False
+        cab.columns[0].width = Cm(2.8)
+        cab.columns[1].width = Cm(13.8)
         c_logo, c_txt = cab.rows[0].cells
-        c_logo.width = Cm(2.3)
+        c_logo.width = Cm(2.8)
+        c_txt.width = Cm(13.8)
         if logo_raw:
             try:
-                c_logo.paragraphs[0].add_run().add_picture(io.BytesIO(logo_raw), height=Cm(1.6))
+                c_logo.paragraphs[0].add_run().add_picture(io.BytesIO(logo_raw), height=Cm(1.9))
             except Exception:
                 pass
         for i, (txt, bold_) in enumerate([
@@ -506,25 +562,35 @@ def _docx_informe(school, docentes, year):
             par = c_txt.paragraphs[0] if i == 0 else c_txt.add_paragraph()
             run = par.add_run(txt)
             run.bold = bold_
-            run.font.size = Pt(11 if bold_ else 9)
+            run.font.name = FUENTE
+            run.font.size = Pt(BASE)
             par.paragraph_format.space_after = Pt(0)
 
         doc.add_paragraph()
 
-        # Tabla única con todas las secciones
+        # ── Caja CARGA HORARIA / DEPARTAMENTO ───────────────────────
+        caja = doc.add_table(rows=0, cols=3)
+        caja.style = 'Table Grid'
+        caja.alignment = WD_TABLE_ALIGNMENT.CENTER
+        margenes(caja)
+        barra(caja, f'CARGA HORARIA {year}')
+        fila = caja.add_row().cells
+        setcell(fila[0], 'DEPARTAMENTO', b=True, fill=AZUL_CLARO)
+        fila[1].merge(fila[2])
+        setcell(fila[1], info['departamento'] or '')
+        anchos(caja)
+
+        doc.add_paragraph()   # el original deja aire aquí
+
+        # ── Tabla principal ─────────────────────────────────────────
         t = doc.add_table(rows=0, cols=3)
         t.style = 'Table Grid'
-
-        barra(t, f'CARGA HORARIA {year}')
-
-        fila = t.add_row().cells
-        setcell(fila[0], 'DEPARTAMENTO', b=True, fill=AZUL, size=10)
-        fila[1].merge(fila[2])
-        setcell(fila[1], info['departamento'] or '', b=True, size=10)
+        t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        margenes(t)
 
         for label, val in S['cabecera']:
             fila = t.add_row().cells
-            setcell(fila[0], label, b=True, fill=GRIS)
+            setcell(fila[0], label, b=True)       # en el original van sin trama
             fila[1].merge(fila[2])
             setcell(fila[1], val)
 
@@ -534,16 +600,30 @@ def _docx_informe(school, docentes, year):
         for i, h in enumerate(['ASIGNATURAS', 'CURSOS', 'CANTIDAD DE HORAS']):
             setcell(fila[i], h, b=True, fill=AZUL, center=True)
 
-        for nombre, cursos, horas in S['lectivas']:
+        # Primero los ramos, luego una fila en blanco y después las
+        # actividades lectivas, como separa el documento original
+        ramos = [f for f, a in zip(S['lectivas'], info['asignaciones'])
+                 if a.get('tipo') == 'asignatura']
+        otras = [f for f, a in zip(S['lectivas'], info['asignaciones'])
+                 if a.get('tipo') != 'asignatura']
+
+        def fila_lectiva(nombre, cursos, horas):
             fila = t.add_row().cells
             setcell(fila[0], nombre)
             setcell(fila[1], cursos, center=True)
             setcell(fila[2], horas, center=True)
 
+        for nombre, cursos, horas in ramos:
+            fila_lectiva(nombre, cursos, horas)
+        if otras:
+            fila_lectiva('', '', '')
+        for nombre, cursos, horas in otras:
+            fila_lectiva(nombre, cursos, horas)
+
         fila = t.add_row().cells
         setcell(fila[0], '')
-        setcell(fila[1], 'Total, de horas', b=True, center=True)
-        setcell(fila[2], S['total_lectivas'], b=True, center=True)
+        setcell(fila[1], 'Total, de horas', center=True)
+        setcell(fila[2], S['total_lectivas'], center=True)
 
         barra(t, 'HORAS NO LECTIVAS')
 
@@ -551,7 +631,6 @@ def _docx_informe(school, docentes, year):
         setcell(fila[0], '')
         setcell(fila[1], '')
         setcell(fila[2], 'Tiempo', b=True, fill=AZUL, center=True)
-
 
         for nombre, tiempo in S['no_lectivas']:
             fila = t.add_row().cells
@@ -577,16 +656,11 @@ def _docx_informe(school, docentes, year):
         # Líneas libres al pie, fuera de todo cálculo
         for etiqueta, valor in S['adicionales']:
             fila = t.add_row().cells
-            setcell(fila[0], etiqueta, b=True)
+            setcell(fila[0], etiqueta)
             setcell(fila[1], '')
             setcell(fila[2], valor, b=True, center=True)
 
-        for row in t.rows:
-            for i, c in enumerate(row.cells[:3]):
-                try:
-                    c.width = ANCHOS[i]
-                except Exception:
-                    pass
+        anchos(t)
 
     buf = io.BytesIO()
     doc.save(buf)
@@ -604,8 +678,8 @@ def _pdf_carga(school, docentes, year):
                                     Paragraph, Spacer, Image, PageBreak)
     from reportlab.lib.enums import TA_CENTER
 
-    AZUL = colors.HexColor('#8EA9DB')
-    GRIS = colors.HexColor('#D9D9D9')
+    AZUL = colors.HexColor('#B4C6E7')
+    AZUL_CLARO = colors.HexColor('#D9E2F3')
 
     buf = io.BytesIO()
     pdf = SimpleDocTemplate(buf, pagesize=letter, leftMargin=2 * cm,
@@ -613,9 +687,9 @@ def _pdf_carga(school, docentes, year):
                             bottomMargin=1.4 * cm)
     story = []
     st_h1 = ParagraphStyle('h1', fontName='Helvetica-Bold', fontSize=11, leading=13)
-    st_h2 = ParagraphStyle('h2', fontName='Helvetica', fontSize=9, leading=11)
-    st_cel = ParagraphStyle('cel', fontName='Helvetica', fontSize=9, leading=11)
-    st_celb = ParagraphStyle('celb', fontName='Helvetica-Bold', fontSize=9, leading=11)
+    st_h2 = ParagraphStyle('h2', fontName='Helvetica', fontSize=10, leading=12)
+    st_cel = ParagraphStyle('cel', fontName='Helvetica', fontSize=10.5, leading=13)
+    st_celb = ParagraphStyle('celb', fontName='Helvetica-Bold', fontSize=10.5, leading=13)
     st_c = ParagraphStyle('c', parent=st_cel, alignment=TA_CENTER)
     st_cb = ParagraphStyle('cb', parent=st_celb, alignment=TA_CENTER)
 
@@ -648,8 +722,9 @@ def _pdf_carga(school, docentes, year):
         data, st = [], [
             ('GRID', (0, 0), (-1, -1), 0.6, colors.black),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
         ]
         f = 0
 
@@ -664,12 +739,12 @@ def _pdf_carga(school, docentes, year):
 
         data.append([Paragraph('<b>DEPARTAMENTO</b>', st_celb),
                      Paragraph(f"<b>{info['departamento'] or ''}</b>", st_celb), ''])
-        st.extend([('SPAN', (1, f), (2, f)), ('BACKGROUND', (0, f), (0, f), AZUL)])
+        st.extend([('SPAN', (1, f), (2, f)), ('BACKGROUND', (0, f), (0, f), AZUL_CLARO)])
         f += 1
 
         for label, val in S['cabecera']:
             data.append([Paragraph(f'<b>{label}</b>', st_celb), Paragraph(val, st_cel), ''])
-            st.extend([('SPAN', (1, f), (2, f)), ('BACKGROUND', (0, f), (0, f), GRIS)])
+            st.append(('SPAN', (1, f), (2, f)))
             f += 1
 
         barra('HORAS LECTIVAS')
@@ -681,14 +756,18 @@ def _pdf_carga(school, docentes, year):
                    ('ALIGN', (0, f), (2, f), 'CENTER')])
         f += 1
 
-        for nombre, cursos, horas in S['lectivas']:
+        ramos = [x for x, a in zip(S['lectivas'], info['asignaciones'])
+                 if a.get('tipo') == 'asignatura']
+        otras = [x for x, a in zip(S['lectivas'], info['asignaciones'])
+                 if a.get('tipo') != 'asignatura']
+        for nombre, cursos, horas in ramos + ([('', '', '')] if otras else []) + otras:
             data.append([Paragraph(nombre, st_cel), Paragraph(cursos, st_c),
                          Paragraph(horas, st_c)])
             st.append(('ALIGN', (1, f), (2, f), 'CENTER'))
             f += 1
 
-        data.append(['', Paragraph('<b>Total, de horas</b>', st_cb),
-                     Paragraph(f"<b>{S['total_lectivas']}</b>", st_cb)])
+        data.append(['', Paragraph('Total, de horas', st_c),
+                     Paragraph(S['total_lectivas'], st_c)])
         st.append(('ALIGN', (1, f), (2, f), 'CENTER'))
         f += 1
 
