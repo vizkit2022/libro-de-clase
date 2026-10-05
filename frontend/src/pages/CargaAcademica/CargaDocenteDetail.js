@@ -26,6 +26,19 @@ const inp = {
   borderRadius: 6, fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit',
 };
 
+// Grilla del horario semanal
+const thHor = {
+  border: '1px solid #cbd5e1', background: '#e2e8f0', padding: '5px 4px',
+  fontSize: 10, fontWeight: 800, color: '#334155', textAlign: 'center',
+};
+const tdHor = { border: '1px solid #e2e8f0', verticalAlign: 'middle' };
+
+// Líneas libres del pie del informe: no entran en ningún total
+const ADICIONALES_SUGERIDOS = [
+  'Recreo', 'Colación', 'Traslado entre sedes', 'Turno de patio',
+  'Permanencia adicional', 'Observaciones',
+];
+
 function StatCard({ label, value, sub, color }) {
   return (
     <div style={{
