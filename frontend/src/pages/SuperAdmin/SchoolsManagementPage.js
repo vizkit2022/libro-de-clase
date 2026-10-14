@@ -394,10 +394,21 @@ export function SchoolDetailPage() {
               <span style={{ color: '#374151', fontWeight: 500 }}>{v}</span>
             </div> : null
           ))}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10, fontSize: 14 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 4, fontSize: 14 }}>
             <span style={{ color: '#94a3b8', minWidth: 80 }}>Usuarios:</span>
-            <span style={{ color: '#374151', fontWeight: 500 }}>{school.user_count || 0}</span>
+            <span style={{ color: '#374151', fontWeight: 600 }}>
+              {school.user_count || 0}
+              <span style={{ color: '#94a3b8', fontWeight: 400, marginLeft: 6, fontSize: 13 }}>
+                facturables
+              </span>
+            </span>
           </div>
+          <p style={{ fontSize: 12.5, color: '#94a3b8', margin: '0 0 0 88px', lineHeight: 1.5 }}>
+            Docentes y administradores. No se cobran
+            {' '}{school.otros_usuarios?.alumnos ?? 0} alumnos
+            {school.otros_usuarios?.apoderados
+              ? ` ni ${school.otros_usuarios.apoderados} apoderados` : ''}.
+          </p>
         </div>
 
         {/* Estado del plan */}
@@ -429,6 +440,73 @@ export function SchoolDetailPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Usuarios facturables */}
+      <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+        marginBottom: 20, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 24px',
+          borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#64748b', margin: 0,
+              textTransform: 'uppercase', letterSpacing: 1 }}>Usuarios del colegio</h3>
+            <p style={{ fontSize: 12.5, color: '#94a3b8', margin: '3px 0 0' }}>
+              Los que determinan el valor del plan
+            </p>
+          </div>
+          {Object.entries(school.usuarios_por_rol || {})
+            .filter(([r]) => ['admin', 'directivo', 'profesor'].includes(r))
+            .map(([rol, n]) => (
+              <span key={rol} style={{ fontSize: 11.5, fontWeight: 700, padding: '3px 10px',
+                borderRadius: 999, background: '#e0e5fb', color: '#2a2eb0' }}>
+                {n} {rol === 'profesor' ? (n === 1 ? 'docente' : 'docentes') : rol}
+              </span>
+            ))}
+        </div>
+
+        {!school.usuarios?.length ? (
+          <p style={{ padding: 32, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
+            Este colegio todavía no tiene docentes ni administradores cargados.
+          </p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5 }}>
+            <thead>
+              <tr style={{ background: '#f8fafc' }}>
+                {['Nombre', 'Correo', 'Rol', 'Estado', 'Último ingreso'].map(h => (
+                  <th key={h} style={{ padding: '9px 24px', textAlign: 'left', fontSize: 11,
+                    textTransform: 'uppercase', color: '#64748b', fontWeight: 700 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {school.usuarios.map(u => (
+                <tr key={u.id} style={{ borderTop: '1px solid #f1f5f9',
+                  opacity: u.is_active ? 1 : 0.62 }}>
+                  <td style={{ padding: '10px 24px', fontWeight: 600, color: '#0f172a' }}>
+                    {u.nombre}
+                  </td>
+                  <td style={{ padding: '10px 24px', color: '#64748b' }}>{u.email}</td>
+                  <td style={{ padding: '10px 24px', color: '#475569',
+                    textTransform: 'capitalize' }}>{u.role}</td>
+                  <td style={{ padding: '10px 24px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px',
+                      borderRadius: 999,
+                      background: u.is_active ? '#dcfce7' : '#f1f5f9',
+                      color: u.is_active ? '#166534' : '#64748b' }}>
+                      {u.is_active ? 'activo' : 'sin acceso'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 24px', color: '#94a3b8', fontSize: 12.5 }}>
+                    {u.last_login
+                      ? new Date(u.last_login).toLocaleDateString('es-CL',
+                          { day: '2-digit', month: 'short', year: 'numeric' })
+                      : 'nunca'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Sección de Pago / Suscripción */}

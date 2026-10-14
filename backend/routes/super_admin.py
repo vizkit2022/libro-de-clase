@@ -144,6 +144,21 @@ def get_school(school_id):
     # Incluir últimas suscripciones
     subs = Subscription.query.filter_by(school_id=school_id).order_by(Subscription.created_at.desc()).limit(5).all()
     data['subscriptions'] = [s.to_dict() for s in subs]
+
+    # Usuarios del colegio. Solo los facturables van en la lista principal;
+    # alumnos y apoderados se informan como total, no se enumeran.
+    from models import ROLES_FACTURABLES
+    usuarios = User.query.filter_by(school_id=school_id)\
+        .order_by(User.role, User.last_name, User.first_name).all()
+    data['usuarios'] = [{
+        'id': u.id, 'nombre': f'{u.first_name} {u.last_name}',
+        'email': u.email, 'rut': u.rut, 'role': u.role,
+        'is_active': u.is_active, 'last_login': u.last_login.isoformat() if u.last_login else None,
+    } for u in usuarios if u.role in ROLES_FACTURABLES]
+    data['otros_usuarios'] = {
+        'alumnos': sum(1 for u in usuarios if u.role == 'alumno' and u.is_active),
+        'apoderados': sum(1 for u in usuarios if u.role == 'apoderado' and u.is_active),
+    }
     return jsonify(data), 200
 
 
@@ -329,3 +344,127 @@ def seed_franz_liszt():
     _create_default_periods(school.id)
     db.session.commit()
     return jsonify({'message': 'Creado', 'school': school.to_dict()}), 201
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  USUARIOS DE TODOS LOS COLEGIOS
+#  El super admin administra a quienes operan la plataforma: directivos,
+#  administradores y docentes. Alumnos y apoderados los maneja el colegio.
+# ══════════════════════════════════════════════════════════════════════
+
+ROLES_GESTIONABLES = ('admin', 'directivo', 'profesor')
+
+
+@super_admin_bp.route('/usuarios', methods=['GET'])
+@require_super_admin
+def listar_usuarios():
+    """Usuarios operativos, con su colegio. Filtrable por colegio, rol o texto."""
+    from models import ROLES_FACTURABLES
+
+    q = User.query.filter(User.role.in_(ROLES_FACTURABLES))
+
+    if request.args.get('school_id'):
+        q = q.filter(User.school_id == request.args.get('school_id', type=int))
+    if request.args.get('role'):
+        q = q.filter(User.role == request.args.get('role'))
+
+    buscar = (request.args.get('buscar') or '').strip()
+    if buscar:
+        patron = f'%{buscar}%'
+        q = q.filter(db.or_(User.first_name.ilike(patron),
+                            User.last_name.ilike(patron),
+                            User.email.ilike(patron)))
+
+    usuarios = q.order_by(User.school_id, User.role, User.last_name).all()
+    colegios = {s.id: s.name for s in School.query.all()}
+
+    return jsonify([{
+        'id': u.id, 'nombre': u.first_name, 'apellido': u.last_name,
+        'email': u.email, 'rut': u.rut, 'telefono': u.phone,
+        'role': u.role, 'is_active': u.is_active,
+        'school_id': u.school_id, 'colegio': colegios.get(u.school_id, '—'),
+        'last_login': u.last_login.isoformat() if u.last_login else None,
+        'created_at': u.created_at.isoformat() if u.created_at else None,
+    } for u in usuarios]), 200
+
+
+@super_admin_bp.route('/usuarios', methods=['POST'])
+@require_super_admin
+def crear_usuario():
+    d = request.get_json() or {}
+    email = (d.get('email') or '').strip().lower()
+    nombre = (d.get('nombre') or '').strip()
+    apellido = (d.get('apellido') or '').strip()
+    rol = d.get('role', 'admin')
+
+    if not email or not nombre or not apellido:
+        return jsonify({'error': 'Nombre, apellido y correo son obligatorios'}), 400
+    if rol not in ROLES_GESTIONABLES:
+        return jsonify({'error': f'Rol no válido: {rol}'}), 400
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': f'El correo {email} ya está registrado'}), 400
+    if not d.get('school_id'):
+        return jsonify({'error': 'Hay que indicar el colegio'}), 400
+    if not School.query.get(d['school_id']):
+        return jsonify({'error': 'El colegio no existe'}), 404
+
+    clave = d.get('password') or 'colegio123'
+    u = User(school_id=d['school_id'], email=email, first_name=nombre,
+             last_name=apellido, rut=(d.get('rut') or '').strip() or None,
+             phone=(d.get('telefono') or '').strip() or None,
+             role=rol, is_active=d.get('is_active', True))
+    u.set_password(clave)
+    db.session.add(u)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': u.id, 'email': email}), 201
+
+
+@super_admin_bp.route('/usuarios/<int:uid>', methods=['PUT'])
+@require_super_admin
+def actualizar_usuario(uid):
+    u = User.query.get_or_404(uid)
+    if u.role == 'super_admin':
+        return jsonify({'error': 'El super admin no se edita desde aquí'}), 403
+    d = request.get_json() or {}
+
+    if 'email' in d:
+        email = (d['email'] or '').strip().lower()
+        if not email:
+            return jsonify({'error': 'El correo no puede quedar vacío'}), 400
+        otro = User.query.filter_by(email=email).first()
+        if otro and otro.id != u.id:
+            return jsonify({'error': f'El correo {email} ya está en uso'}), 400
+        u.email = email
+
+    for campo, destino in (('nombre', 'first_name'), ('apellido', 'last_name'),
+                           ('rut', 'rut'), ('telefono', 'phone')):
+        if campo in d:
+            setattr(u, destino, (d[campo] or '').strip() or None)
+
+    if 'role' in d:
+        if d['role'] not in ROLES_GESTIONABLES:
+            return jsonify({'error': f'Rol no válido: {d["role"]}'}), 400
+        u.role = d['role']
+    if 'school_id' in d and d['school_id']:
+        if not School.query.get(d['school_id']):
+            return jsonify({'error': 'El colegio no existe'}), 404
+        u.school_id = d['school_id']
+    if 'is_active' in d:
+        u.is_active = bool(d['is_active'])
+    if d.get('password'):
+        u.set_password(d['password'])
+
+    db.session.commit()
+    return jsonify({'ok': True, 'id': u.id}), 200
+
+
+@super_admin_bp.route('/usuarios/<int:uid>', methods=['DELETE'])
+@require_super_admin
+def desactivar_usuario(uid):
+    """Baja lógica: conserva su historial de notas, anotaciones y carga."""
+    u = User.query.get_or_404(uid)
+    if u.role == 'super_admin':
+        return jsonify({'error': 'El super admin no se desactiva desde aquí'}), 403
+    u.is_active = False
+    db.session.commit()
+    return jsonify({'ok': True, 'mensaje': f'{u.first_name} {u.last_name} quedó sin acceso'}), 200

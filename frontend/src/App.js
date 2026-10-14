@@ -29,6 +29,7 @@ import SuperAdminLayout from './pages/SuperAdmin/SuperAdminLayout';
 import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard';
 import SchoolsManagementPage, { SchoolFormPage, SchoolDetailPage } from './pages/SuperAdmin/SchoolsManagementPage';
 import SubscriptionsPage from './pages/SuperAdmin/SubscriptionsPage';
+import AdminsPage from './pages/SuperAdmin/AdminsPage';
 
 const RedirectByRole = () => {
   const { user } = useAuth();
@@ -77,6 +78,7 @@ export default function App() {
             <Route path="schools/:id" element={<SchoolDetailPage />} />
             <Route path="schools/:id/edit" element={<SchoolFormPage />} />
             <Route path="subscriptions" element={<SubscriptionsPage />} />
+            <Route path="admins" element={<AdminsPage />} />
           </Route>
 
           {/* App normal de colegios */}

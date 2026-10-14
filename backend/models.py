@@ -4,6 +4,11 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
+# Roles que cuentan para el cobro: el plan se calcula sobre quienes
+# administran, no sobre la matrícula. Alumnos y apoderados no suman.
+ROLES_FACTURABLES = ('admin', 'directivo', 'profesor')
+
+
 class School(db.Model):
     __tablename__ = 'schools'
     id = db.Column(db.Integer, primary_key=True)
@@ -35,6 +40,18 @@ class School(db.Model):
     subjects = db.relationship('Subject', backref='school', lazy=True)
     subscriptions = db.relationship('Subscription', backref='school', lazy=True)
 
+    def contar_facturables(self):
+        """Docentes y administradores activos: la base del plan."""
+        return sum(1 for u in (self.users or [])
+                   if u.role in ROLES_FACTURABLES and u.is_active)
+
+    def contar_por_rol(self):
+        conteo = {}
+        for u in (self.users or []):
+            if u.is_active:
+                conteo[u.role] = conteo.get(u.role, 0) + 1
+        return conteo
+
     def to_dict(self):
         return {
             'id': self.id, 'name': self.name, 'rut': self.rut,
@@ -46,7 +63,8 @@ class School(db.Model):
             'is_active': self.is_active,
             'plan': self.plan, 'plan_status': self.plan_status,
             'subscription_expires_at': self.subscription_expires_at.isoformat() if self.subscription_expires_at else None,
-            'user_count': len(self.users) if self.users else 0,
+            'user_count': self.contar_facturables(),
+            'usuarios_por_rol': self.contar_por_rol(),
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
