@@ -3,14 +3,97 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kolevia — Plataforma educacional 360 para colegios chilenos</title>
-<meta name="description" content="Kolevia reúne libro de clases digital, calificaciones, carga académica según Tabla Legal MINEDUC, convivencia escolar y portal de apoderados en una sola plataforma.">
+<title>Kolevia · Libro de clases digital y gestión escolar para colegios de Chile</title>
+<meta name="description" content="Plataforma chilena de gestión escolar: libro de clases digital, calificaciones, carga horaria docente según la Tabla Legal del MINEDUC, convivencia escolar con los anexos oficiales y portal de apoderados.">
+<link rel="canonical" href="https://kolevia.cl/">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta name="author" content="Kolevia">
+<meta name="geo.region" content="CL">
 <meta name="theme-color" content="#3b4fd8">
-<meta property="og:image" content="/inicio/img/aula-2.jpg">
-<meta property="og:title" content="Kolevia — Plataforma educacional 360">
-<meta property="og:description" content="Todo lo que tu colegio necesita para gestionar lo pedagógico, en un solo lugar.">
+
 <meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta property="og:site_name" content="Kolevia">
+<meta property="og:url" content="https://kolevia.cl/">
+<meta property="og:title" content="Kolevia · Libro de clases digital y gestión escolar para colegios de Chile">
+<meta property="og:description" content="Libro de clases, calificaciones, carga horaria según la Tabla Legal del MINEDUC y convivencia escolar con los anexos oficiales. Todo en una plataforma.">
+<meta property="og:image" content="https://kolevia.cl/inicio/img/og-kolevia.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Kolevia, tecnología para educar">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kolevia · Gestión escolar para colegios de Chile">
+<meta name="twitter:description" content="Libro de clases digital, carga horaria MINEDUC y convivencia escolar en una sola plataforma.">
+<meta name="twitter:image" content="https://kolevia.cl/inicio/img/og-kolevia.jpg">
+
 <link rel="icon" type="image/png" href="/inicio/img/favicon.png">
+<link rel="apple-touch-icon" href="/inicio/img/kolevia-isotipo.png">
+
+<!-- Datos estructurados: le dicen a buscadores y asistentes qué es esto, a
+     quién sirve y qué resuelve, sin que tengan que deducirlo del texto. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://kolevia.cl/#organizacion",
+      "name": "Kolevia",
+      "url": "https://kolevia.cl/",
+      "logo": "https://kolevia.cl/inicio/img/kolevia-isotipo.png",
+      "image": "https://kolevia.cl/inicio/img/og-kolevia.jpg",
+      "description": "Plataforma chilena de gestión escolar para colegios de educación básica y media.",
+      "email": "contacto@kolevia.cl",
+      "areaServed": { "@type": "Country", "name": "Chile" },
+      "knowsLanguage": "es-CL"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://kolevia.cl/#sitio",
+      "url": "https://kolevia.cl/",
+      "name": "Kolevia",
+      "inLanguage": "es-CL",
+      "publisher": { "@id": "https://kolevia.cl/#organizacion" }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://kolevia.cl/#plataforma",
+      "name": "Kolevia",
+      "applicationCategory": "BusinessApplication",
+      "applicationSubCategory": "Gestión escolar",
+      "operatingSystem": "Navegador web",
+      "url": "https://kolevia.cl/",
+      "inLanguage": "es-CL",
+      "description": "Libro de clases digital, calificaciones, carga horaria docente según la Tabla Legal del MINEDUC, convivencia escolar con los anexos oficiales, reportes y portal de apoderados.",
+      "featureList": [
+        "Libro de clases digital",
+        "Calificaciones por asignatura y período",
+        "Carga horaria docente según la Tabla Legal del MINEDUC",
+        "Convivencia escolar con los anexos oficiales",
+        "Matrícula con carga desde Excel",
+        "Reportes en Word y PDF",
+        "Portal de apoderados",
+        "Administración de varios establecimientos"
+      ],
+      "audience": {
+        "@type": "EducationalAudience",
+        "educationalRole": "Equipo directivo, jefes de departamento, docentes y encargados de convivencia escolar"
+      },
+      "provider": { "@id": "https://kolevia.cl/#organizacion" },
+      "offers": {
+        "@type": "Offer",
+        "name": "Plan Base",
+        "price": "0.5",
+        "priceCurrency": "CLF",
+        "description": "0,5 UF por usuario al mes, contando docentes y administradores. Estudiantes y apoderados no se cobran.",
+        "availability": "https://schema.org/InStock"
+      }
+    }
+  ]
+}
+</script>
+
 <style>
   :root{
     --azul:#3b4fd8; --azul-cl:#6b8ef5; --azul-os:#2a2eb0; --azul-noc:#1a1a6e;
@@ -352,6 +435,32 @@
     padding:4px 12px;border-radius:999px}
   .precio-pie{text-align:center;font-size:12.5px;color:var(--txt-3);margin-top:26px}
 
+  /* Perfiles */
+  .perfiles{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+  .perfil{background:#fff;border:1px solid var(--bor);border-radius:var(--r);
+    padding:26px;box-shadow:var(--sombra)}
+  .perfil h3{font-size:17.5px;font-weight:780;letter-spacing:-.018em;margin-bottom:2px}
+  .perfil .rol{font-size:11.5px;font-weight:700;color:var(--azul);text-transform:uppercase;
+    letter-spacing:.06em;margin-bottom:12px}
+  .perfil .desc{font-size:14.5px;color:var(--txt-2)}
+  .perfil .lista{margin-top:14px;gap:8px}
+  .perfil .lista li{font-size:13.5px}
+
+  /* Testimonios */
+  .citas{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;
+    max-width:900px;margin:0 auto}
+  .cita{background:#fff;border:1px solid var(--bor);border-radius:var(--r);
+    padding:28px;margin:0;box-shadow:var(--sombra);position:relative}
+  .cita blockquote{margin:0 0 20px;font-size:15.5px;line-height:1.6;color:var(--txt)}
+  .cita figcaption{display:flex;align-items:center;gap:12px;
+    border-top:1px solid var(--bor);padding-top:16px}
+  .cita .ini{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:grid;
+    place-items:center;font-size:14px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--azul),var(--azul-cl))}
+  .cita figcaption b{display:block;font-size:14px;font-weight:750;color:#0f172a}
+  .cita figcaption i{display:block;font-style:normal;font-size:12.5px;color:var(--txt-3);
+    margin-top:1px}
+
   /* Nosotros */
   .nos{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:8px}
   .nos .b{background:#fff;border:1px solid var(--bor);border-radius:var(--r);padding:28px}
@@ -408,13 +517,14 @@
     .dest{grid-template-columns:1fr;gap:32px}
     .dest.inv .vis{order:0}
     .props,.mods,.nos{grid-template-columns:repeat(2,1fr)}
+    .perfiles,.citas{grid-template-columns:1fr}
     .pie-grid{grid-template-columns:1fr 1fr;gap:30px}
     .nav-links{display:none}
   }
   @media (max-width:640px){
     section{padding:56px 0}
     .hero .env{padding-top:48px;padding-bottom:48px}
-    .props,.mods,.cols,.nos{grid-template-columns:1fr}
+    .props,.mods,.cols,.nos,.perfiles,.citas{grid-template-columns:1fr}
     .cifras{gap:24px}
     .dos{grid-template-columns:1fr}
     .pie-grid{grid-template-columns:1fr}
@@ -457,6 +567,7 @@
     <nav class="nav-links">
       <a href="#modulos">Módulos</a>
       <a href="#carga">Carga académica</a>
+      <a href="#perfiles">Para quién es</a>
       <a href="#precios">Planes</a>
       <a href="#colegios">Colegios</a>
       <a href="#nosotros">Nosotros</a>
@@ -775,7 +886,105 @@
   </div>
 </section>
 
-<section class="sec-sup" id="colegios">
+<section id="perfiles">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Para quién es</p>
+      <h2>Cada rol entra a lo suyo</h2>
+      <p>Una misma plataforma, pero cada persona ve lo que le corresponde y nada más.</p>
+    </div>
+    <div class="perfiles rev-g">
+      <article class="perfil">
+        <h3>Equipo directivo</h3>
+        <p class="rol">Dirección y UTP</p>
+        <p class="desc">Ve el estado del colegio completo: matrícula, cobertura de la
+          carga horaria, casos de convivencia abiertos y qué está sin resolver. Define
+          períodos, cursos y quién accede a qué.</p>
+        <ul class="lista">
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Panel con lo que requiere atención</li>
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Informes listos para firmar</li>
+        </ul>
+      </article>
+
+      <article class="perfil">
+        <h3>Jefes de departamento</h3>
+        <p class="rol">Coordinación académica</p>
+        <p class="desc">Reparten las horas de su departamento entre los docentes
+          respetando la jornada de cada uno, y ven al instante si un curso quedó sin
+          profesor o con dos.</p>
+        <ul class="lista">
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Reparto asistido que respeta la Tabla Legal</li>
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Informe del departamento en Word y PDF</li>
+        </ul>
+      </article>
+
+      <article class="perfil">
+        <h3>Docentes</h3>
+        <p class="rol">Profesores de aula y jefes de curso</p>
+        <p class="desc">Entran a sus cursos, registran calificaciones y anotaciones, y
+          consultan su carga y su horario semanal sin pedírselo a nadie.</p>
+        <ul class="lista">
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Sus cursos y asignaturas a mano</li>
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Anotaciones desde una foto del registro</li>
+        </ul>
+      </article>
+
+      <article class="perfil">
+        <h3>Convivencia escolar</h3>
+        <p class="rol">Encargados y duplas psicosociales</p>
+        <p class="desc">Llevan cada caso por sus cinco etapas con los anexos oficiales,
+          registran la bitácora de seguimiento e imprimen el informe de la etapa para
+          el expediente.</p>
+        <ul class="lista">
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Protocolo completo, no una planilla</li>
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Trazabilidad de medidas y acuerdos</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="sec-sup" id="testimonios">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Lo que dicen quienes la usan</p>
+      <h2>Desde el colegio, no desde el folleto</h2>
+    </div>
+    <div class="citas rev-g">
+      <figure class="cita">
+        <blockquote>
+          Antes llegaba a marzo con las planillas de notas a medio llenar y sin
+          saber qué curso me faltaba. Ahora entro, veo mis cursos y registro
+          apenas termino la clase.
+        </blockquote>
+        <figcaption>
+          <span class="ini">RH</span>
+          <span>
+            <b>Rocío Herrera</b>
+            <i>Profesora · Colegio Franz Liszt</i>
+          </span>
+        </figcaption>
+      </figure>
+
+      <figure class="cita">
+        <blockquote>
+          Lo que más me ordenó fue tener el caso completo en un solo lugar. Cada
+          etapa con su anexo, la bitácora al día, y el informe listo para imprimir
+          cuando lo piden. Dejé de armarlos a mano.
+        </blockquote>
+        <figcaption>
+          <span class="ini">DA</span>
+          <span>
+            <b>Darinka Alfaro</b>
+            <i>Encargada de Convivencia Escolar · Colegio Franz Liszt</i>
+          </span>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="colegios">
   <div class="env">
     <div class="cab rev">
       <p class="et">Comunidad Kolevia</p>
