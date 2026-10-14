@@ -108,6 +108,9 @@ export default function UsersPage() {
   const [teacherCourses, setTeacherCourses] = useState([]);  // cursos asignados al profesor en edición
   const [togglingCourse, setTogglingCourse] = useState(null); // id del curso en proceso
 
+  // Contraseña: visible u oculta mientras se escribe
+  const [verClave, setVerClave] = useState(false);
+
   // Foto de perfil en modal
   const [pendingPhoto, setPendingPhoto] = useState(null); // base64 data URL a guardar
 
@@ -145,6 +148,7 @@ export default function UsersPage() {
 
   const openNew = () => {
     setForm(EMPTY_FORM);
+    setVerClave(false);
     setEditing(null);
     setSelectedStudents([]);
     setTeacherCourses([]);
@@ -154,6 +158,7 @@ export default function UsersPage() {
 
   const openEdit = async (u) => {
     setForm({ ...u, password: '', birth_date: u.birth_date || '' });
+    setVerClave(false);
     setEditing(u);
     setSelectedStudents([]);
     setTeacherCourses([]);
@@ -195,6 +200,27 @@ export default function UsersPage() {
       showToast('Error al actualizar', 'error');
     } finally {
       setTogglingCourse(null);
+    }
+  };
+
+  /* Sin caracteres ambiguos: nadie confunde una l con un 1 al dictarla. */
+  const generarClave = () => {
+    const alfabeto = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const azar = new Uint32Array(10);
+    window.crypto.getRandomValues(azar);
+    const clave = Array.from(azar, n => alfabeto[n % alfabeto.length]).join('');
+    setForm(f => ({ ...f, password: clave }));
+    setVerClave(true);   // de nada sirve generarla si no se puede leer
+  };
+
+  const copiarClave = async () => {
+    try {
+      await navigator.clipboard.writeText(form.password);
+      showToast('Contraseña copiada');
+    } catch {
+      // Sin permiso de portapapeles: al menos queda a la vista para copiarla a mano
+      setVerClave(true);
+      showToast('No pudimos copiarla. Queda visible para copiarla a mano.', 'error');
     }
   };
 
@@ -396,9 +422,49 @@ export default function UsersPage() {
                     <label>Dirección</label>
                     <input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Av. Principal 123, Santiago" />
                   </div>
-                  <div className="form-group">
+                  <div className="form-group" style={{ gridColumn: '1/-1' }}>
                     <label>{editing ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}</label>
-                    <input type="password" required={!editing} value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="••••••••" />
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <div style={{ position: 'relative', flex: 1 }}>
+                        <input
+                          type={verClave ? 'text' : 'password'}
+                          required={!editing}
+                          value={form.password}
+                          onChange={e => setForm({ ...form, password: e.target.value })}
+                          placeholder="••••••••"
+                          autoComplete="new-password"
+                          style={{ width: '100%', paddingRight: 44 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setVerClave(v => !v)}
+                          title={verClave ? 'Ocultar' : 'Ver la contraseña'}
+                          aria-label={verClave ? 'Ocultar la contraseña' : 'Ver la contraseña'}
+                          style={{
+                            position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
+                            background: 'none', border: 'none', cursor: 'pointer', fontSize: 16,
+                            padding: '4px 6px', lineHeight: 1,
+                          }}
+                        >
+                          {verClave ? '🙈' : '👁️'}
+                        </button>
+                      </div>
+                      <button type="button" className="btn btn-secondary btn-sm"
+                              onClick={generarClave} style={{ whiteSpace: 'nowrap' }}>
+                        Generar
+                      </button>
+                      {form.password && (
+                        <button type="button" className="btn btn-secondary btn-sm"
+                                onClick={copiarClave} style={{ whiteSpace: 'nowrap' }}>
+                          Copiar
+                        </button>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 12, color: '#64748b', margin: '6px 0 0', lineHeight: 1.5 }}>
+                      {editing
+                        ? 'La contraseña actual no se puede ver: la plataforma guarda solo una huella cifrada, nunca el texto. Si la persona la perdió, escribe una nueva o genérala acá y entrégasela.'
+                        : 'Anótala o cópiala antes de guardar: después no se puede volver a ver.'}
+                    </p>
                   </div>
                   <div className="form-group" style={{ justifyContent: 'flex-end', flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <label style={{ margin: 0 }}>Activo</label>
