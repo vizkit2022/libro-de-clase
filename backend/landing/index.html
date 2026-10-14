@@ -413,6 +413,30 @@
   .col p{font-size:13.5px;color:var(--txt-3);margin-top:3px}
   .col .usa{font-size:11.5px;color:var(--azul-os);font-weight:650;margin-top:7px}
 
+  /* Escenarios de ejemplo. El rótulo no es decorativo: es lo que
+     distingue un caso ilustrativo de un cliente real, así que va en el
+     encabezado del bloque y repetido en cada tarjeta. */
+  .ejemplos{margin-top:60px}
+  .ejemplos-cab{text-align:center;max-width:680px;margin:0 auto 10px}
+  .ejemplos-cab h3{font-size:24px;letter-spacing:-.02em}
+  .ejemplos-cab p{font-size:15px;color:var(--txt-2);margin-top:8px}
+  .aviso-ej{display:inline-flex;align-items:center;gap:8px;margin:18px auto 30px;
+    background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:99px;
+    padding:8px 16px;font-size:12.5px;font-weight:600;line-height:1.4;text-align:left}
+  .aviso-ej svg{flex-shrink:0}
+  .ejs{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px}
+  .ej{background:#fff;border:1px solid var(--bor);border-radius:var(--r);padding:26px;
+    box-shadow:var(--sombra);display:flex;flex-direction:column}
+  .ej-tag{align-self:flex-start;background:var(--sup-2);color:var(--txt-3);
+    border-radius:6px;padding:3px 9px;font-size:10.5px;font-weight:750;
+    text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px}
+  .ej h4{font-size:16.5px;font-weight:750;letter-spacing:-.012em}
+  .ej-datos{font-size:13px;color:var(--txt-3);margin-top:4px}
+  .ej-proc{font-size:13.5px;color:var(--txt-2);margin-top:14px;line-height:1.6}
+  .ej-cita{border-left:3px solid var(--azul-cl);padding-left:14px;margin-top:18px;
+    font-size:14px;color:var(--txt);line-height:1.6;font-style:italic}
+  .ej-firma{font-size:12px;color:var(--txt-3);margin-top:10px;font-style:normal}
+
   /* Planes */
   .planes{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:880px;margin:0 auto}
   .plan{background:#fff;border:1px solid var(--bor);border-radius:16px;padding:32px;
@@ -1117,6 +1141,63 @@
           <h3>Colegio Franz Liszt</h3>
           <p>Enseñanza básica</p>
           <p class="usa">Libro de clases · Calificaciones · Carga académica · Apoderados</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ejemplos">
+      <div class="ejemplos-cab rev">
+        <h3>Cómo se ve el proceso en distintos colegios</h3>
+        <p>Tres realidades habituales en Chile y qué parte de la plataforma
+           resuelve cada una.</p>
+        <p class="aviso-ej">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+          </svg>
+          Ejemplos ilustrativos: los establecimientos, las personas y las frases
+          de este bloque son ficticios y sirven para mostrar el flujo de trabajo.
+          No son clientes de Kolevia.
+        </p>
+      </div>
+
+      <div class="ejs rev-g">
+        <div class="ej">
+          <span class="ej-tag">Ejemplo ficticio</span>
+          <h4>Colegio Los Aromos</h4>
+          <p class="ej-datos">480 alumnos · 26 docentes · Básica completa</p>
+          <p class="ej-proc">Carga una planilla con la jornada contratada de cada
+             profesor. La plataforma reparte horas lectivas y no lectivas según la
+             Tabla Legal, avisa de los descuadres y publica el resultado al libro
+             de clases.</p>
+          <p class="ej-cita">«El reparto de horas vivía en una planilla que entendía
+             una sola persona. Ahora el cuadre lo hace el sistema y el informe sale
+             listo para firma.»</p>
+          <p class="ej-firma">Jefa de UTP · personaje de ejemplo</p>
+        </div>
+
+        <div class="ej">
+          <span class="ej-tag">Ejemplo ficticio</span>
+          <h4>Liceo Pedro de Valdivia Sur</h4>
+          <p class="ej-datos">820 alumnos · Básica y media · Dos jornadas</p>
+          <p class="ej-proc">Cada caso de convivencia avanza por las cinco etapas de
+             los anexos oficiales, con responsable y fecha en cada paso, y un informe
+             imprimible por etapa.</p>
+          <p class="ej-cita">«Cuando nos piden el expediente de un caso, está completo:
+             se ve en qué etapa va, quién lo tomó y qué se hizo en cada una.»</p>
+          <p class="ej-firma">Encargado de convivencia escolar · personaje de ejemplo</p>
+        </div>
+
+        <div class="ej">
+          <span class="ej-tag">Ejemplo ficticio</span>
+          <h4>Escuela Las Vertientes</h4>
+          <p class="ej-datos">90 alumnos · Rural multigrado · 6 docentes</p>
+          <p class="ej-proc">Matrícula cargada desde la planilla que ya tenían, con
+             vista previa que separa alumnos nuevos de cambios de curso antes de
+             aplicar nada.</p>
+          <p class="ej-cita">«Somos seis profesores y nadie tiene tiempo de administrar
+             un sistema. Necesitábamos algo que funcionara el primer día.»</p>
+          <p class="ej-firma">Directora · personaje de ejemplo</p>
         </div>
       </div>
     </div>

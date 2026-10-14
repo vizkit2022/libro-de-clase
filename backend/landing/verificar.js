@@ -73,11 +73,21 @@ setTimeout(() => {
                  /558\.272/.test(texto('calcPesosMes'));
   console.log('calculadora (20 usuarios):', calc, calcOk ? '✓' : '✗');
 
+  // Los escenarios son ficticios. Si alguna vez se les quita el rótulo,
+  // el sitio pasa a presentar colegios inventados como clientes: falla.
+  const ejs = [...doc.querySelectorAll('.ej')];
+  const rotulados = ejs.filter(e => /ejemplo/i.test(e.textContent));
+  const avisoEj = !!doc.querySelector('.aviso-ej');
+  const ejOk = ejs.length > 0 && rotulados.length === ejs.length && avisoEj;
+  console.log('escenarios de ejemplo:', ejs.length,
+              '· todos rotulados:', rotulados.length === ejs.length,
+              '· aviso del bloque:', avisoEj, ejOk ? '✓' : '✗');
+
   console.log('errores de JavaScript:', errores.length);
   errores.forEach(e => console.log('   ', e));
 
   const mal = errores.length || ocultos.length || activas !== 1 ||
-              imgsRotas.length || !calcOk;
+              imgsRotas.length || !calcOk || !ejOk;
   console.log(mal ? '\nFALLA' : '\nOK');
   process.exit(mal ? 1 : 0);
 }, 3200);
