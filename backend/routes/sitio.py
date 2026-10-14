@@ -87,8 +87,33 @@ def marcar_lead(lead_id):
 # Lo pide la calculadora del sitio. Va por el servidor y no directo desde
 # el navegador por dos razones: evita depender del CORS de un tercero y
 # permite cachear, para no golpear el servicio una vez por visita.
+#
+# Hay dos fuentes porque mindicador.cl se cayó (502) el mismo día que se
+# publicó la calculadora. Se consultan en orden y basta con que una
+# responda.
 _UF_CACHE = {'dia': None, 'valor': None, 'fecha': None}
-_UF_FUENTE = 'https://mindicador.cl/api/uf'
+
+
+def _leer_json(url):
+    peticion = urllib.request.Request(
+        url, headers={'User-Agent': 'Kolevia/1.0 (+https://kolevia.cl)'})
+    with urllib.request.urlopen(peticion, timeout=8) as r:
+        return json.loads(r.read().decode('utf-8'))
+
+
+def _uf_gael():
+    d = _leer_json('https://api.gael.cloud/general/public/monedas/UF')
+    # Llega como texto y a la chilena: "41157,43"
+    return float(str(d['Valor']).replace('.', '').replace(',', '.')), \
+        str(d.get('Fecha') or '')[:10]
+
+
+def _uf_mindicador():
+    punto = (_leer_json('https://mindicador.cl/api/uf').get('serie') or [])[0]
+    return float(punto['valor']), str(punto.get('fecha') or '')[:10]
+
+
+_UF_FUENTES = (('gael', _uf_gael), ('mindicador', _uf_mindicador))
 
 
 @sitio_bp.route('/api/uf')
@@ -97,23 +122,31 @@ def valor_uf():
     if _UF_CACHE['dia'] == hoy and _UF_CACHE['valor']:
         return jsonify({'valor': _UF_CACHE['valor'],
                         'fecha': _UF_CACHE['fecha']}), 200
-    try:
-        peticion = urllib.request.Request(
-            _UF_FUENTE, headers={'User-Agent': 'Kolevia/1.0 (+https://kolevia.cl)'})
-        with urllib.request.urlopen(peticion, timeout=6) as r:
-            datos = json.loads(r.read().decode('utf-8'))
-        punto = (datos.get('serie') or [])[0]
-        valor = round(float(punto['valor']), 2)
-        # Red de seguridad: si la fuente cambia de formato o devuelve una
-        # cifra absurda, es preferible no mostrar pesos a mostrarlos mal.
-        if not 10000 < valor < 200000:
-            raise ValueError('valor fuera de rango: %s' % valor)
-        _UF_CACHE.update({'dia': hoy, 'valor': valor,
-                          'fecha': str(punto.get('fecha') or '')[:10]})
-        return jsonify({'valor': valor, 'fecha': _UF_CACHE['fecha']}), 200
-    except Exception as e:
-        return jsonify({'error': 'La UF de hoy no está disponible',
-                        'detalle': str(e)[:140]}), 503
+
+    fallas = []
+    for nombre, obtener in _UF_FUENTES:
+        try:
+            valor, fecha = obtener()
+            valor = round(valor, 2)
+            # Red de seguridad: si la fuente cambia de formato o devuelve
+            # una cifra absurda, es preferible no mostrar pesos a mostrarlos
+            # mal. La UF se mueve despacio, así que el rango es holgado.
+            if not 10000 < valor < 200000:
+                raise ValueError('valor fuera de rango: %s' % valor)
+            _UF_CACHE.update({'dia': hoy, 'valor': valor, 'fecha': fecha})
+            return jsonify({'valor': valor, 'fecha': fecha}), 200
+        except Exception as e:
+            fallas.append('%s: %s' % (nombre, str(e)[:60]))
+
+    # Último recurso: el valor bueno más reciente, aunque sea de otro día.
+    # La página muestra la fecha, así que no engaña a nadie, y la UF cambia
+    # centésimas al día: mejor eso que dejar la calculadora sin pesos.
+    if _UF_CACHE['valor']:
+        return jsonify({'valor': _UF_CACHE['valor'],
+                        'fecha': _UF_CACHE['fecha'], 'rezagado': True}), 200
+
+    return jsonify({'error': 'La UF de hoy no está disponible',
+                    'detalle': ' | '.join(fallas)[:200]}), 503
 
 
 # ── Archivos para buscadores y asistentes ─────────────────────────────

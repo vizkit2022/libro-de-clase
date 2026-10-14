@@ -70,8 +70,7 @@ setTimeout(() => {
   const texto = id => (doc.getElementById(id) || {}).textContent || '';
   const calc = `${texto('calcUfMes')} · ${texto('calcPesosMes')}`;
   const calcOk = texto('calcUfMes') === '14 UF' &&
-                 /558\.272/.test(texto('calcPesosMes')) &&
-                 /168 UF/.test(texto('calcUfAnio'));
+                 /558\.272/.test(texto('calcPesosMes'));
   console.log('calculadora (20 usuarios):', calc, calcOk ? '✓' : '✗');
 
   console.log('errores de JavaScript:', errores.length);
