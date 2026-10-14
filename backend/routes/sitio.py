@@ -19,6 +19,13 @@ def landing():
     return send_from_directory(LANDING_DIR, 'index.html')
 
 
+@sitio_bp.route('/inicio/img/<path:archivo>')
+def landing_img(archivo):
+    """Imágenes del sitio público."""
+    return send_from_directory(os.path.join(LANDING_DIR, 'img'), archivo,
+                               max_age=60 * 60 * 24 * 7)
+
+
 @sitio_bp.route('/api/leads', methods=['POST'])
 def crear_lead():
     """Público a propósito: lo llama el formulario del sitio, sin sesión."""
