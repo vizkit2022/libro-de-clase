@@ -56,8 +56,16 @@
   display: inline-flex; align-items: center; gap: 11px;
   text-decoration: none; color: inherit;
 }
-.kv-logo span { font-size: 22px; font-weight: 800; letter-spacing: -.025em; }
 .kv-logo img { display: block; }
+.kv-lock { display: block; line-height: 1.05; }
+.kv-lock b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -.025em; }
+.kv-lock i {
+  display: block; font-style: normal; font-size: 8.8px; font-weight: 650;
+  letter-spacing: .17em; text-transform: uppercase;
+  color: rgba(255, 255, 255, .52); margin-top: 3px; white-space: nowrap;
+}
+.kv-logo-movil .kv-lock b { color: var(--txt); }
+.kv-logo-movil .kv-lock i { color: var(--txt-3); }
 
 .kv-pitch { margin: auto 0; padding: 40px 0; }
 .kv-pitch h1 {

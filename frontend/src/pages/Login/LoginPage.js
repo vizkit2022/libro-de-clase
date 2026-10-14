@@ -62,8 +62,11 @@ export default function LoginPage() {
 
         <div className="kv-marca-cont">
           <a href="/" className="kv-logo">
-            <img src="/inicio/img/kolevia-isotipo.png" alt="" width="42" height="42" />
-            <span>Kolevia</span>
+            <img src="/inicio/img/kolevia-isotipo.png" alt="" width="44" height="44" />
+            <span className="kv-lock">
+              <b>Kolevia</b>
+              <i>Tecnología para educar</i>
+            </span>
           </a>
 
           <div className="kv-pitch">
@@ -90,8 +93,11 @@ export default function LoginPage() {
       <main className="kv-acceso">
         <div className="kv-caja">
           <a href="/" className="kv-logo kv-logo-movil">
-            <img src="/inicio/img/kolevia-isotipo.png" alt="" width="36" height="36" />
-            <span>Kolevia</span>
+            <img src="/inicio/img/kolevia-isotipo.png" alt="" width="38" height="38" />
+            <span className="kv-lock">
+              <b>Kolevia</b>
+              <i>Tecnología para educar</i>
+            </span>
           </a>
 
           <h2>Ingresa a tu cuenta</h2>

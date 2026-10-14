@@ -36,9 +36,12 @@
 
   /* ── Marca ─────────────────────────────────────────────── */
   .marca{display:flex;align-items:center;gap:10px}
-  .marca-txt{font-size:21px;font-weight:800;letter-spacing:-.025em;color:var(--gris)}
-  .marca-sub{display:block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
-    color:rgba(255,255,255,.5);font-weight:600;margin-top:2px}
+  .marca-txt{display:block;font-size:21px;font-weight:800;letter-spacing:-.025em;
+    color:var(--gris);line-height:1.05}
+  .marca-bloque{display:block}
+  .marca-sub{display:block;font-size:8.6px;letter-spacing:.17em;text-transform:uppercase;
+    color:var(--txt-4);font-weight:650;margin-top:2px;white-space:nowrap}
+  .pie .marca-sub{color:rgba(255,255,255,.45);font-size:9.5px;letter-spacing:.15em}
   .pie .marca-txt{color:#fff}
 
   /* ── Navegación ────────────────────────────────────────── */
@@ -445,8 +448,11 @@
 <header>
   <div class="env nav">
     <a href="#inicio" class="marca" aria-label="Kolevia, ir al inicio">
-      <img src="/inicio/img/kolevia-isotipo.png" width="38" height="38" alt="">
-      <span class="marca-txt">Kolevia</span>
+      <img src="/inicio/img/kolevia-isotipo.png" width="40" height="40" alt="">
+      <span class="marca-bloque">
+        <span class="marca-txt">Kolevia</span>
+        <span class="marca-sub">Tecnología para educar</span>
+      </span>
     </a>
     <nav class="nav-links">
       <a href="#modulos">Módulos</a>
@@ -943,7 +949,7 @@
           <img src="/inicio/img/kolevia-isotipo.png" width="36" height="36" alt="">
           <div>
             <span class="marca-txt">Kolevia</span>
-            <span class="marca-sub">Todo tu colegio, conectado</span>
+            <span class="marca-sub">Tecnología para educar</span>
           </div>
         </div>
         <p>Plataforma educacional 360 para colegios chilenos. La gestión pedagógica
