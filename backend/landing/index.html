@@ -987,8 +987,40 @@
 
   var sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Cada bloque va aislado. Un error en uno no puede dejar la página
+  // en blanco impidiendo que corran los siguientes.
+  function bloque(nombre, fn) {
+    try { fn(); } catch (e) { console.error('[kolevia] ' + nombre, e); }
+  }
+
+  /* El revelado va primero a propósito: es de lo que depende que se vea
+     el contenido, así que no puede quedar detrás de nada que falle. */
+  /* ── Revelado progresivo al hacer scroll ──────────────────────── */
+  bloque('revelado', function () {
+    var objetivos = document.querySelectorAll('.rev, .rev-g');
+    if (!objetivos.length) return;
+    if (sinMovimiento || !('IntersectionObserver' in window)) {
+      objetivos.forEach(function (el) { el.classList.add('vis'); });
+      return;
+    }
+    var ojo = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('vis');
+        ojo.unobserve(e.target);     // una sola vez: no parpadea al volver
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+    objetivos.forEach(function (el) { ojo.observe(el); });
+
+    // Si algo impide que el observador dispare, el contenido igual se muestra.
+    // Prefiero perder la animación antes que dejar la página en blanco.
+    setTimeout(function () {
+      objetivos.forEach(function (el) { el.classList.add('vis'); });
+    }, 2500);
+  });
+
   /* ── Carrusel del hero ────────────────────────────────────────── */
-  (function () {
+  bloque('carrusel', function () {
     var caja = document.getElementById('carru');
     if (!caja) return;
 
@@ -1024,12 +1056,11 @@
       caja.classList.add('quieto');
     }
 
-    caja.querySelector('.ant').addEventListener('click', function () {
-      mostrar(actual - 1); arrancar();
-    });
-    caja.querySelector('.sig').addEventListener('click', function () {
-      mostrar(actual + 1); arrancar();
-    });
+    // El hero de fondo no lleva flechas; el de tarjeta sí. Puede no haberlas.
+    var flAnt = caja.querySelector('.ant');
+    var flSig = caja.querySelector('.sig');
+    if (flAnt) flAnt.addEventListener('click', function () { mostrar(actual - 1); arrancar(); });
+    if (flSig) flSig.addEventListener('click', function () { mostrar(actual + 1); arrancar(); });
     puntos.forEach(function (p, i) {
       p.addEventListener('click', function () { mostrar(i); arrancar(); });
     });
@@ -1059,34 +1090,11 @@
     } else {
       arrancar();
     }
-  })();
+  });
 
-  /* ── Revelado progresivo al hacer scroll ──────────────────────── */
-  (function () {
-    var objetivos = document.querySelectorAll('.rev, .rev-g');
-    if (!objetivos.length) return;
-    if (sinMovimiento || !('IntersectionObserver' in window)) {
-      objetivos.forEach(function (el) { el.classList.add('vis'); });
-      return;
-    }
-    var ojo = new IntersectionObserver(function (entradas) {
-      entradas.forEach(function (e) {
-        if (!e.isIntersecting) return;
-        e.target.classList.add('vis');
-        ojo.unobserve(e.target);     // una sola vez: no parpadea al volver
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-    objetivos.forEach(function (el) { ojo.observe(el); });
-
-    // Si algo impide que el observador dispare, el contenido igual se muestra.
-    // Prefiero perder la animación antes que dejar la página en blanco.
-    setTimeout(function () {
-      objetivos.forEach(function (el) { el.classList.add('vis'); });
-    }, 2500);
-  })();
 
   /* ── Sombra del encabezado al despegarse del borde ────────────── */
-  (function () {
+  bloque('sombra', function () {
     var cab = document.querySelector('header');
     var marcado = false;
     addEventListener('scroll', function () {
@@ -1096,7 +1104,7 @@
         cab.style.boxShadow = pasado ? '0 1px 16px rgba(16,20,45,.07)' : 'none';
       }
     }, { passive: true });
-  })();
+  });
 
   // Clave pública de Web3Forms. Es un identificador, no un secreto:
   // no expone el correo de destino, que queda guardado en el servicio.
