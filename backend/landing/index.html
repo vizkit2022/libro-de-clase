@@ -603,10 +603,24 @@
     .dos{grid-template-columns:1fr}
     .pie-grid{grid-template-columns:1fr}
     .nav-acc .btn-g{display:none}
+    /* El encabezado no cabía: la bajada de la marca no se encoge (nowrap)
+       y el botón quedaba encima del logo. */
+    .nav{gap:14px}
+    .nav-acc{margin-left:auto}
+    header .marca{min-width:0}
+    header .marca img{width:34px;height:34px}
+    header .marca-txt{font-size:19px}
+    header .marca-sub{font-size:7.4px;letter-spacing:.11em}
+    .nav-acc .btn{padding:9px 15px;font-size:13.5px}
     .mock-cuerpo{grid-template-columns:1fr}
     .mock-side{flex-direction:row;overflow:auto}
     .vis{padding:16px}
     .calc-lab{flex-wrap:wrap}
+  }
+  @media (max-width:370px){
+    /* Pantallas muy angostas: antes que el botón pise la marca, la bajada
+       se va. En el pie sigue estando. */
+    header .marca-sub{display:none}
   }
 
   /* Un hijo de grid o flex no se encoge por debajo de su contenido salvo
