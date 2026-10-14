@@ -206,7 +206,7 @@ def llms():
 > horaria docente, la convivencia escolar y el portal de apoderados.
 
 Sitio: https://kolevia.cl
-Contacto: contacto@kolevia.cl
+Contacto: formulario en https://kolevia.cl/#contacto
 País: Chile
 
 ## Qué resuelve
