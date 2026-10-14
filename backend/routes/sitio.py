@@ -13,6 +13,9 @@ LANDING_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'landing'
 EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 
 
+# La raíz muestra el sitio público. Va antes del catch-all de React, que
+# de otro modo entrega la app y termina rebotando al login.
+@sitio_bp.route('/')
 @sitio_bp.route('/inicio')
 @sitio_bp.route('/inicio/')
 def landing():

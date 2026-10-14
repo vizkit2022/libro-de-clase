@@ -61,7 +61,7 @@ export default function LoginPage() {
         </div>
 
         <div className="kv-marca-cont">
-          <a href="/inicio" className="kv-logo">
+          <a href="/" className="kv-logo">
             <img src="/inicio/img/kolevia-isotipo.png" alt="" width="42" height="42" />
             <span>Kolevia</span>
           </a>
@@ -81,7 +81,7 @@ export default function LoginPage() {
 
           <p className="kv-pie">
             ¿Tu colegio todavía no usa Kolevia?{' '}
-            <a href="/inicio#contacto">Pide una demostración</a>
+            <a href="/#contacto">Pide una demostración</a>
           </p>
         </div>
       </aside>
@@ -89,7 +89,7 @@ export default function LoginPage() {
       {/* Panel derecho: el formulario */}
       <main className="kv-acceso">
         <div className="kv-caja">
-          <a href="/inicio" className="kv-logo kv-logo-movil">
+          <a href="/" className="kv-logo kv-logo-movil">
             <img src="/inicio/img/kolevia-isotipo.png" alt="" width="36" height="36" />
             <span>Kolevia</span>
           </a>
@@ -158,7 +158,7 @@ export default function LoginPage() {
         </div>
 
         <p className="kv-volver">
-          <a href="/inicio">← Volver al sitio</a>
+          <a href="/">← Volver al sitio</a>
         </p>
       </main>
     </div>
