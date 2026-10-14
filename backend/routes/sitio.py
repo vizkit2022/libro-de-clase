@@ -167,7 +167,7 @@ escolar de colegios chilenos.
 
 ## Planes
 
-- **Plan Base**: 0,5 UF por usuario al mes. Se cuentan docentes y
+- **Plan Base**: 1 UF por usuario al mes. Se cuentan docentes y
   administradores; estudiantes y apoderados no se cobran.
 - **Plan Especial**: para colegios con necesidades específicas y para
   establecimientos que no pueden costear el plan base.
