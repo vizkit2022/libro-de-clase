@@ -15,7 +15,7 @@ class School(db.Model):
     name = db.Column(db.String(200), nullable=False)
     rut = db.Column(db.String(20), unique=True)
     address = db.Column(db.String(300))
-    phone = db.Column(db.String(20))
+    phone = db.Column(db.String(50))   # 20 se queda corto con prefijo y anexo
     email = db.Column(db.String(100))
     website = db.Column(db.String(200))
     rector = db.Column(db.String(200))
@@ -89,7 +89,7 @@ class User(db.Model):
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
     rut = db.Column(db.String(20))
-    phone = db.Column(db.String(20))
+    phone = db.Column(db.String(50))   # 20 se queda corto con prefijo y anexo
     address = db.Column(db.String(300))
     birth_date = db.Column(db.Date)
     gender = db.Column(db.String(10))

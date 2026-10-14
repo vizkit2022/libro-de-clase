@@ -265,6 +265,18 @@ def run_migrations():
             except Exception:
                 conn.rollback()   # ya existía → ignorar
 
+        # 7. Teléfonos: VARCHAR(20) no alcanza para «+56 2 2345 6789 anexo 102»
+        #    y PostgreSQL rechaza el guardado con un 500 sin explicación.
+        if is_postgres:
+            for tabla in ('schools', 'users'):
+                try:
+                    conn.execute(text(
+                        f"ALTER TABLE {tabla} ALTER COLUMN phone TYPE VARCHAR(50)"))
+                    conn.commit()
+                    print(f"✅ Migración: {tabla}.phone ampliado a 50")
+                except Exception:
+                    conn.rollback()
+
         # La tabla convivencia_bitacora se crea automáticamente por db.create_all()
 
 

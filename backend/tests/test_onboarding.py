@@ -450,3 +450,79 @@ def test_super_admin_ve_el_avance_de_cada_colegio(entorno):
     assert 0 <= fila['pct'] <= 100
     assert fila['docentes_pueden_entrar'] is False
     assert fila['siguiente_paso']
+
+
+# ── Guardar los datos del colegio ─────────────────────────────────────
+
+def test_un_campo_demasiado_largo_avisa_cual_en_vez_de_reventar(entorno):
+    """PostgreSQL rechaza un VARCHAR pasado de largo con un 500 ilegible.
+
+    SQLite no lo valida, así que esto en local nunca se veía: por eso la
+    comprobación está en la ruta y no solo en la base.
+    """
+    app, cli, sid, db = entorno
+
+    r = cli.put(f'/api/schools/{sid}', json={
+        'name': 'Colegio', 'phone': '+56 2 2345 6789 anexo 102 — dirección' * 3})
+    assert r.status_code == 400
+    assert 'teléfono' in r.get_json()['error']
+
+    r2 = cli.put(f'/api/schools/{sid}', json={'name': 'C', 'rut': '7' * 40})
+    assert r2.status_code == 400
+    assert 'RUT' in r2.get_json()['error']
+
+
+def test_un_telefono_chileno_con_anexo_si_cabe(entorno):
+    """El caso que motivó ampliar la columna: 20 caracteres no alcanzaban."""
+    app, cli, sid, db = entorno
+    from models import School
+
+    telefono = '+56 2 2345 6789 an. 102'
+    assert len(telefono) > 20
+    r = cli.put(f'/api/schools/{sid}', json={'name': 'Colegio', 'phone': telefono})
+    assert r.status_code == 200
+    with app.app_context():
+        assert School.query.get(sid).phone == telefono
+
+
+def test_los_campos_vacios_se_guardan_como_nulos(entorno):
+    """Así «falta el rector» es una sola condición y no dos."""
+    app, cli, sid, db = entorno
+    from models import School
+
+    cli.put(f'/api/schools/{sid}', json={'name': 'Colegio', 'rector': '   '})
+    with app.app_context():
+        assert School.query.get(sid).rector is None
+    # Y el paso 1 lo reporta como pendiente
+    p = paso(estado(cli), 'colegio')
+    assert any('rector' in x for x in p['pendientes'])
+
+
+def test_no_se_puede_dejar_al_colegio_sin_nombre(entorno):
+    _, cli, sid, _ = entorno
+    r = cli.put(f'/api/schools/{sid}', json={'name': '  '})
+    assert r.status_code == 400
+    assert 'nombre' in r.get_json()['error']
+
+
+def test_subir_logo_y_despues_guardar_datos_no_se_estorban(entorno):
+    """La secuencia que reportó el colegio: primero el logo, luego guardar."""
+    import io as _io
+    app, cli, sid, db = entorno
+    from models import School
+
+    png = bytes.fromhex(
+        '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489'
+        '0000000a49444154789c6360000002000100ffff0300000600055'
+        '7bfabd40000000049454e44ae426082')
+    r = cli.post(f'/api/schools/{sid}/upload-logo',
+                 data={'logo': (_io.BytesIO(png), 'logo.png', 'image/png')},
+                 content_type='multipart/form-data')
+    assert r.status_code == 200
+    assert r.get_json()['logo_url'].startswith('data:image/png;base64,')
+
+    r2 = cli.put(f'/api/schools/{sid}', json={
+        'name': 'Colegio Franz Liszt', 'rector': 'Ana Soto', 'phone': ''})
+    assert r2.status_code == 200
+    # Guardar los datos no borra el logo que se acaba de subir
+    assert r2.get_json()['logo_url'].startswith('data:image/png;base64,')

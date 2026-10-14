@@ -40,6 +40,25 @@ const TEXTOS = {
 const Tic = () => <span aria-hidden="true">✓</span>;
 const Alerta = () => <span aria-hidden="true">!</span>;
 
+/**
+ * Un mensaje de error que sirva para algo.
+ *
+ * `e.response.data.error` solo existe si el backend respondió JSON suyo. Si
+ * cae un 500, un 413 del proxy o se corta la red, no hay tal campo y el
+ * genérico «no se pudo guardar» deja a todo el mundo a ciegas: al usuario y
+ * a quien tenga que arreglarlo. Por eso se arrastra el código HTTP.
+ */
+function explicar(e, generico) {
+  const r = e?.response;
+  if (!r) return `${generico}: no hubo respuesta del servidor. Revisa tu conexión.`;
+  const delServidor = r.data?.error || r.data?.detalle;
+  if (delServidor) return delServidor;
+  if (r.status === 413) return 'El archivo es demasiado grande para el servidor.';
+  if (r.status === 403) return 'Tu cuenta no tiene permisos para esto.';
+  if (r.status === 401) return 'Tu sesión expiró. Vuelve a entrar.';
+  return `${generico} (error ${r.status} del servidor).`;
+}
+
 function Aviso({ tipo = 'info', children }) {
   return <div className={`ob-aviso ${tipo}`}><div>{children}</div></div>;
 }
@@ -94,7 +113,7 @@ export default function OnboardingPage() {
       setError('');
       return data;
     } catch (e) {
-      setError(e.response?.data?.error || 'No pudimos cargar el estado');
+      setError(explicar(e, 'No pudimos cargar el estado'));
       return null;
     } finally {
       setCargando(false);
@@ -202,7 +221,8 @@ function PasoColegio({ school, updateSchool, recargar }) {
     name: '', rut: '', rector: '', subtitulo: '', address: '', phone: '',
   });
   const [guardando, setGuardando] = useState(false);
-  const [aviso, setAviso] = useState('');
+  const [subiendo, setSubiendo] = useState(false);
+  const [aviso, setAviso] = useState(null);
   const logo = useRef(null);
 
   useEffect(() => {
@@ -215,37 +235,54 @@ function PasoColegio({ school, updateSchool, recargar }) {
     }
   }, [school]);
 
+  // Mismo tope que la columna de la base: cortar acá evita un error del
+  // servidor que el usuario no puede interpretar.
+  const TOPES = { name: 200, rut: 20, rector: 200, subtitulo: 200, address: 300, phone: 50 };
+
   const campo = (k, etiqueta, pista, ancho) => (
     <div className={`ob-campo${ancho ? ' ancho' : ''}`} key={k}>
       <label htmlFor={`ob-${k}`}>{etiqueta}{pista && <em> · {pista}</em>}</label>
-      <input id={`ob-${k}`} value={form[k]}
+      <input id={`ob-${k}`} value={form[k]} maxLength={TOPES[k]}
              onChange={e => setForm({ ...form, [k]: e.target.value })} />
     </div>
   );
 
   const guardar = async () => {
     setGuardando(true);
+    setAviso(null);
     try {
       const { data } = await axios.put(`/api/schools/${school.id}`, form);
       updateSchool(data);
-      setAviso('Datos guardados');
+      setAviso({ tipo: 'ok', texto: 'Datos guardados' });
       await recargar();
     } catch (e) {
-      setAviso(e.response?.data?.error || 'No se pudo guardar');
+      setAviso({ tipo: 'mal', texto: explicar(e, 'No se pudo guardar') });
     } finally {
       setGuardando(false);
     }
   };
 
   const subirLogo = async archivo => {
+    setAviso(null);
+    // Se revisa acá además de en el servidor: así el usuario no espera la
+    // subida completa de un archivo que igual va a ser rechazado.
+    if (archivo.size > 2 * 1024 * 1024) {
+      setAviso({ tipo: 'mal', texto:
+        `El logo pesa ${Math.round(archivo.size / 1024)} KB y el máximo son 2048 KB.` });
+      return;
+    }
+    setSubiendo(true);
     const fd = new FormData();
     fd.append('logo', archivo);
     try {
       const { data } = await axios.post(`/api/schools/${school.id}/upload-logo`, fd);
       updateSchool({ ...school, logo_url: data.logo_url });
+      setAviso({ tipo: 'ok', texto: 'Logo actualizado' });
       await recargar();
     } catch (e) {
-      setAviso(e.response?.data?.error || 'No se pudo subir el logo');
+      setAviso({ tipo: 'mal', texto: explicar(e, 'No se pudo subir el logo') });
+    } finally {
+      setSubiendo(false);
     }
   };
 
@@ -266,8 +303,9 @@ function PasoColegio({ school, updateSchool, recargar }) {
           <div className="ob-der">
             <input ref={logo} type="file" accept="image/*" style={{ display: 'none' }}
                    onChange={e => { const f = e.target.files?.[0]; if (f) subirLogo(f); e.target.value = ''; }} />
-            <button className="ob-btn ob-btn-g ob-btn-ch" onClick={() => logo.current?.click()}>
-              {school?.logo_url ? 'Cambiar imagen' : 'Subir imagen'}
+            <button className="ob-btn ob-btn-g ob-btn-ch" disabled={subiendo}
+                    onClick={() => logo.current?.click()}>
+              {subiendo ? 'Subiendo…' : school?.logo_url ? 'Cambiar imagen' : 'Subir imagen'}
             </button>
           </div>
         </div>
@@ -286,7 +324,7 @@ function PasoColegio({ school, updateSchool, recargar }) {
         </div>
       </div>
 
-      {aviso && <Aviso tipo={aviso === 'Datos guardados' ? 'ok' : 'mal'}>{aviso}</Aviso>}
+      {aviso && <Aviso tipo={aviso.tipo}>{aviso.texto}</Aviso>}
 
       <div style={{ marginTop: 16 }}>
         <button className="ob-btn ob-btn-p" onClick={guardar} disabled={guardando}>
@@ -327,7 +365,7 @@ function PasoPeriodos({ year, estado, recargar, cambiarYear }) {
       await recargar(year);
       setAviso('');
     } catch (e) {
-      setAviso(e.response?.data?.error || 'No se pudieron crear los períodos');
+      setAviso(explicar(e, 'No se pudieron crear los períodos'));
     } finally {
       setCreando(false);
     }
@@ -424,7 +462,7 @@ function PasoCursos({ year, estado, recargar, navegar }) {
       await traer();
       await recargar(year);
     } catch (e) {
-      setAviso({ tipo: 'mal', texto: e.response?.data?.error || 'No se pudo copiar' });
+      setAviso({ tipo: 'mal', texto: explicar(e, 'No se pudo copiar') });
     } finally {
       setOcupado(false);
     }
@@ -440,7 +478,7 @@ function PasoCursos({ year, estado, recargar, navegar }) {
       await traer();
       await recargar(year);
     } catch (err) {
-      setAviso({ tipo: 'mal', texto: err.response?.data?.error || 'No se pudo crear' });
+      setAviso({ tipo: 'mal', texto: explicar(err, 'No se pudo crear') });
     } finally {
       setOcupado(false);
     }
@@ -629,7 +667,7 @@ function PasoEquipo({ year, recargar }) {
       const { data } = await axios.post('/api/onboarding/equipo/previsualizar', fd);
       setPrevia(data);
     } catch (e) {
-      setAviso({ tipo: 'mal', texto: e.response?.data?.error || 'No se pudo leer la planilla' });
+      setAviso({ tipo: 'mal', texto: explicar(e, 'No se pudo leer la planilla') });
     } finally {
       setLeyendo(false);
     }
@@ -645,7 +683,7 @@ function PasoEquipo({ year, recargar }) {
       await traer();
       await recargar(year);
     } catch (e) {
-      setAviso({ tipo: 'mal', texto: e.response?.data?.error || 'No se pudo guardar' });
+      setAviso({ tipo: 'mal', texto: explicar(e, 'No se pudo guardar') });
     }
   };
 
@@ -658,7 +696,7 @@ function PasoEquipo({ year, recargar }) {
       await traer();
       await recargar(year);
     } catch (err) {
-      setAviso({ tipo: 'mal', texto: err.response?.data?.error || 'No se pudo agregar' });
+      setAviso({ tipo: 'mal', texto: explicar(err, 'No se pudo agregar') });
     }
   };
 
@@ -822,7 +860,7 @@ function PasoMatricula({ year, recargar }) {
         `/api/matricula/importar/previsualizar?year=${year}`, fd);
       setPrevia(data);
     } catch (e) {
-      setAviso({ tipo: 'mal', texto: e.response?.data?.error || 'No se pudo leer la planilla' });
+      setAviso({ tipo: 'mal', texto: explicar(e, 'No se pudo leer la planilla') });
     } finally {
       setLeyendo(false);
     }
@@ -839,7 +877,7 @@ function PasoMatricula({ year, recargar }) {
       setPrevia(null);
       await recargar(year);
     } catch (e) {
-      setAviso({ tipo: 'mal', texto: e.response?.data?.error || 'No se pudo guardar' });
+      setAviso({ tipo: 'mal', texto: explicar(e, 'No se pudo guardar') });
     }
   };
 
@@ -1041,7 +1079,7 @@ function PasoAccesos({ estado, year, recargar }) {
       await traer();
       await recargar(year);
     } catch (e) {
-      setAviso({ tipo: 'mal', texto: e.response?.data?.error || 'No se pudo activar' });
+      setAviso({ tipo: 'mal', texto: explicar(e, 'No se pudo activar') });
     } finally { setOcupado(false); }
   };
 
@@ -1052,7 +1090,7 @@ function PasoAccesos({ estado, year, recargar }) {
       await recargar(year);
       setAviso({ tipo: 'ok', texto: 'Puesta en marcha cerrada' });
     } catch (e) {
-      setAviso({ tipo: 'al', texto: e.response?.data?.error || 'No se pudo cerrar' });
+      setAviso({ tipo: 'al', texto: explicar(e, 'No se pudo cerrar') });
     } finally { setOcupado(false); }
   };
 
