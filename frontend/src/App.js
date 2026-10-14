@@ -22,6 +22,7 @@ import ConvivenciaCasosPage, { ConvivenciaCasoForm } from './pages/Convivencia/C
 import ConvivenciaCasoDetail from './pages/Convivencia/ConvivenciaCasoDetail';
 import CargaAcademicaDashboard from './pages/CargaAcademica/CargaAcademicaDashboard';
 import CargaDocenteDetail from './pages/CargaAcademica/CargaDocenteDetail';
+import MatriculaPage from './pages/Matricula/MatriculaPage';
 
 // Super Admin
 import SuperAdminLayout from './pages/SuperAdmin/SuperAdminLayout';
@@ -106,6 +107,7 @@ export default function App() {
             <Route path="convivencia/casos/:id" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoDetail /></PrivateRoute>} />
             <Route path="convivencia/casos/:id/editar" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoForm /></PrivateRoute>} />
             {/* Módulo Carga Académica */}
+            <Route path="matricula" element={<PrivateRoute roles={['admin','directivo']}><MatriculaPage /></PrivateRoute>} />
             <Route path="carga-academica" element={<PrivateRoute roles={['admin','directivo']}><CargaAcademicaDashboard /></PrivateRoute>} />
             <Route path="carga-academica/docentes/:id" element={<PrivateRoute roles={['admin','directivo']}><CargaDocenteDetail /></PrivateRoute>} />
           </Route>

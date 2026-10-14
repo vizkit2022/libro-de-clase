@@ -19,6 +19,7 @@ const navItems = [
   { to: '/parameters', icon: '🏫', label: 'Colegio', roles: ['admin','directivo'] },
   { to: '/periods', icon: '📅', label: 'Períodos', roles: ['admin','directivo'] },
   { to: '/courses', icon: '📚', label: 'Cursos', roles: ['admin','directivo','profesor'] },
+  { to: '/matricula', icon: '🧾', label: 'Matrícula', roles: ['admin','directivo'] },
   { to: '/subjects', icon: '📖', label: 'Asignaturas', roles: ['admin','directivo','profesor'] },
   { to: '/grades', icon: '✏️', label: 'Calificaciones', roles: ['admin','directivo','profesor'] },
   { to: '/reports', icon: '📊', label: 'Reportes', roles: ['admin','directivo','profesor'] },
