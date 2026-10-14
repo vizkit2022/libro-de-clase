@@ -91,13 +91,47 @@
     background:linear-gradient(100deg,var(--azul) 10%,var(--azul-cl) 90%);
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
-  .bajada{font-size:17.5px;color:var(--txt-2);margin-top:20px;max-width:530px}
-  .hero-ctas{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap}
-  .cifras{display:flex;gap:34px;margin-top:44px;padding-top:28px;border-top:1px solid var(--bor);flex-wrap:wrap}
+  .bajada{font-size:17px;color:var(--txt-2);margin-top:16px;max-width:530px}
+  .hero-ctas{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+  .cifras{display:flex;gap:34px;margin-top:34px;padding-top:22px;border-top:1px solid var(--bor);flex-wrap:wrap}
   .cifra strong{display:block;font-size:27px;font-weight:800;color:var(--gris);letter-spacing:-.02em}
   .cifra span{font-size:12.5px;color:var(--txt-3);font-weight:500}
 
-  /* ── Carrusel ──────────────────────────────────────────── */
+
+  /* ── Hero con carrusel de fondo ─────────────────────────── */
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--bor)}
+  .hero-fondo{position:absolute;inset:0;z-index:0}
+  .hero-fondo .dia{position:absolute;inset:0;margin:0;opacity:0;
+    transition:opacity 1.1s cubic-bezier(.4,0,.2,1);will-change:opacity}
+  .hero-fondo .dia.act{opacity:1}
+  .hero-fondo .dia img{width:100%;height:100%;object-fit:cover}
+  .hero-fondo .dia.act img{animation:deriva 11s ease-out forwards}
+  .velo{position:absolute;inset:0;z-index:1}
+  .hero .env.hero-txt{position:relative;z-index:2;display:block;max-width:var(--max)}
+  .carru-puntos{position:absolute;z-index:3;display:flex;gap:7px}
+  .hero-ctas{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+
+  .hero .env.hero-txt{padding-top:54px;padding-bottom:62px;max-width:980px}
+  .velo{background:
+    linear-gradient(100deg, rgba(14,16,46,.93) 0%, rgba(14,16,46,.78) 46%, rgba(14,16,46,.45) 100%),
+    linear-gradient(to top, rgba(14,16,46,.6), transparent 42%)}
+  .hero h1,.hero .cifra strong{color:#fff}
+  .hero h1 .deg{background:linear-gradient(100deg,#a9bdf9 5%,#9ad9b4 95%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .bajada{color:rgba(255,255,255,.8);max-width:580px}
+  .hero .eyebrow{background:rgba(255,255,255,.12);color:#dbe3ff;
+    border-color:rgba(255,255,255,.22)}
+  .hero .eyebrow b{background:#9ad9b4}
+  .hero .cifras{border-top-color:rgba(255,255,255,.16)}
+  .hero .cifra span{color:rgba(255,255,255,.6)}
+  .hero .btn-g{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.3);
+    backdrop-filter:blur(6px)}
+  .hero .btn-g:hover{background:rgba(255,255,255,.2);color:#fff}
+  .carru-puntos{right:28px;bottom:26px}
+  .pt{background:rgba(255,255,255,.3)}
+  .pt s{background:#fff}
+
+  /* ── Carrusel (restos del estilo anterior) ─────────────── */
   .carru{position:relative}
   .carru-marco{
     position:relative;aspect-ratio:4/3;border-radius:18px;overflow:hidden;
@@ -169,7 +203,7 @@
   .hero .env > div > *:nth-child(3){animation-delay:.16s}
   .hero .env > div > *:nth-child(4){animation-delay:.24s}
   .hero .env > div > *:nth-child(5){animation-delay:.32s}
-  .carru{animation:sube .9s cubic-bezier(.2,.7,.3,1) .18s both}
+  .hero-txt > *{animation:sube .8s cubic-bezier(.2,.7,.3,1) both}
   @keyframes sube{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 
   .banda-mock{padding-top:0}
@@ -432,15 +466,31 @@
 <main id="inicio">
 
 <section class="hero">
-  <div class="env">
-    <div>
+  <div class="hero-fondo" id="carru">
+    <figure class="dia act">
+      <img src="/inicio/img/aula-1.jpg" alt="" loading="eager" decoding="async">
+    </figure>
+    <figure class="dia">
+      <img src="/inicio/img/aula-2.jpg" alt="" loading="lazy" decoding="async">
+    </figure>
+    <figure class="dia">
+      <img src="/inicio/img/aula-3.jpg" alt="" loading="lazy" decoding="async">
+    </figure>
+    <div class="velo"></div>
+    <div class="carru-puntos" role="tablist" aria-label="Cambiar imagen de fondo">
+      <button type="button" class="pt act" role="tab" aria-label="Imagen 1"><s></s></button>
+      <button type="button" class="pt" role="tab" aria-label="Imagen 2"><s></s></button>
+      <button type="button" class="pt" role="tab" aria-label="Imagen 3"><s></s></button>
+    </div>
+  </div>
+  <div class="env hero-txt">
       <span class="eyebrow"><b></b> Plataforma educacional 360</span>
       <h1>La gestión de tu colegio,
           <span class="deg">ordenada de principio a fin</span></h1>
       <p class="bajada">
-        Libro de clases digital, calificaciones, convivencia escolar y carga horaria docente
-        en un solo lugar. Pensado para la realidad de los colegios chilenos y la normativa
-        del MINEDUC.
+        Libro de clases digital, calificaciones, convivencia escolar y carga horaria
+        docente en un solo lugar. Pensado para la realidad de los colegios chilenos
+        y la normativa del MINEDUC.
       </p>
       <div class="hero-ctas">
         <a href="#contacto" class="btn btn-p btn-lg">Pedir una demo</a>
@@ -451,38 +501,6 @@
         <div class="cifra"><strong>44</strong><span>jornadas de la Tabla Legal</span></div>
         <div class="cifra"><strong>100%</strong><span>en la nube, sin instalar</span></div>
       </div>
-    </div>
-
-    <div class="carru" id="carru">
-      <div class="carru-marco">
-        <figure class="dia act">
-          <img src="/inicio/img/aula-1.jpg" alt="Sala de clases con sillas ordenadas" loading="eager" decoding="async">
-          <figcaption>El libro de clases, al día desde el primer día</figcaption>
-        </figure>
-        <figure class="dia">
-          <img src="/inicio/img/aula-2.jpg" alt="Aula iluminada con pupitres dispuestos para la jornada" loading="lazy" decoding="async">
-          <figcaption>Cursos, asignaturas y horarios que calzan</figcaption>
-        </figure>
-        <figure class="dia">
-          <img src="/inicio/img/aula-3.jpg" alt="Docente preparando su clase frente a la pizarra" loading="lazy" decoding="async">
-          <figcaption>Menos planillas, más tiempo para enseñar</figcaption>
-        </figure>
-
-        <button class="carru-fl ant" type="button" aria-label="Imagen anterior">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <button class="carru-fl sig" type="button" aria-label="Imagen siguiente">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-      </div>
-      <div class="carru-puntos" role="tablist" aria-label="Seleccionar imagen">
-        <button type="button" class="pt act" role="tab" aria-label="Imagen 1"><s></s></button>
-        <button type="button" class="pt" role="tab" aria-label="Imagen 2"><s></s></button>
-        <button type="button" class="pt" role="tab" aria-label="Imagen 3"><s></s></button>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -803,19 +821,20 @@
       <div class="plan plan-esp">
         <span class="plan-tag">A medida</span>
         <h3>Plan Especial</h3>
-        <p class="plan-d">Para colegios con necesidades específicas que el plan base no
-           cubre tal como viene.</p>
+        <p class="plan-d">Para colegios con necesidades específicas, y también para
+           establecimientos que hoy no pueden costear el plan base.</p>
         <div class="precio">
           <strong>Conversemos</strong>
           <span>valor según<br>el alcance</span>
         </div>
-        <p class="plan-n">Evaluamos tu caso y te proponemos un plan ajustado a lo que
-           tu establecimiento necesita.</p>
+        <p class="plan-n">Conversamos tu situación y nos adaptamos. Ningún colegio
+           debería quedarse fuera por el precio.</p>
         <ul class="lista">
           <li><svg width="19" height="19"><use href="#tic"/></svg>Módulos adaptados a tus procesos internos</li>
           <li><svg width="19" height="19"><use href="#tic"/></svg>Informes con formatos propios del establecimiento</li>
           <li><svg width="19" height="19"><use href="#tic"/></svg>Integraciones con sistemas que ya uses</li>
           <li><svg width="19" height="19"><use href="#tic"/></svg>Redes y sostenedores con varios establecimientos</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Valores ajustados a la realidad económica del colegio</li>
           <li><svg width="19" height="19"><use href="#tic"/></svg>Condiciones de implementación a convenir</li>
         </ul>
         <a href="#contacto" class="btn btn-g" style="width:100%;margin-top:22px">Hablar con nosotros</a>

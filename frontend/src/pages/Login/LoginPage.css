@@ -1,253 +1,201 @@
-.login-page {
-  display: flex;
-  min-height: 100vh;
-}
+/* Ingreso a Kolevia. Misma paleta e imágenes que el sitio público,
+   para que el salto del sitio a la plataforma no se note. */
 
-/* ====== LADO IZQUIERDO (Ilustración) ====== */
-.login-illustration {
-  flex: 1;
-  background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px;
-  position: relative;
-  overflow: hidden;
-}
+.kv-login {
+  --azul: #3b4fd8;
+  --azul-cl: #6b8ef5;
+  --azul-os: #2a2eb0;
+  --noche: #0e102e;
+  --gris: #1f2937;
+  --txt: #111827;
+  --txt-2: #4b5563;
+  --txt-3: #6b7280;
+  --bor: #e5e7eb;
 
-.illustration-content {
-  position: relative;
-  z-index: 2;
-  color: white;
-  max-width: 420px;
-}
-
-.big-emoji {
-  font-size: 80px;
-  margin-bottom: 24px;
-  display: block;
-  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.2));
-}
-
-.login-illustration h1 {
-  font-size: 32px;
-  font-weight: 800;
-  line-height: 1.2;
-  margin-bottom: 16px;
-}
-
-.login-illustration p {
-  font-size: 17px;
-  opacity: 0.88;
-  line-height: 1.6;
-  margin-bottom: 32px;
-}
-
-.features-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 15px;
-  font-weight: 500;
-  opacity: 0.95;
-  background: rgba(255,255,255,0.1);
-  padding: 10px 16px;
-  border-radius: 10px;
-}
-
-/* Formas decorativas */
-.shapes { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-
-.shape {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.1;
-}
-
-.shape-1 {
-  width: 300px; height: 300px;
-  background: white;
-  top: -80px; right: -80px;
-}
-
-.shape-2 {
-  width: 200px; height: 200px;
-  background: white;
-  bottom: 40px; left: -60px;
-}
-
-.shape-3 {
-  width: 120px; height: 120px;
-  background: white;
-  bottom: 200px; right: 80px;
-}
-
-/* ====== LADO DERECHO (Formulario) ====== */
-.login-form-side {
-  width: 480px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  background: #f8fafc;
-}
-
-.login-card {
-  width: 100%;
-  max-width: 380px;
-}
-
-.login-logo {
-  font-size: 48px;
-  margin-bottom: 16px;
-  display: block;
-}
-
-.login-card h2 {
-  font-size: 28px;
-  font-weight: 800;
-  color: #0f172a;
-  margin-bottom: 6px;
-}
-
-.login-subtitle {
-  font-size: 15px;
-  color: #64748b;
-  margin-bottom: 28px;
-}
-
-.error-banner {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 12px 16px;
-  border-radius: 10px;
-  font-size: 14px;
-  margin-bottom: 16px;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.login-form .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.login-form label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #374151;
-}
-
-.login-form input {
-  padding: 12px 16px;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 15px;
-  color: #1e293b;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  font-family: inherit;
-  background: white;
-}
-
-.login-form input:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
-}
-
-.btn-login {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #2563EB, #7C3AED);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-family: inherit;
-}
-
-.btn-login:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(37,99,235,0.3);
-}
-
-.btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
-
-.spinner-sm {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255,255,255,0.4);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: inline-block;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Sección demo */
-.demo-section {
-  border-top: 1px solid #e2e8f0;
-  padding-top: 20px;
-}
-
-.demo-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 10px;
-}
-
-.demo-buttons {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  grid-template-columns: 1.04fr 1fr;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #fff;
+  color: var(--txt);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
 }
 
-.demo-btn {
-  padding: 8px 6px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1.5px solid;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
+/* ── Panel de marca ─────────────────────────────────────────────── */
+.kv-marca { position: relative; overflow: hidden; display: flex; }
+
+.kv-fotos { position: absolute; inset: 0; }
+.kv-foto {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  opacity: 0; transition: opacity 1.4s cubic-bezier(.4, 0, .2, 1);
+  transform: scale(1.04);
+}
+.kv-foto.act { opacity: 1; animation: kvDeriva 14s ease-out forwards; }
+@keyframes kvDeriva {
+  from { transform: scale(1.03) translate3d(0, 0, 0); }
+  to   { transform: scale(1.12) translate3d(-1.4%, -1.6%, 0); }
+}
+.kv-velo {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(135deg, rgba(14, 16, 46, .94) 0%, rgba(14, 16, 46, .82) 52%,
+                    rgba(26, 26, 110, .68) 100%),
+    linear-gradient(to top, rgba(14, 16, 46, .55), transparent 45%);
 }
 
-.demo-btn.admin     { background: #ede9fe; color: #7c3aed; border-color: #c4b5fd; }
-.demo-btn.directivo { background: #fef9c3; color: #ca8a04; border-color: #fde68a; }
-.demo-btn.profesor  { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
-.demo-btn.alumno    { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
-.demo-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.kv-marca-cont {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  padding: 44px 56px; width: 100%; max-width: 620px; margin-left: auto;
+  color: #fff;
+}
 
-@media (max-width: 768px) {
-  .login-page { flex-direction: column; }
-  .login-illustration { flex: none; padding: 40px 24px; min-height: 280px; }
-  .login-illustration h1 { font-size: 24px; }
-  .login-form-side { width: 100%; padding: 28px 20px; }
-  .features-list { display: none; }
+.kv-logo {
+  display: inline-flex; align-items: center; gap: 11px;
+  text-decoration: none; color: inherit;
+}
+.kv-logo span { font-size: 22px; font-weight: 800; letter-spacing: -.025em; }
+.kv-logo img { display: block; }
+
+.kv-pitch { margin: auto 0; padding: 40px 0; }
+.kv-pitch h1 {
+  font-size: clamp(32px, 3.4vw, 44px); line-height: 1.12;
+  letter-spacing: -.032em; font-weight: 800; margin: 0 0 18px;
+}
+.kv-pitch h1 em {
+  font-style: normal;
+  background: linear-gradient(100deg, #a9bdf9 5%, #9ad9b4 95%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.kv-pitch p {
+  font-size: 16px; line-height: 1.6; color: rgba(255, 255, 255, .78);
+  max-width: 430px; margin: 0 0 26px;
+}
+.kv-pitch ul { list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 12px; }
+.kv-pitch li {
+  position: relative; padding-left: 28px;
+  font-size: 14.5px; color: rgba(255, 255, 255, .88);
+}
+.kv-pitch li::before {
+  content: ""; position: absolute; left: 0; top: 6px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(154, 217, 180, .22);
+  box-shadow: inset 0 0 0 1.5px rgba(154, 217, 180, .75);
+}
+.kv-pitch li::after {
+  content: ""; position: absolute; left: 5px; top: 10.5px;
+  width: 6px; height: 3.5px; border: 1.6px solid #9ad9b4;
+  border-top: 0; border-right: 0; transform: rotate(-45deg);
+}
+
+.kv-pie { font-size: 13.5px; color: rgba(255, 255, 255, .62); margin: 0; }
+.kv-pie a { color: #a9bdf9; font-weight: 600; text-decoration: none; }
+.kv-pie a:hover { color: #fff; text-decoration: underline; }
+
+/* ── Panel del formulario ───────────────────────────────────────── */
+.kv-acceso {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 40px 28px; position: relative;
+}
+.kv-caja { width: 100%; max-width: 392px; }
+
+.kv-logo-movil { display: none; margin-bottom: 26px; color: var(--txt); }
+
+.kv-caja h2 {
+  font-size: 26px; font-weight: 800; letter-spacing: -.026em; margin: 0 0 6px;
+}
+.kv-sub { font-size: 14.5px; color: var(--txt-3); margin: 0 0 26px; }
+
+.kv-error {
+  display: flex; align-items: flex-start; gap: 9px;
+  background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+  padding: 11px 14px; border-radius: 10px; font-size: 14px;
+  margin-bottom: 18px; line-height: 1.45;
+  animation: kvEntra .3s cubic-bezier(.2, .7, .3, 1);
+}
+.kv-error svg { flex-shrink: 0; margin-top: 1px; }
+@keyframes kvEntra {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.kv-campo { margin-bottom: 16px; }
+.kv-campo label {
+  display: block; font-size: 12.5px; font-weight: 700; color: var(--gris);
+  margin-bottom: 7px; letter-spacing: .01em;
+}
+.kv-campo input {
+  width: 100%; padding: 12px 14px; font-size: 15px; font-family: inherit;
+  color: var(--txt); background: #fff;
+  border: 1px solid var(--bor); border-radius: 10px;
+  transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
+}
+.kv-campo input::placeholder { color: #9ca3af; }
+.kv-campo input:focus {
+  outline: none; border-color: var(--azul);
+  box-shadow: 0 0 0 3px rgba(59, 79, 216, .14);
+}
+
+.kv-clave { position: relative; }
+.kv-clave input { padding-right: 46px; }
+.kv-clave button {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 34px; height: 34px; display: grid; place-items: center;
+  background: none; border: none; cursor: pointer; color: #9ca3af;
+  border-radius: 8px; transition: color .15s, background .15s;
+}
+.kv-clave button:hover { color: var(--gris); background: #f3f4f6; }
+
+.kv-entrar {
+  width: 100%; margin-top: 8px; padding: 13px 20px;
+  font-size: 15px; font-weight: 700; font-family: inherit; color: #fff;
+  background: var(--azul); border: none; border-radius: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; min-height: 48px;
+  transition: background .18s, transform .18s, box-shadow .18s;
+  box-shadow: 0 1px 2px rgba(59, 79, 216, .3);
+}
+.kv-entrar:hover:not(:disabled) {
+  background: var(--azul-os); transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(59, 79, 216, .28);
+}
+.kv-entrar:disabled { opacity: .7; cursor: default; transform: none; }
+
+.kv-girando {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2.2px solid rgba(255, 255, 255, .35); border-top-color: #fff;
+  animation: kvGira .7s linear infinite;
+}
+@keyframes kvGira { to { transform: rotate(360deg); } }
+
+.kv-ayuda {
+  font-size: 13px; color: var(--txt-3); margin: 22px 0 0;
+  text-align: center; line-height: 1.5;
+}
+
+.kv-volver { position: absolute; bottom: 26px; font-size: 13.5px; margin: 0; }
+.kv-volver a { color: var(--txt-3); text-decoration: none; transition: color .15s; }
+.kv-volver a:hover { color: var(--azul); }
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 920px) {
+  .kv-login { grid-template-columns: 1fr; }
+  .kv-marca { display: none; }
+  .kv-logo-movil { display: inline-flex; }
+  .kv-acceso { min-height: 100vh; min-height: 100dvh; }
+}
+
+@media (max-width: 420px) {
+  .kv-acceso { padding: 32px 20px 64px; }
+  .kv-caja h2 { font-size: 23px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kv-foto, .kv-foto.act, .kv-error, .kv-entrar {
+    animation: none !important; transition: none !important;
+  }
+  .kv-foto.act { transform: scale(1.04); }
 }
