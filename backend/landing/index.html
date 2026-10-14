@@ -590,17 +590,36 @@
     .pie-grid{grid-template-columns:1fr 1fr;gap:30px}
     .nav-links{display:none}
   }
+  @media (max-width:820px){
+    /* Las dos tarjetas de plan no caben lado a lado bajo este ancho y
+       estaban empujando la página 200px a la derecha. */
+    .planes{grid-template-columns:1fr;max-width:460px}
+  }
   @media (max-width:640px){
     section{padding:56px 0}
     .hero .env{padding-top:48px;padding-bottom:48px}
-    .props,.mods,.cols,.nos,.perfiles,.citas{grid-template-columns:1fr}
+    .props,.mods,.cols,.nos,.perfiles,.citas,.ejs{grid-template-columns:1fr}
     .cifras{gap:24px}
     .dos{grid-template-columns:1fr}
     .pie-grid{grid-template-columns:1fr}
     .nav-acc .btn-g{display:none}
     .mock-cuerpo{grid-template-columns:1fr}
     .mock-side{flex-direction:row;overflow:auto}
+    .vis{padding:16px}
+    .calc-lab{flex-wrap:wrap}
   }
+
+  /* Un hijo de grid o flex no se encoge por debajo de su contenido salvo
+     que se le diga: sin esto, una tabla ancha estira su columna y arrastra
+     toda la página. Pasó con la tabla de carga académica en el móvil. */
+  .dest>*,.planes>*,.mods>*,.props>*,.ejs>*,.cols>*,.perfiles>*,.citas>*,
+  .mock-cuerpo>*,.pie-grid>*{min-width:0}
+  .vis{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tabla{min-width:280px}
+  /* Red de seguridad: nada debería desbordar, pero si algo se cuela no
+     queremos que el visitante pueda arrastrar la página entera de lado.
+     Va en <body> y no en <html> para no romper el scroll pegajoso. */
+  body{overflow-x:clip}
 </style>
 <script type="application/ld+json">
 {
