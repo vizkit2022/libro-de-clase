@@ -100,10 +100,10 @@ def test_con_clave_valida_responde_ok(entorno, monkeypatch):
 
 
 @pytest.mark.parametrize('excepcion,esperado', [
-    (Exception('authentication_error: invalid x-api-key'), 'rechaza'),
+    (Exception('authentication_error: invalid x-api-key'), 'rechazada'),
     (Exception('404 not_found: model'), 'retirado'),
     (Exception('Your credit balance is too low'), 'saldo'),
-    (Exception('rate limit exceeded'), 'Límite'),
+    (Exception('rate limit exceeded'), 'demasiadas peticiones'),
 ])
 def test_cada_falla_se_explica_distinto(entorno, monkeypatch, excepcion, esperado):
     """Un «error genérico» obliga a entrar al servidor a investigar."""
@@ -161,3 +161,49 @@ def test_la_sugerencia_de_carga_funciona_sin_ia(monkeypatch):
         ['Matemática'], ['7° Básico'])
     assert motivo == 'sin_api_key'
     assert prefs['notas'] and 'ANTHROPIC_API_KEY' in prefs['notas'][0]
+
+
+# ── Los errores que ve el usuario ─────────────────────────────────────
+
+@pytest.mark.parametrize('crudo,esperado', [
+    ("Error code: 400 - {'type': 'error', 'error': {'type': "
+     "'invalid_request_error', 'message': 'Your credit balance is too low to "
+     "access the Anthropic API. Please go to Plans & Billing to upgrade or "
+     "purchase credits.'}, 'request_id': 'req_011Cg2PRNLTyA8RjcBcFdtbT'}",
+     'saldo'),
+    ('authentication_error: invalid x-api-key', 'rechazada'),
+    ('Error code: 404 not_found_error: model', 'retirado'),
+    ('rate_limit_error: too many requests', 'demasiadas peticiones'),
+    ('overloaded_error', 'saturado'),
+    ('Request timed out', 'demoró'),
+    ('algo totalmente inesperado', 'no pudo procesar'),
+])
+def test_el_error_que_ve_el_usuario_es_en_castellano_y_sin_detalle_interno(
+        crudo, esperado):
+    """El texto del SDK trae JSON, request_id e inglés: no sirve en pantalla."""
+    from servicios import ia
+
+    mensaje = ia.explicar_error(Exception(crudo))
+    assert esperado in mensaje
+    # Nada de lo interno se filtra
+    for filtrado in ('request_id', 'req_011', 'x-api-key', '{', 'Error code'):
+        assert filtrado not in mensaje
+
+
+def test_el_diagnostico_si_guarda_el_detalle_tecnico(entorno, monkeypatch):
+    """En la pantalla de administración el texto crudo sí sirve."""
+    app, cliente = entorno
+    from servicios import ia
+
+    class ClienteFalso:
+        class messages:
+            @staticmethod
+            def create(**kw):
+                raise Exception("Error code: 400 - credit balance is too low")
+
+    monkeypatch.setenv('ANTHROPIC_API_KEY', 'sk-ant-falsa')
+    monkeypatch.setattr(ia, 'cliente', lambda: ClienteFalso())
+
+    d = cliente().get('/api/ia/estado').get_json()
+    assert 'saldo' in d['error']
+    assert 'Error code: 400' in d['detalle_tecnico']

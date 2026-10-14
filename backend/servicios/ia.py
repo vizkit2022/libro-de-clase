@@ -66,6 +66,38 @@ def limpiar_json(texto):
     return t.strip()
 
 
+def explicar_error(e):
+    """Traduce una falla del servicio a algo que un usuario pueda accionar.
+
+    El texto crudo del SDK trae el JSON de la respuesta, el request_id y
+    términos en inglés. Mostrárselo a un inspector de convivencia no le dice
+    qué hacer y además filtra detalle interno a una ventana del navegador.
+    """
+    nombre = type(e).__name__
+    texto = str(e)
+    # Se mira el nombre de la excepción y el texto: el SDK usa clases
+    # propias, pero envuelto o simulado llega como Exception a secas.
+    pista = f'{nombre} {texto}'.lower()
+
+    if ('authentication' in pista or '401' in pista
+            or 'x-api-key' in pista or 'permission' in pista):
+        return ('La clave de acceso al servicio de IA existe pero fue rechazada. '
+                'Hay que revisarla en la configuración del servidor.')
+    if 'not_found' in pista or '404' in pista:
+        return (f'El modelo «{modelo()}» no existe o fue retirado. '
+                'Se puede cambiar con la variable ANTHROPIC_MODEL.')
+    if 'credit' in pista or 'billing' in pista or 'quota' in pista:
+        return ('La cuenta de IA no tiene saldo disponible. Las demás funciones '
+                'de la plataforma siguen operando con normalidad.')
+    if 'rate' in pista and 'limit' in pista:
+        return 'El servicio de IA está recibiendo demasiadas peticiones. Reintenta en un minuto.'
+    if 'overloaded' in pista or '529' in pista or '503' in pista:
+        return 'El servicio de IA está saturado en este momento. Reintenta en unos minutos.'
+    if 'timeout' in pista or 'timed out' in pista:
+        return 'El servicio de IA demoró demasiado en responder. Reintenta.'
+    return 'El servicio de IA no pudo procesar la solicitud.'
+
+
 def diagnostico():
     """Comprueba de verdad que la IA responde, con una petición mínima.
 
@@ -98,22 +130,8 @@ def diagnostico():
         estado['ok'] = True
         estado['respuesta'] = (r.content[0].text or '').strip()[:40]
     except Exception as e:
-        nombre = type(e).__name__
-        texto = str(e)
-        # Se mira el nombre de la excepción y el texto: el SDK usa clases
-        # propias, pero envuelto o simulado llega como Exception a secas.
-        pista = f'{nombre} {texto}'.lower()
-        if ('authentication' in pista or '401' in pista
-                or 'x-api-key' in pista or 'permission' in pista):
-            estado['error'] = 'La clave existe pero el servicio la rechaza.'
-        elif 'not_found' in pista or '404' in pista:
-            estado['error'] = (f'El modelo «{modelo()}» no existe o fue retirado. '
-                               'Se puede cambiar con la variable ANTHROPIC_MODEL.')
-        elif 'credit' in pista or 'billing' in pista:
-            estado['error'] = 'La cuenta no tiene saldo disponible.'
-        elif 'rate' in pista and 'limit' in pista:
-            estado['error'] = 'Límite de peticiones alcanzado. Reintenta en un momento.'
-        else:
-            estado['error'] = f'{nombre}: {texto[:160]}'
+        estado['error'] = explicar_error(e)
+        # El detalle crudo sí sirve acá: esta pantalla es de administración
+        estado['detalle_tecnico'] = f'{type(e).__name__}: {str(e)[:200]}'
     estado['latencia_ms'] = int((time.time() - inicio) * 1000)
     return estado

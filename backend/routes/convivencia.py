@@ -349,6 +349,10 @@ Responde SOLO con el JSON, sin markdown ni explicaciones."""
         result = json_lib.loads(raw)
         return jsonify(result), 200
     except json_lib.JSONDecodeError:
-        return jsonify({'error': 'No se pudo interpretar la respuesta del modelo', 'raw': raw}), 422
+        return jsonify({'error': 'La lectura automática no entendió el documento. '
+                                 'Prueba con una foto más nítida, o escribe el caso '
+                                 'a mano.'}), 422
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        # Sin el texto crudo del SDK: trae el JSON de la respuesta y el
+        # request_id, que no le dicen nada a quien registra un caso.
+        return jsonify({'error': ia.explicar_error(e)}), 502

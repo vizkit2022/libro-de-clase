@@ -1,4 +1,5 @@
 import os
+import json
 import base64
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
@@ -97,21 +98,19 @@ IMPORTANTE: Responde SOLO con el JSON válido, sin explicaciones adicionales."""
         )
 
         # Parsear respuesta JSON
-        import json
-        raw_text = response.content[0].text.strip()
-
-        # Limpiar posibles bloques markdown
-        if raw_text.startswith('```'):
-            lines = raw_text.split('\n')
-            raw_text = '\n'.join(lines[1:-1])
-
-        result = json.loads(raw_text)
+        result = json.loads(ia.limpiar_json(response.content[0].text))
         return jsonify(result), 200
 
-    except Exception as e:
+    except json.JSONDecodeError:
         return jsonify({
-            'error': f'Error al procesar la imagen: {str(e)}'
-        }), 500
+            'error': 'No se entendió la transcripción. Prueba con una foto más '
+                     'nítida o mejor iluminada.'
+        }), 422
+    except Exception as e:
+        # El texto crudo del SDK trae el JSON de la respuesta y el request_id:
+        # no le dice nada al profesor que escaneó una hoja, y expone detalle
+        # interno en una ventana del navegador.
+        return jsonify({'error': ia.explicar_error(e)}), 502
 
 
 @ocr_bp.route('/save', methods=['POST'])
