@@ -461,6 +461,24 @@
   .cita figcaption i{display:block;font-style:normal;font-size:12.5px;color:var(--txt-3);
     margin-top:1px}
 
+  /* Preguntas frecuentes */
+  .faqs{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+  .faq{background:#fff;border:1px solid var(--bor);border-radius:var(--r);
+    overflow:hidden;box-shadow:var(--sombra)}
+  .faq[open]{border-color:rgba(59,79,216,.4)}
+  .faq summary{display:flex;align-items:center;gap:12px;padding:16px 20px;
+    cursor:pointer;list-style:none;user-select:none;font-size:15.5px;
+    font-weight:650;color:#0f172a;letter-spacing:-.011em}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";margin-left:auto;font-size:20px;color:var(--azul);
+    font-weight:400;line-height:1;transition:transform .2s}
+  .faq[open] summary::after{content:"\2212"}
+  .faq summary:hover{background:#fafbff}
+  .faq .resp{padding:0 20px 18px;font-size:14.5px;color:var(--txt-2);line-height:1.62}
+  .faq .resp p{margin:0 0 10px}
+  .faq .resp p:last-child{margin-bottom:0}
+  .faq .resp a{color:var(--azul);font-weight:600}
+
   /* Nosotros */
   .nos{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:8px}
   .nos .b{background:#fff;border:1px solid var(--bor);border-radius:var(--r);padding:28px}
@@ -533,6 +551,79 @@
     .mock-side{flex-direction:row;overflow:auto}
   }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "es-CL",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "¿Kolevia cumple con la normativa del MINEDUC?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Los módulos siguen los formatos oficiales. La carga horaria docente se calcula con la Tabla Legal del MINEDUC —proporción 65/35, artículos 69 y 80 del DFL N°1 de 1996— para las 44 jornadas de la tabla, repartiendo horas de aula, no lectivas y recreo. La convivencia escolar usa los campos de los anexos oficiales y los informes salen en el formato que el establecimiento ya entrega."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Cómo migramos los datos que tenemos en planillas?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "La matrícula se carga desde Excel o CSV con una plantilla que incluye los cursos reales de tu colegio. Antes de guardar nada ves una vista previa fila por fila: cuáles son alumnos nuevos, cuáles cambian de curso y cuáles tienen un problema que corregir. Los cursos, asignaturas y docentes también se cargan en la puesta en marcha. Te acompañamos en ese proceso."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Cuánto cuesta y qué se cuenta como usuario?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "El Plan Base son 0,5 UF por usuario al mes, y se cuentan solo docentes y administradores. Los estudiantes y apoderados usan la plataforma sin costo adicional, así que un colegio de 600 alumnos con 30 docentes paga sobre 30, no sobre 630. Si el valor no calza con la realidad del establecimiento, está el Plan Especial: conversamos la situación y nos adaptamos."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Hay que instalar algo en el colegio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Kolevia funciona en el navegador, así que se entra desde cualquier computador, tablet o teléfono con internet. No hay servidor que mantener ni programa que actualizar, y las mejoras llegan solas."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Los apoderados y estudiantes pueden entrar?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sí. Cada apoderado entra con su cuenta y ve las notas y anotaciones de sus pupilos. El colegio decide a quién le habilita el acceso y cuándo."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Qué pasa con los datos de nuestros estudiantes?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Los datos son del establecimiento, no de Kolevia. Cada colegio ve únicamente los suyos, incluso cuando un sostenedor administra varios desde el mismo panel, y cada persona accede solo a lo que su rol permite. La información se puede exportar en cualquier momento: los informes salen en Word y PDF."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Sirve para un colegio con varias sedes o para un sostenedor?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sí. Un sostenedor administra varios establecimientos desde un mismo panel, cada uno con su identidad, sus cursos, sus docentes y sus datos separados."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿En cuánto tiempo queda funcionando?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Depende de en qué estado estén los datos del colegio. Con las listas de curso ordenadas en una planilla, la matrícula y los cursos quedan cargados el mismo día. Lo que suele tomar más es definir la carga horaria del año, porque ahí hay decisiones pedagógicas de por medio."
+      }
+    }
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -570,6 +661,7 @@
       <a href="#perfiles">Para quién es</a>
       <a href="#precios">Planes</a>
       <a href="#colegios">Colegios</a>
+      <a href="#preguntas">Preguntas</a>
       <a href="#nosotros">Nosotros</a>
       <a href="#contacto">Contacto</a>
     </nav>
@@ -1088,6 +1180,50 @@
            comunicación con las familias— manteniendo lo que nos importa: que la
            plataforma avise antes de que el error llegue al papel.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="preguntas">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Preguntas frecuentes</p>
+      <h2>Lo que nos preguntan los colegios</h2>
+      <p>Si falta algo, escribinos y lo respondemos sin vueltas.</p>
+    </div>
+    <div class="faqs rev">
+      <details class="faq">
+        <summary>¿Kolevia cumple con la normativa del MINEDUC?</summary>
+        <div class="resp"><p>Los módulos siguen los formatos oficiales. La carga horaria docente se calcula con la Tabla Legal del MINEDUC —proporción 65/35, artículos 69 y 80 del DFL N°1 de 1996— para las 44 jornadas de la tabla, repartiendo horas de aula, no lectivas y recreo. La convivencia escolar usa los campos de los anexos oficiales y los informes salen en el formato que el establecimiento ya entrega.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Cómo migramos los datos que tenemos en planillas?</summary>
+        <div class="resp"><p>La matrícula se carga desde Excel o CSV con una plantilla que incluye los cursos reales de tu colegio. Antes de guardar nada ves una vista previa fila por fila: cuáles son alumnos nuevos, cuáles cambian de curso y cuáles tienen un problema que corregir.</p><p>Los cursos, asignaturas y docentes también se cargan en la puesta en marcha. Te acompañamos en ese proceso.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Cuánto cuesta y qué se cuenta como usuario?</summary>
+        <div class="resp"><p>El Plan Base son 0,5 UF por usuario al mes, y se cuentan solo docentes y administradores. Los estudiantes y apoderados usan la plataforma sin costo adicional, así que un colegio de 600 alumnos con 30 docentes paga sobre 30, no sobre 630.</p><p>Si el valor no calza con la realidad del establecimiento, está el Plan Especial: conversamos la situación y nos adaptamos.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Hay que instalar algo en el colegio?</summary>
+        <div class="resp"><p>No. Kolevia funciona en el navegador, así que se entra desde cualquier computador, tablet o teléfono con internet. No hay servidor que mantener ni programa que actualizar, y las mejoras llegan solas.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Los apoderados y estudiantes pueden entrar?</summary>
+        <div class="resp"><p>Sí. Cada apoderado entra con su cuenta y ve las notas y anotaciones de sus pupilos. El colegio decide a quién le habilita el acceso y cuándo.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Qué pasa con los datos de nuestros estudiantes?</summary>
+        <div class="resp"><p>Los datos son del establecimiento, no de Kolevia. Cada colegio ve únicamente los suyos, incluso cuando un sostenedor administra varios desde el mismo panel, y cada persona accede solo a lo que su rol permite.</p><p>La información se puede exportar en cualquier momento: los informes salen en Word y PDF.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Sirve para un colegio con varias sedes o para un sostenedor?</summary>
+        <div class="resp"><p>Sí. Un sostenedor administra varios establecimientos desde un mismo panel, cada uno con su identidad, sus cursos, sus docentes y sus datos separados.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿En cuánto tiempo queda funcionando?</summary>
+        <div class="resp"><p>Depende de en qué estado estén los datos del colegio. Con las listas de curso ordenadas en una planilla, la matrícula y los cursos quedan cargados el mismo día. Lo que suele tomar más es definir la carga horaria del año, porque ahí hay decisiones pedagógicas de por medio.</p></div>
+      </details>
     </div>
   </div>
 </section>
