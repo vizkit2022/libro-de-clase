@@ -2061,15 +2061,13 @@ def _preferencias_desde_texto(texto, nombres, asignaturas, niveles):
     if not texto:
         return prefs, None
 
-    api_key = os.environ.get('ANTHROPIC_API_KEY')
-    if not api_key:
+    from servicios import ia
+    cliente = ia.cliente()
+    if cliente is None:
         prefs['notas'].append(
-            'No hay ANTHROPIC_API_KEY configurada: se repartió con los criterios '
-            'por defecto y no se aplicaron las instrucciones escritas.')
+            'No hay ANTHROPIC_API_KEY configurada en el servidor: se repartió con '
+            'los criterios por defecto y no se aplicaron las instrucciones escritas.')
         return prefs, 'sin_api_key'
-
-    import anthropic
-    cliente = anthropic.Anthropic(api_key=api_key)
     prompt = f"""Traduce instrucciones de un jefe de UTP chileno a preferencias de reparto de carga docente.
 
 Docentes disponibles: {', '.join(nombres)}
@@ -2103,14 +2101,9 @@ Omite docentes o asignaturas sobre los que no haya indicación. Sin markdown."""
 
     try:
         msg = cliente.messages.create(
-            model='claude-haiku-4-5-20251001', max_tokens=1500,
+            model=ia.modelo(), max_tokens=1500,
             messages=[{'role': 'user', 'content': prompt}])
-        raw = msg.content[0].text.strip()
-        if raw.startswith('```'):
-            raw = raw.split('```')[1]
-            if raw.startswith('json'):
-                raw = raw[4:]
-        datos = json_lib.loads(raw)
+        datos = json_lib.loads(ia.limpiar_json(msg.content[0].text))
     except Exception as e:
         prefs['notas'].append(f'No se pudieron interpretar las instrucciones ({e}). '
                               f'Se repartió con los criterios por defecto.')

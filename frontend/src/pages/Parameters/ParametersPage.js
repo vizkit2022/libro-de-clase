@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import EstadoIA from './EstadoIA';
 
 export default function ParametersPage() {
   const { school, updateSchool } = useAuth();
@@ -188,6 +189,10 @@ export default function ParametersPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <EstadoIA />
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>

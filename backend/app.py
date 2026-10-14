@@ -57,6 +57,7 @@ def create_app():
     from routes.sitio import sitio_bp
     from routes.matricula import matricula_bp
     from routes.onboarding import onboarding_bp
+    from routes.ia_estado import ia_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -75,6 +76,7 @@ def create_app():
     # Sin prefijo: define /inicio y /api/leads. Va antes del catch-all de React.
     app.register_blueprint(matricula_bp, url_prefix='/api/matricula')
     app.register_blueprint(onboarding_bp, url_prefix='/api/onboarding')
+    app.register_blueprint(ia_bp, url_prefix='/api/ia')
     app.register_blueprint(sitio_bp)
 
     # ── Serve React (SPA catch-all) ───────────────────────────────────────────

@@ -3,21 +3,15 @@ import base64
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from models import db, Annotation, User, Course, Enrollment
+from servicios import ia
 from datetime import date
 
 ocr_bp = Blueprint('ocr', __name__)
 
 
 def get_anthropic_client():
-    """Crea cliente Anthropic si hay API key disponible."""
-    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
-    if not api_key:
-        return None
-    try:
-        import anthropic
-        return anthropic.Anthropic(api_key=api_key)
-    except ImportError:
-        return None
+    """Cliente Anthropic, o None si no se puede usar."""
+    return ia.cliente()
 
 
 @ocr_bp.route('/transcribe', methods=['POST'])
@@ -79,7 +73,7 @@ Si el texto es ilegible o la imagen no corresponde a un libro de clases, indica 
 IMPORTANTE: Responde SOLO con el JSON válido, sin explicaciones adicionales."""
 
         response = client.messages.create(
-            model='claude-opus-4-6',
+            model=ia.modelo_vision(),
             max_tokens=2048,
             messages=[
                 {

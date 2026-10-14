@@ -300,7 +300,8 @@ def update_step(case_id, step_id):
 @jwt_required()
 @school_required
 def extract_from_image():
-    import anthropic, base64, os, json as json_lib
+    import base64, json as json_lib
+    from servicios import ia
     from models import CONVIVENCIA_PROCEDURES, CONVIVENCIA_TYPIFICATIONS
 
     file = request.files.get('image')
@@ -310,11 +311,10 @@ def extract_from_image():
     mime = file.content_type or 'image/jpeg'
     img_data = base64.standard_b64encode(file.read()).decode('utf-8')
 
-    api_key = os.environ.get('ANTHROPIC_API_KEY')
-    if not api_key:
-        return jsonify({'error': 'ANTHROPIC_API_KEY no configurada'}), 500
-
-    client = anthropic.Anthropic(api_key=api_key)
+    client = ia.cliente()
+    if client is None:
+        return jsonify({'error': 'La lectura automática no está disponible: falta '
+                                 'configurar ANTHROPIC_API_KEY en el servidor.'}), 503
 
     prompt = f"""Eres un asistente de convivencia escolar chileno. Analiza la imagen adjunta y extrae la información del caso de convivencia.
 
@@ -335,7 +335,7 @@ Responde SOLO con el JSON, sin markdown ni explicaciones."""
 
     try:
         msg = client.messages.create(
-            model='claude-haiku-4-5-20251001',
+            model=ia.modelo(),
             max_tokens=1024,
             messages=[{
                 'role': 'user',
@@ -345,12 +345,7 @@ Responde SOLO con el JSON, sin markdown ni explicaciones."""
                 ]
             }]
         )
-        raw = msg.content[0].text.strip()
-        # Limpiar posible markdown
-        if raw.startswith('```'):
-            raw = raw.split('```')[1]
-            if raw.startswith('json'):
-                raw = raw[4:]
+        raw = ia.limpiar_json(msg.content[0].text)
         result = json_lib.loads(raw)
         return jsonify(result), 200
     except json_lib.JSONDecodeError:
