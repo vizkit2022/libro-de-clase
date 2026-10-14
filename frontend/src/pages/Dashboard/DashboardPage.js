@@ -1,163 +1,238 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { Icono } from '../../components/Layout/iconos';
+import './DashboardPage.css';
 
-const ROLE_WELCOME = {
-  admin: '¡Hola, Administrador! 👋',
-  directivo: '¡Bienvenido, Directivo! 👋',
-  profesor: '¡Hola, Profe! 👋',
-  apoderado: '¡Hola! 👋',
-  alumno: '¡Hola! 👋',
+const SALUDO = () => {
+  const h = new Date().getHours();
+  return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
 };
+
+const FECHA = () => new Date().toLocaleDateString('es-CL', {
+  weekday: 'long', day: 'numeric', month: 'long',
+});
 
 export default function DashboardPage() {
   const { user, school } = useAuth();
-  const [summary, setSummary] = useState(null);
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const primary = school?.primary_color || '#2563EB';
+  const year = new Date().getFullYear();
+
+  const [resumen, setResumen] = useState(null);
+  const [cursos, setCursos] = useState([]);
+  const [carga, setCarga] = useState(null);
+  const [cargando, setCargando] = useState(true);
+
+  const gestiona = ['admin', 'directivo'].includes(user?.role);
+  const docente = user?.role === 'profesor';
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (['admin','directivo','profesor'].includes(user?.role)) {
-          const [sumRes, courseRes] = await Promise.all([
-            axios.get('/api/reports/school/summary'),
-            axios.get('/api/courses')
-          ]);
-          setSummary(sumRes.data);
-          setCourses(courseRes.data.slice(0, 4));
-        }
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    };
-    fetchData();
-  }, [user]);
+    let vivo = true;
+    (async () => {
+      if (!['admin', 'directivo', 'profesor'].includes(user?.role)) {
+        return setCargando(false);
+      }
+      // Cada fuente va por su lado: si una falla, el resto del panel se ve igual
+      const pedir = (url) => axios.get(url).then(r => r.data).catch(() => null);
+      const [s, c, k] = await Promise.all([
+        pedir('/api/reports/school/summary'),
+        pedir('/api/courses'),
+        gestiona ? pedir(`/api/carga-academica/dashboard?year=${year + 1}`) : null,
+      ]);
+      if (!vivo) return;
+      setResumen(s);
+      setCursos(Array.isArray(c) ? c : []);
+      setCarga(k);
+      setCargando(false);
+    })();
+    return () => { vivo = false; };
+  }, [user, gestiona, year]);
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+  if (cargando) return <div className="loading-container"><div className="spinner" /></div>;
 
-  if (loading) return (
-    <div className="loading-container"><div className="spinner" /></div>
-  );
+  const alertas = carga?.alertas || [];
+  const cob = carga?.resumen;
+
+  const indicadores = [
+    { et: 'Estudiantes', val: resumen?.total_students ?? '—', ico: 'familia',
+      color: '#3b4fd8', fondo: '#eef1fe', nota: 'matriculados y activos' },
+    { et: 'Docentes', val: resumen?.total_teachers ?? '—', ico: 'personas',
+      color: '#2f7d4f', fondo: '#eaf7ef', nota: 'con cuenta en la plataforma' },
+    { et: 'Cursos', val: resumen?.total_courses ?? '—', ico: 'libro',
+      color: '#6d4ed8', fondo: '#f1eefe', nota: `año lectivo ${year}` },
+    { et: 'Requieren atención', val: alertas.length, ico: 'reloj',
+      color: alertas.length ? '#b91c1c' : '#2f7d4f',
+      fondo: alertas.length ? '#fee2e2' : '#eaf7ef',
+      nota: alertas.length ? 'en la carga académica' : 'sin pendientes' },
+  ];
 
   return (
-    <div>
-      {/* Bienvenida */}
-      <div style={{
-        background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`,
-        borderRadius: '20px',
-        padding: '32px',
-        marginBottom: '28px',
-        color: 'white',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <p style={{ fontSize: '15px', opacity: 0.85, marginBottom: '8px' }}>{greeting} ☀️</p>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, margin: 0 }}>
-            {user?.first_name} {user?.last_name}
-          </h1>
-          <p style={{ opacity: 0.85, marginTop: '6px', fontSize: '14px' }}>
-            {school?.name} · {new Date().toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
+    <div className="kv-panel">
+
+      <div className="kv-saludo">
+        <div>
+          <h2>{SALUDO()}, {user?.first_name}</h2>
+          <p>{FECHA()} · {school?.name}</p>
         </div>
-        <div style={{
-          position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)',
-          fontSize: '80px', opacity: 0.15, zIndex: 1
-        }}>🏫</div>
+        <div className="kv-saludo-acc">
+          {(gestiona || docente) && (
+            <Link to="/grades" className="kv-btn kv-btn-p">
+              <Icono nombre="lapiz" tam={15} /> Registrar notas
+            </Link>
+          )}
+        </div>
       </div>
 
-      {/* Stats (solo admin/directivo/profesor) */}
-      {summary && (
-        <div className="stats-grid" style={{ marginBottom: '28px' }}>
-          {[
-            { icon: '🎓', label: 'Estudiantes', value: summary.total_students, bg: '#ede9fe', color: '#7c3aed' },
-            { icon: '👨‍🏫', label: 'Profesores', value: summary.total_teachers, bg: '#dbeafe', color: '#1d4ed8' },
-            { icon: '📚', label: 'Cursos', value: summary.total_courses, bg: '#d1fae5', color: '#065f46' },
-            { icon: '⭐', label: 'Anotaciones +', value: summary.annotations_positive, bg: '#fef3c7', color: '#92400e' },
-          ].map((s, i) => (
-            <div key={i} className="stat-card">
-              <div className="stat-icon" style={{ background: s.bg, color: s.color }}>{s.icon}</div>
-              <div className="stat-info">
-                <h3>{s.value}</h3>
-                <p>{s.label}</p>
-              </div>
+      {/* Indicadores */}
+      <div className="kv-kpis">
+        {indicadores.map(k => (
+          <div className="kv-kpi" key={k.et}>
+            <div className="cab">
+              <span className="et">{k.et}</span>
+              <span className="ico" style={{ background: k.fondo, color: k.color }}>
+                <Icono nombre={k.ico} tam={15} />
+              </span>
             </div>
-          ))}
-        </div>
-      )}
+            <b>{k.val}</b>
+            <span className="nota">{k.nota}</span>
+          </div>
+        ))}
+      </div>
 
-      {/* Accesos rápidos */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-        {/* Cursos recientes */}
-        {courses.length > 0 && (
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>📚 Cursos</h3>
-              <Link to="/courses" style={{ fontSize: '13px', color: primary, fontWeight: 600, textDecoration: 'none' }}>Ver todos →</Link>
+      <div className="kv-rejilla">
+
+        {/* Cobertura de la carga */}
+        {gestiona && (
+          <div className="card kv-tarj">
+            <div className="kv-tarj-cab">
+              <div>
+                <h3>Carga académica {year + 1}</h3>
+                <p>Cobertura por asignatura</p>
+              </div>
+              {cob?.total_demanda > 0 && (
+                <span className={`kv-pill ${cob.cobertura_pct >= 100 ? 'v' : 'a'}`}>
+                  {cob.cobertura_pct}% repartido
+                </span>
+              )}
+              <Link to="/carga-academica" className="kv-mas">Ver detalle →</Link>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {courses.map(c => (
-                <Link key={c.id} to={`/courses/${c.id}`} style={{ textDecoration: 'none' }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: '12px',
-                    padding: '10px 12px', borderRadius: '10px', background: '#f8fafc',
-                    transition: 'background 0.2s'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}>
-                    <div style={{
-                      width: 36, height: 36, borderRadius: '8px',
-                      background: primary, color: 'white',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 700, fontSize: '13px', flexShrink: 0
-                    }}>
-                      {c.level?.[0] || '?'}
+
+            {!carga?.por_asignatura?.length ? (
+              <p className="kv-vacio">
+                Todavía no hay demanda de horas definida para {year + 1}.{' '}
+                <Link to="/carga-academica">Abrir el proceso →</Link>
+              </p>
+            ) : (
+              <div className="kv-barras">
+                {carga.por_asignatura.slice(0, 6).map(a => {
+                  const falta = a.horas_faltantes;
+                  const col = falta === 0 ? '#2f7d4f' : falta < 0 ? '#b91c1c' : '#b45309';
+                  return (
+                    <div className="kv-barra" key={a.asignatura}>
+                      <span className="nom" title={a.asignatura}>{a.asignatura}</span>
+                      <span className="pista">
+                        <i style={{ width: `${Math.min(a.cobertura_pct, 100)}%`,
+                          background: falta === 0 ? '#7cc496' : '#3b4fd8' }} />
+                      </span>
+                      <span className="cif" style={{ color: col }}>
+                        {a.horas_asignadas}/{a.horas_demanda}
+                      </span>
                     </div>
-                    <div>
-                      <p style={{ fontWeight: 600, color: '#0f172a', fontSize: '14px' }}>{c.name}</p>
-                      <p style={{ fontSize: '12px', color: '#64748b' }}>{c.student_count} alumnos</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Acciones rápidas */}
-        <div className="card">
-          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '16px' }}>⚡ Acciones rápidas</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* Pendientes */}
+        {gestiona && (
+          <div className="card kv-tarj">
+            <div className="kv-tarj-cab">
+              <div>
+                <h3>Requiere tu atención</h3>
+                <p>{alertas.length
+                  ? `${alertas.length} ${alertas.length === 1 ? 'asunto abierto' : 'asuntos abiertos'}`
+                  : 'Nada pendiente'}</p>
+              </div>
+            </div>
+
+            {!alertas.length ? (
+              <p className="kv-vacio kv-ok">
+                No hay descuadres en la carga académica.
+              </p>
+            ) : (
+              <div className="kv-pends">
+                {alertas.slice(0, 5).map((a, i) => (
+                  <Link to="/carga-academica" className="kv-pend" key={i}>
+                    <span className="mk" style={{
+                      background: a.tipo === 'descuadre' ? '#fee2e2' : '#fef3c7',
+                      color: a.tipo === 'descuadre' ? '#b91c1c' : '#b45309' }}>
+                      <Icono nombre="reloj" tam={14} />
+                    </span>
+                    <span className="txt">{a.mensaje}</span>
+                    <span className="ir">›</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Cursos */}
+        <div className="card kv-tarj">
+          <div className="kv-tarj-cab">
+            <div>
+              <h3>{docente ? 'Mis cursos' : 'Cursos del establecimiento'}</h3>
+              <p>Año lectivo {year}</p>
+            </div>
+            <Link to="/courses" className="kv-mas">Ver todos →</Link>
+          </div>
+
+          {!cursos.length ? (
+            <p className="kv-vacio">
+              Todavía no hay cursos creados para {year}.{' '}
+              <Link to="/courses">Crear el primero →</Link>
+            </p>
+          ) : (
+            <div className="kv-cursos">
+              {cursos.slice(0, 6).map(c => (
+                <Link to={`/courses/${c.id}`} className="kv-curso" key={c.id}>
+                  <span className="nom">{c.name}</span>
+                  <span className="dato">
+                    {c.student_count ?? 0} {c.student_count === 1 ? 'estudiante' : 'estudiantes'}
+                  </span>
+                  {c.head_teacher && (
+                    <span className="jefe">
+                      {c.head_teacher.first_name} {c.head_teacher.last_name}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Accesos */}
+        <div className="card kv-tarj">
+          <div className="kv-tarj-cab"><div><h3>Accesos rápidos</h3></div></div>
+          <div className="kv-accesos">
             {[
-              ...(user?.role !== 'alumno' && user?.role !== 'apoderado' ? [
-                { to: '/grades', icon: '✏️', label: 'Registrar calificaciones', color: '#dbeafe' },
-                { to: '/courses', icon: '📋', label: 'Ver cursos', color: '#d1fae5' },
-              ] : []),
-              { to: '/reports', icon: '📊', label: 'Ver reportes', color: '#fef3c7' },
-              ...(user?.role === 'admin' || user?.role === 'directivo' ? [
-                { to: '/users', icon: '👥', label: 'Gestionar usuarios', color: '#ede9fe' },
-                { to: '/parameters', icon: '⚙️', label: 'Configurar colegio', color: '#fee2e2' },
-              ] : []),
-            ].map((item, i) => (
-              <Link key={i} to={item.to} style={{ textDecoration: 'none' }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '10px 12px', borderRadius: '10px',
-                  background: item.color, transition: 'opacity 0.2s'
-                }}
-                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-                  <span style={{ fontSize: '18px' }}>{item.icon}</span>
-                  <span style={{ fontWeight: 600, fontSize: '14px', color: '#1e293b' }}>{item.label}</span>
-                  <span style={{ marginLeft: 'auto', color: '#64748b' }}>→</span>
-                </div>
+              { to: '/grades', ico: 'lapiz', t1: 'Registrar', t2: 'calificaciones' },
+              gestiona && { to: '/matricula', ico: 'lista', t1: 'Matricular', t2: 'alumnos' },
+              gestiona && { to: '/carga-academica', ico: 'reloj', t1: 'Repartir', t2: `carga ${year + 1}` },
+              { to: '/reports', ico: 'grafico', t1: 'Generar', t2: 'reportes' },
+              { to: '/convivencia', ico: 'convivencia', t1: 'Convivencia', t2: 'escolar' },
+              { to: '/ocr-annotations', ico: 'escanear', t1: 'Escanear', t2: 'anotaciones' },
+            ].filter(Boolean).slice(0, 6).map(a => (
+              <Link to={a.to} className="kv-acc" key={a.to}>
+                <span className="ic"><Icono nombre={a.ico} tam={15} /></span>
+                <span>{a.t1}<br />{a.t2}</span>
               </Link>
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );
