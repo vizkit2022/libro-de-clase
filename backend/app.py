@@ -54,6 +54,7 @@ def create_app():
     from routes.payments import payments_bp
     from routes.convivencia import convivencia_bp
     from routes.carga_academica import carga_bp
+    from routes.sitio import sitio_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -69,6 +70,8 @@ def create_app():
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
     app.register_blueprint(convivencia_bp, url_prefix='/api/convivencia')
     app.register_blueprint(carga_bp, url_prefix='/api/carga-academica')
+    # Sin prefijo: define /inicio y /api/leads. Va antes del catch-all de React.
+    app.register_blueprint(sitio_bp)
 
     # ── Serve React (SPA catch-all) ───────────────────────────────────────────
     @app.route('/', defaults={'path': ''})

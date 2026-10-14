@@ -851,3 +851,26 @@ class HorarioCelda(db.Model):
             'etiqueta_libre': self.etiqueta_libre, 'texto': self.texto(),
             'tipo': self.asignacion.tipo if self.asignacion else 'libre',
         }
+
+
+class SolicitudDemo(db.Model):
+    """Solicitud de demo enviada desde el sitio público de Kolevia."""
+    __tablename__ = 'solicitudes_demo'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(200), nullable=False)
+    telefono = db.Column(db.String(50))
+    colegio = db.Column(db.String(200))
+    mensaje = db.Column(db.Text)
+    origen = db.Column(db.String(60), default='sitio')
+    atendida = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'nombre': self.nombre, 'email': self.email,
+            'telefono': self.telefono, 'colegio': self.colegio,
+            'mensaje': self.mensaje, 'origen': self.origen,
+            'atendida': self.atendida,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
