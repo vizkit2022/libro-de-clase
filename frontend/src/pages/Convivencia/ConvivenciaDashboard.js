@@ -117,6 +117,41 @@ export default function ConvivenciaDashboard() {
         ))}
       </div>
 
+      {/* Sin casos, tres paneles diciendo "Sin datos" no ayudan a empezar */}
+      {!data.total ? (
+        <div className="card" style={{ textAlign: 'center', padding: '48px 28px' }}>
+          <div style={{ width: 54, height: 54, borderRadius: 14, margin: '0 auto 16px',
+            background: `${primary}12`, color: primary,
+            display: 'grid', placeItems: 'center' }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9.5" cy="7" r="4" /><path d="m17 11 2 2 4-4" />
+            </svg>
+          </div>
+          <h3 style={{ fontSize: 17, fontWeight: 750, color: '#0f172a', margin: '0 0 7px' }}>
+            Todavía no hay casos registrados en {new Date().getFullYear()}
+          </h3>
+          <p style={{ fontSize: 14, color: '#64748b', margin: '0 auto 22px', maxWidth: 430,
+            lineHeight: 1.55 }}>
+            Cada caso avanza por cinco etapas con los anexos oficiales, desde la
+            recepción hasta la apelación, y podés imprimir el informe de cada una.
+          </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/convivencia/casos/nuevo" style={{ padding: '10px 20px',
+              background: primary, color: '#fff', borderRadius: 9, fontSize: 14,
+              fontWeight: 700, textDecoration: 'none' }}>
+              Registrar el primer caso
+            </Link>
+            <Link to="/convivencia/casos" style={{ padding: '10px 20px', background: '#fff',
+              color: '#475569', border: '1px solid #e2e8f0', borderRadius: 9, fontSize: 14,
+              fontWeight: 650, textDecoration: 'none' }}>
+              Ver la lista de casos
+            </Link>
+          </div>
+        </div>
+      ) : (
+      <>
       {/* Casos por mes */}
       <div className="card" style={{ marginBottom: 24 }}>
         <h3 style={{ fontWeight: 700, fontSize: 15, color: '#0f172a', margin: '0 0 20px', textAlign: 'center' }}>
@@ -194,6 +229,8 @@ export default function ConvivenciaDashboard() {
             </div>
         }
       </div>
+      </>
+      )}
     </div>
   );
 }

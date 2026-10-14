@@ -524,6 +524,19 @@ function Anx5Form({ data, onChange }) {
   );
 }
 
+const celdaDato = { background: '#fff', padding: '10px 14px 12px' };
+const etiquetaDato = {
+  display: 'block', fontSize: 10, fontWeight: 750, color: '#94a3b8',
+  textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 5,
+};
+// Lo que falta por definir se marca en ámbar, para que salte a la vista
+const selectDato = (vacio) => ({
+  width: '100%', padding: '6px 8px', fontSize: 13, fontFamily: 'inherit',
+  border: `1px solid ${vacio ? '#fcd34d' : '#e2e8f0'}`, borderRadius: 7,
+  background: vacio ? '#fffbeb' : '#fff',
+  color: vacio ? '#92400e' : '#334155',
+});
+
 // ── Componente principal ──────────────────────────────────────────────
 
 export default function ConvivenciaCasoDetail() {
@@ -546,6 +559,8 @@ export default function ConvivenciaCasoDetail() {
   const [anx4, setAnx4] = useState(null);
   const [anx5, setAnx5] = useState(null);
   const [bitacora, setBitacora] = useState([]);
+  const [catalogos, setCatalogos] = useState({ profesionales: [], alumnos: [], cursos: [] });
+  const [guardandoDato, setGuardandoDato] = useState(null);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -569,6 +584,44 @@ export default function ConvivenciaCasoDetail() {
   }, [id, navigate]);
 
   useEffect(() => { fetchCase(); }, [fetchCase]);
+
+  // Catálogos para poder asignar desde la ficha. Van aparte: si fallan, el
+  // caso igual se abre y se puede trabajar.
+  useEffect(() => {
+    const pedir = u => axios.get(u).then(r => r.data).catch(() => []);
+    Promise.all([
+      pedir('/api/users/?role=profesor'),
+      pedir('/api/users/?role=directivo'),
+      pedir('/api/users/?role=alumno'),
+      pedir('/api/courses/'),
+    ]).then(([prof, dir, alu, cur]) => setCatalogos({
+      profesionales: [...prof, ...dir],
+      alumnos: Array.isArray(alu) ? alu : [],
+      cursos: Array.isArray(cur) ? cur : [],
+    }));
+  }, []);
+
+  // Guarda un dato del caso al momento: lo que se elige queda aplicado
+  const definir = async (campo, valor) => {
+    setGuardandoDato(campo);
+    try {
+      await axios.put(`/api/convivencia/cases/${id}`, { [campo]: valor });
+      await fetchCase();
+    } catch (e) {
+      showToast(e.response?.data?.error || 'No se pudo guardar', 'error');
+    }
+    setGuardandoDato(null);
+  };
+
+  const cerrarOReabrir = async () => {
+    const cerrar = caso.status !== 'cerrado';
+    if (!window.confirm(cerrar
+      ? `¿Cerrar el caso #${String(caso.case_number).padStart(3, '0')}?\n\n`
+        + 'Queda registrado y podés reabrirlo cuando quieras.'
+      : '¿Reabrir este caso?')) return;
+    await definir('status', cerrar ? 'cerrado' : 'abierto');
+    showToast(cerrar ? 'Caso cerrado' : 'Caso reabierto');
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -636,9 +689,7 @@ export default function ConvivenciaCasoDetail() {
             </span>
           </div>
           <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 0' }}>
-            {caso.date ? fmtDate(caso.date) : ''}
-            {caso.student && ` · ${caso.student.first_name} ${caso.student.last_name}`}
-            {caso.course_name && ` · ${caso.course_name}`}
+            {caso.date ? fmtDate(caso.date) : ''} · {caso.year}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -647,12 +698,95 @@ export default function ConvivenciaCasoDetail() {
             padding: '8px 16px', background: primary, color: '#fff', border: 'none',
             borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.7 : 1
           }}>{saving ? 'Guardando...' : '💾 Guardar'}</button>
+          <button onClick={cerrarOReabrir} style={{
+            padding: '8px 14px', border: '1px solid #e2e8f0', borderRadius: 8,
+            fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            background: isCerrado ? '#fff' : '#f0fdf4',
+            color: isCerrado ? '#475569' : '#15803d',
+            borderColor: isCerrado ? '#e2e8f0' : '#bbf7d0',
+          }}>{isCerrado ? 'Reabrir caso' : 'Cerrar caso'}</button>
           {canAdvance && (
             <button onClick={handleAvanzar} style={{
               padding: '8px 16px', background: '#16a34a', color: '#fff', border: 'none',
               borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer'
             }}>Avanzar Etapa →</button>
           )}
+        </div>
+      </div>
+
+      {/* Datos del caso: se definen acá, no en otra pantalla */}
+      <div className="card" style={{ marginBottom: 18, padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '11px 16px', borderBottom: '1px solid #f1f5f9',
+          display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3 style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', margin: 0,
+            textTransform: 'uppercase', letterSpacing: '.06em' }}>Datos del caso</h3>
+          {guardandoDato && <span style={{ fontSize: 11, color: '#94a3b8' }}>guardando…</span>}
+        </div>
+
+        <div style={{ display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 1,
+          background: '#f1f5f9' }}>
+
+          {/* Profesional a cargo */}
+          <div style={celdaDato}>
+            <label style={etiquetaDato}>Profesional a cargo</label>
+            <select value={caso.professional_id || ''} style={selectDato(!caso.professional_id)}
+              onChange={e => definir('professional_id',
+                e.target.value ? parseInt(e.target.value) : null)}>
+              <option value="">Sin asignar</option>
+              {catalogos.profesionales.map(p => (
+                <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Alumno */}
+          <div style={celdaDato}>
+            <label style={etiquetaDato}>Estudiante</label>
+            <select value={caso.student_id || ''} style={selectDato(!caso.student_id)}
+              onChange={e => definir('student_id',
+                e.target.value ? parseInt(e.target.value) : null)}>
+              <option value="">Sin asignar</option>
+              {catalogos.alumnos.map(a => (
+                <option key={a.id} value={a.id}>{a.last_name}, {a.first_name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Curso */}
+          <div style={celdaDato}>
+            <label style={etiquetaDato}>Curso</label>
+            <select value={caso.course_id || ''} style={selectDato(!caso.course_id)}
+              onChange={e => definir('course_id',
+                e.target.value ? parseInt(e.target.value) : null)}>
+              <option value="">Sin asignar</option>
+              {catalogos.cursos.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Criticidad */}
+          <div style={celdaDato}>
+            <label style={etiquetaDato}>Criticidad</label>
+            <select value={caso.criticality || 'media'}
+              onChange={e => definir('criticality', e.target.value)}
+              style={{ ...selectDato(false), color: critColor, fontWeight: 650 }}>
+              <option value="baja">Baja</option>
+              <option value="media">Media</option>
+              <option value="alta">Alta</option>
+            </select>
+          </div>
+
+          {/* Tipificación */}
+          <div style={celdaDato}>
+            <label style={etiquetaDato}>Tipificación</label>
+            <select value={caso.typification || ''} style={selectDato(!caso.typification)}
+              onChange={e => definir('typification', e.target.value || null)}>
+              <option value="">Sin tipificar</option>
+              {TIPIFICACIONES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 
