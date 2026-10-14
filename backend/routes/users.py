@@ -4,8 +4,13 @@ from models import db, User, School, StudentGuardian, Course, CourseSubject, Enr
 from sqlalchemy import or_
 from functools import wraps
 import base64
+import re
 
 users_bp = Blueprint('users', __name__)
+
+# Deliberadamente laxa: valida la forma, no la existencia. Una regla estricta
+# rechaza correos institucionales perfectamente válidos.
+EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 
 def require_roles(*roles):
     def decorator(f):
@@ -46,12 +51,17 @@ def create_user():
     school_id = claims.get('school_id')
     data = request.get_json()
 
-    if User.query.filter_by(email=data['email'].lower()).first():
-        return jsonify({'error': 'El email ya está registrado'}), 400
+    correo = (data.get('email') or '').strip().lower()
+    if not correo:
+        return jsonify({'error': 'El correo es obligatorio'}), 400
+    if not EMAIL_RE.match(correo):
+        return jsonify({'error': f'«{correo}» no parece un correo válido'}), 400
+    if User.query.filter_by(email=correo).first():
+        return jsonify({'error': f'El correo {correo} ya está registrado'}), 400
 
     user = User(
         school_id=school_id,
-        email=data['email'].lower().strip(),
+        email=correo,
         first_name=data['first_name'],
         last_name=data['last_name'],
         rut=data.get('rut'),
@@ -82,6 +92,31 @@ def update_user(user_id):
     for field in ['first_name', 'last_name', 'rut', 'phone', 'address', 'gender', 'avatar_url']:
         if field in data:
             setattr(user, field, data[field])
+
+    # El correo es la credencial de entrada, así que se trata aparte: hay que
+    # normalizarlo, comprobar que no esté tomado y dejar que solo lo cambie
+    # quien administra o la propia persona. Antes el formulario lo mostraba
+    # editable y el backend lo ignoraba en silencio.
+    if 'email' in data:
+        nuevo = (data['email'] or '').strip().lower()
+        if nuevo and nuevo != (user.email or '').lower():
+            puede = (claims.get('role') in ('admin', 'directivo')
+                     or current_user_id == user.id)
+            if not puede:
+                return jsonify({'error': 'No puedes cambiar el correo de otra '
+                                         'persona'}), 403
+            if not EMAIL_RE.match(nuevo):
+                return jsonify({'error': f'«{nuevo}» no parece un correo válido'}), 400
+            if len(nuevo) > 120:
+                return jsonify({'error': 'El correo es demasiado largo '
+                                         f'({len(nuevo)} de 120 caracteres)'}), 400
+            tomado = User.query.filter(User.email == nuevo,
+                                       User.id != user.id).first()
+            if tomado:
+                return jsonify({'error': f'El correo {nuevo} ya está en uso '
+                                         'por otra persona'}), 400
+            user.email = nuevo
+
     if 'birth_date' in data and data['birth_date']:
         from datetime import date
         user.birth_date = date.fromisoformat(data['birth_date'])

@@ -45,6 +45,10 @@ def entorno():
         cli.environ_base['HTTP_AUTHORIZATION'] = f'Bearer {token}'
         yield app, cli, colegio.id, db
 
+        # La base en memoria sobrevive entre tests del mismo proceso: sin
+        # esto, el segundo choca con los correos únicos del primero.
+        db.drop_all()
+
 
 def estado(cli, year=2027):
     r = cli.get(f'/api/onboarding/estado?year={year}')
