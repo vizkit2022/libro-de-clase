@@ -122,6 +122,10 @@ def add_subject(course_id):
     if claims.get('role') not in ['admin', 'directivo']:
         return jsonify({'error': 'Sin permisos'}), 403
     data = request.get_json()
+    ya = CourseSubject.query.filter_by(
+        course_id=course_id, subject_id=data['subject_id']).first()
+    if ya:
+        return jsonify({'error': 'Esa asignatura ya está en el curso'}), 409
     cs = CourseSubject(
         course_id=course_id, subject_id=data['subject_id'],
         teacher_id=data.get('teacher_id'),
@@ -130,6 +134,41 @@ def add_subject(course_id):
     db.session.add(cs)
     db.session.commit()
     return jsonify(cs.to_dict()), 201
+
+# Editar una asignatura del curso: docente a cargo y horas semanales
+@courses_bp.route('/<int:course_id>/subjects/<int:cs_id>', methods=['PUT'])
+@jwt_required()
+def update_course_subject(course_id, cs_id):
+    claims = get_jwt()
+    if claims.get('role') not in ['admin', 'directivo']:
+        return jsonify({'error': 'Sin permisos'}), 403
+    Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404()
+    cs = CourseSubject.query.filter_by(id=cs_id, course_id=course_id).first_or_404()
+    data = request.get_json() or {}
+    if 'teacher_id' in data:
+        cs.teacher_id = data['teacher_id'] or None
+    if 'hours_per_week' in data:
+        try:
+            cs.hours_per_week = max(0, int(data['hours_per_week'] or 0))
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Las horas deben ser un número'}), 400
+    db.session.commit()
+    return jsonify(cs.to_dict()), 200
+
+
+# Quitar una asignatura del curso
+@courses_bp.route('/<int:course_id>/subjects/<int:cs_id>', methods=['DELETE'])
+@jwt_required()
+def remove_course_subject(course_id, cs_id):
+    claims = get_jwt()
+    if claims.get('role') not in ['admin', 'directivo']:
+        return jsonify({'error': 'Sin permisos'}), 403
+    Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404()
+    cs = CourseSubject.query.filter_by(id=cs_id, course_id=course_id).first_or_404()
+    db.session.delete(cs)
+    db.session.commit()
+    return jsonify({'ok': True}), 200
+
 
 # Apoderados del curso
 @courses_bp.route('/<int:course_id>/guardians', methods=['GET'])
