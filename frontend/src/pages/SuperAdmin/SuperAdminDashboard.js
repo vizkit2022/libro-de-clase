@@ -23,6 +23,7 @@ const StatCard = ({ icon, label, value, color, sub }) => (
 export default function SuperAdminDashboard() {
   const [stats, setStats] = useState(null);
   const [schools, setSchools] = useState([]);
+  const [puesta, setPuesta] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -30,9 +31,12 @@ export default function SuperAdminDashboard() {
     Promise.all([
       axios.get('/api/super-admin/stats'),
       axios.get('/api/super-admin/schools'),
-    ]).then(([statsRes, schoolsRes]) => {
+      // Cada fuente va por separado: si una falla, el panel igual abre
+      axios.get('/api/super-admin/onboarding').catch(() => null),
+    ]).then(([statsRes, schoolsRes, onbRes]) => {
       setStats(statsRes.data);
       setSchools(schoolsRes.data.slice(0, 5)); // últimos 5
+      setPuesta(onbRes?.data?.colegios || []);
     }).catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -82,6 +86,63 @@ export default function SuperAdminDashboard() {
           <StatCard icon="🆓" label="Plan Gratuito" value={stats.free_schools} color="#3b82f6" />
           <StatCard icon="👥" label="Total Usuarios" value={stats.total_users} color="#ec4899" />
           <StatCard icon="💳" label="Suscripciones" value={stats.active_subscriptions} color="#8b5cf6" sub="Autorizadas" />
+        </div>
+      )}
+
+      {/* Puesta en marcha de cada colegio */}
+      {puesta.length > 0 && (
+        <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>
+            🚀 Puesta en marcha
+          </h2>
+          <p style={{ color: '#64748b', margin: '0 0 18px', fontSize: 13 }}>
+            En qué va cada colegio y qué lo tiene detenido. «Docentes dentro» significa
+            que el equipo ya está cargado y los profesores pueden ver sus cursos.
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
+                  {['Colegio', 'Año', 'Avance', 'Docentes dentro', 'Qué falta'].map(h => (
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: 12 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {puesta.map(c => (
+                  <tr key={c.id}
+                      onClick={() => navigate(`/super-admin/schools/${c.id}`)}
+                      style={{ borderBottom: '1px solid #f8fafc', cursor: 'pointer' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <td style={{ padding: '12px', fontWeight: 600, color: '#0f172a' }}>{c.name}</td>
+                    <td style={{ padding: '12px', color: '#64748b' }}>{c.year}</td>
+                    <td style={{ padding: '12px', minWidth: 170 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                        <div style={{ flex: 1, height: 6, borderRadius: 99, background: '#eef1f8', overflow: 'hidden' }}>
+                          <div style={{ width: `${c.pct}%`, height: '100%', borderRadius: 99,
+                                        background: c.cerrado_at ? '#10b981' : 'linear-gradient(90deg,#6366f1,#8b5cf6)' }} />
+                        </div>
+                        <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0f172a', minWidth: 34 }}>{c.pct}%</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <span style={{
+                        fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 99,
+                        background: c.docentes_pueden_entrar ? '#dcfce7' : '#fef3c7',
+                        color: c.docentes_pueden_entrar ? '#15803d' : '#b45309',
+                      }}>
+                        {c.docentes_pueden_entrar ? 'Sí' : 'Todavía no'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px', color: '#64748b', fontSize: 13 }}>
+                      {c.cerrado_at ? 'Cerrada' : (c.siguiente_paso || '—')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

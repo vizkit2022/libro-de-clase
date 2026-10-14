@@ -23,6 +23,7 @@ import ConvivenciaCasoDetail from './pages/Convivencia/ConvivenciaCasoDetail';
 import CargaAcademicaDashboard from './pages/CargaAcademica/CargaAcademicaDashboard';
 import CargaDocenteDetail from './pages/CargaAcademica/CargaDocenteDetail';
 import MatriculaPage from './pages/Matricula/MatriculaPage';
+import OnboardingPage from './pages/Onboarding/OnboardingPage';
 
 // Super Admin
 import SuperAdminLayout from './pages/SuperAdmin/SuperAdminLayout';
@@ -89,6 +90,7 @@ export default function App() {
           }>
             <Route index element={<RedirectByRole />} />
             <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="onboarding" element={<PrivateRoute roles={['admin','directivo']}><OnboardingPage /></PrivateRoute>} />
             <Route path="users" element={<PrivateRoute roles={['admin','directivo']}><UsersPage /></PrivateRoute>} />
             <Route path="parameters" element={<PrivateRoute roles={['admin','directivo']}><ParametersPage /></PrivateRoute>} />
             <Route path="periods" element={<PrivateRoute roles={['admin','directivo']}><PeriodsPage /></PrivateRoute>} />

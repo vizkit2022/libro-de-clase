@@ -34,6 +34,13 @@ class School(db.Model):
     plan_status = db.Column(db.String(20), default='active')
     subscription_expires_at = db.Column(db.DateTime, nullable=True)
 
+    # Puesta en marcha. El avance de cada paso se calcula mirando los datos
+    # reales (si hay cursos, si hay asignaturas...), así que acá solo se
+    # guarda lo que no se puede deducir: qué año se está configurando y
+    # cuándo el colegio dio el proceso por cerrado.
+    onboarding_year = db.Column(db.Integer)
+    onboarding_cerrado_at = db.Column(db.DateTime)
+
     users = db.relationship('User', backref='school', lazy=True)
     courses = db.relationship('Course', backref='school', lazy=True)
     periods = db.relationship('Period', backref='school', lazy=True)
@@ -65,6 +72,9 @@ class School(db.Model):
             'subscription_expires_at': self.subscription_expires_at.isoformat() if self.subscription_expires_at else None,
             'user_count': self.contar_facturables(),
             'usuarios_por_rol': self.contar_por_rol(),
+            'onboarding_year': self.onboarding_year,
+            'onboarding_cerrado_at': (self.onboarding_cerrado_at.isoformat()
+                                      if self.onboarding_cerrado_at else None),
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
@@ -90,6 +100,12 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
+    # Clave temporal entregada por el asistente de puesta en marcha. Mientras
+    # esté en True, la plataforma le pide a la persona que la cambie.
+    debe_cambiar_clave = db.Column(db.Boolean, default=False)
+    # Cuándo se le generó la última clave para entregar. No guardamos la clave
+    # en sí: si el colegio la pierde, se genera otra.
+    clave_entregada_at = db.Column(db.DateTime)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
@@ -107,6 +123,9 @@ class User(db.Model):
             'gender': self.gender, 'avatar_url': self.avatar_url,
             'has_photo': bool(self.photo),
             'role': self.role, 'is_active': self.is_active,
+            'debe_cambiar_clave': bool(self.debe_cambiar_clave),
+            'clave_entregada_at': (self.clave_entregada_at.isoformat()
+                                   if self.clave_entregada_at else None),
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 

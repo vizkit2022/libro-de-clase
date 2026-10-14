@@ -56,6 +56,7 @@ def create_app():
     from routes.carga_academica import carga_bp
     from routes.sitio import sitio_bp
     from routes.matricula import matricula_bp
+    from routes.onboarding import onboarding_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -73,6 +74,7 @@ def create_app():
     app.register_blueprint(carga_bp, url_prefix='/api/carga-academica')
     # Sin prefijo: define /inicio y /api/leads. Va antes del catch-all de React.
     app.register_blueprint(matricula_bp, url_prefix='/api/matricula')
+    app.register_blueprint(onboarding_bp, url_prefix='/api/onboarding')
     app.register_blueprint(sitio_bp)
 
     # ── Serve React (SPA catch-all) ───────────────────────────────────────────
@@ -247,6 +249,21 @@ def run_migrations():
             print("✅ Migración: carga_horario_celdas.letra agregada")
         except Exception:
             conn.rollback()
+
+        # 6. Columnas de la puesta en marcha
+        for tabla, col, definicion in [
+            ('schools', 'onboarding_year',       'INTEGER'),
+            ('schools', 'onboarding_cerrado_at', 'TIMESTAMP'),
+            ('users',   'debe_cambiar_clave',    'BOOLEAN DEFAULT FALSE'),
+            ('users',   'clave_entregada_at',    'TIMESTAMP'),
+        ]:
+            try:
+                conn.execute(text(
+                    f"ALTER TABLE {tabla} ADD COLUMN {col} {definicion}"))
+                conn.commit()
+                print(f"✅ Migración: {tabla}.{col} agregada")
+            except Exception:
+                conn.rollback()   # ya existía → ignorar
 
         # La tabla convivencia_bitacora se crea automáticamente por db.create_all()
 

@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kolevia · maqueta del asistente de puesta en marcha</title>
+<style>
+  :root{
+    color-scheme: light;
+    --azul:#3b4fd8; --azul-cl:#6b8ef5; --azul-os:#2a2eb0; --azul-noc:#1a1a6e;
+    --noche:#0e102e;
+    --txt:#111827; --txt-2:#4b5563; --txt-3:#6b7280; --txt-4:#9ca3af;
+    --bor:#e5e7eb; --bor-2:#f1f3f7;
+    --sup:#f7f8fc; --sup-2:#eef1f8; --blanco:#fff;
+    --ok:#15803d; --ok-bg:#dcfce7; --ok-bor:#bbf7d0;
+    --alerta:#b45309; --alerta-bg:#fef3c7; --alerta-bor:#fde68a;
+    --mal:#b91c1c; --mal-bg:#fee2e2;
+    --r:12px;
+    --sombra:0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.06);
+    --sombra-lg:0 10px 34px rgba(17,24,39,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,
+                "Helvetica Neue",Arial,sans-serif;
+    background:var(--sup);color:var(--txt);line-height:1.5;
+    -webkit-font-smoothing:antialiased;font-size:14px;
+  }
+  svg{display:block}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+  /* ── Encabezado de la maqueta (no es parte del producto) ── */
+  .nota{
+    background:#fff7ed;border-bottom:1px solid #fed7aa;color:#9a3412;
+    padding:11px 22px;font-size:12.5px;font-weight:600;
+    display:flex;gap:10px;align-items:center;
+  }
+  .nota svg{flex-shrink:0}
+
+  .marco{max-width:1180px;margin:26px auto 60px;padding:0 22px}
+  .marco-cab{margin-bottom:20px}
+  .marco-cab h1{font-size:21px;font-weight:800;letter-spacing:-.025em}
+  .marco-cab p{font-size:13.5px;color:var(--txt-3);margin-top:4px}
+
+  /* ── Lienzo que imita la ventana de la plataforma ───────── */
+  .app{
+    background:var(--blanco);border:1px solid var(--bor);border-radius:16px;
+    box-shadow:var(--sombra-lg);overflow:hidden;
+  }
+  .barra{
+    background:var(--noche);color:#fff;padding:13px 22px;
+    display:flex;align-items:center;gap:12px;
+  }
+  .barra .sello{
+    width:30px;height:30px;border-radius:8px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--azul),var(--azul-cl));
+    display:grid;place-items:center;font-size:12px;font-weight:800;
+  }
+  .barra b{font-size:14.5px;font-weight:700;letter-spacing:-.015em}
+  .barra span{font-size:11.5px;color:rgba(255,255,255,.5)}
+  .barra .der{margin-left:auto;display:flex;gap:9px;align-items:center}
+  .chip-rol{
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);
+    border-radius:99px;padding:4px 11px;font-size:11px;font-weight:650;
+  }
+
+  .cuerpo{display:grid;grid-template-columns:286px 1fr}
+
+  /* ── Indicador de etapas ────────────────────────────────── */
+  .etapas{
+    border-right:1px solid var(--bor);background:var(--sup);
+    padding:22px 18px;
+  }
+  .avance-cab{margin-bottom:6px;display:flex;justify-content:space-between;
+    align-items:baseline}
+  .avance-cab h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;
+    color:var(--txt-3);font-weight:750}
+  .avance-cab b{font-size:19px;font-weight:800;color:var(--azul);
+    font-variant-numeric:tabular-nums}
+  .barra-avance{height:7px;border-radius:99px;background:var(--sup-2);
+    overflow:hidden;margin-bottom:5px}
+  .barra-avance i{display:block;height:100%;border-radius:99px;
+    background:linear-gradient(90deg,var(--azul),var(--azul-cl));
+    transition:width .35s ease}
+  .avance-pie{font-size:11.5px;color:var(--txt-3);margin-bottom:20px}
+
+  .paso{
+    display:grid;grid-template-columns:26px 1fr;gap:11px;
+    padding:9px 10px;border-radius:9px;align-items:start;
+    text-align:left;width:100%;position:relative;
+  }
+  .paso + .paso{margin-top:2px}
+  /* La línea que une los pasos: ayuda a leerlos como una secuencia */
+  .paso:not(:last-child)::after{
+    content:'';position:absolute;left:22px;top:34px;bottom:-4px;width:2px;
+    background:var(--bor);border-radius:2px;
+  }
+  .paso.ok::after{background:var(--ok-bor)}
+  .paso .num{
+    width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+    font-size:11.5px;font-weight:750;flex-shrink:0;z-index:1;
+    background:var(--blanco);border:2px solid var(--bor);color:var(--txt-4);
+  }
+  .paso.ok .num{background:var(--ok-bg);border-color:var(--ok-bor);color:var(--ok)}
+  .paso.act .num{background:var(--azul);border-color:var(--azul);color:#fff;
+    box-shadow:0 0 0 4px rgba(59,79,216,.14)}
+  .paso .tit{display:block;font-size:13.2px;font-weight:650;color:var(--txt-2);line-height:1.35}
+  .paso.act .tit{color:var(--txt);font-weight:750}
+  .paso .sub{display:block;font-size:11.5px;color:var(--txt-4);margin-top:1px}
+  .paso.ok .sub{color:var(--ok)}
+  .paso.act{background:var(--blanco);box-shadow:var(--sombra)}
+  .paso:hover:not(.act){background:rgba(59,79,216,.05)}
+  .paso.blq .tit,.paso.blq .sub{color:var(--txt-4)}
+  .paso.blq{cursor:not-allowed}
+
+  .etapas-pie{
+    margin-top:20px;padding-top:16px;border-top:1px solid var(--bor);
+    font-size:11.5px;color:var(--txt-3);line-height:1.55;
+  }
+  .etapas-pie b{color:var(--txt-2)}
+
+  /* ── Panel del paso ─────────────────────────────────────── */
+  .panel{padding:28px 32px 32px;min-height:620px;display:flex;flex-direction:column}
+  .panel-cab{margin-bottom:22px}
+  .panel-et{font-size:11.5px;font-weight:750;color:var(--azul);
+    text-transform:uppercase;letter-spacing:.07em}
+  .panel-cab h2{font-size:23px;font-weight:800;letter-spacing:-.028em;margin-top:5px}
+  .panel-cab p{font-size:14px;color:var(--txt-2);margin-top:7px;max-width:620px}
+
+  .campos{display:grid;grid-template-columns:1fr 1fr;gap:16px 18px;max-width:700px}
+  .campo{display:flex;flex-direction:column;gap:6px}
+  .campo.ancho{grid-column:1/-1}
+  .campo label{font-size:12.5px;font-weight:650;color:var(--txt-2)}
+  .campo label em{font-style:normal;color:var(--txt-4);font-weight:500}
+  .campo .caja{
+    border:1px solid var(--bor);border-radius:9px;padding:9px 12px;
+    font-size:13.5px;background:var(--blanco);color:var(--txt);min-height:38px;
+    display:flex;align-items:center;
+  }
+  .campo .caja.ph{color:var(--txt-4)}
+  .campo .pista{font-size:11.5px;color:var(--txt-4)}
+
+  .cajon{
+    border:1px solid var(--bor);border-radius:var(--r);background:var(--blanco);
+    box-shadow:var(--sombra);
+  }
+  .cajon + .cajon{margin-top:16px}
+  .cajon-cab{
+    padding:14px 18px;border-bottom:1px solid var(--bor-2);
+    display:flex;align-items:center;gap:10px;
+  }
+  .cajon-cab h4{font-size:14px;font-weight:750}
+  .cajon-cab .der{margin-left:auto;display:flex;gap:8px}
+  .cajon-cuerpo{padding:18px}
+
+  .tabla{width:100%;border-collapse:collapse;font-size:13px}
+  .tabla th{
+    background:var(--sup);padding:8px 14px;text-align:left;font-size:10px;
+    text-transform:uppercase;letter-spacing:.06em;color:var(--txt-3);font-weight:750;
+    border-bottom:1px solid var(--bor-2);
+  }
+  .tabla td{padding:10px 14px;border-bottom:1px solid var(--bor-2);color:var(--txt-2)}
+  .tabla tr:last-child td{border-bottom:none}
+  .tabla td b{color:var(--txt);font-weight:650}
+
+  .pill{font-size:10.5px;font-weight:750;padding:2px 9px;border-radius:999px;
+    display:inline-block;white-space:nowrap}
+  .pill.ok{background:var(--ok-bg);color:var(--ok)}
+  .pill.al{background:var(--alerta-bg);color:var(--alerta)}
+  .pill.ne{background:var(--sup-2);color:var(--txt-3)}
+  .pill.ia{background:#ede9fe;color:#6d28d9}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    padding:9px 16px;border-radius:9px;font-size:13.2px;font-weight:650;
+    border:1px solid transparent;white-space:nowrap;
+  }
+  .btn-p{background:var(--azul);color:#fff}
+  .btn-p:hover{background:var(--azul-os)}
+  .btn-g{background:var(--blanco);border-color:var(--bor);color:var(--txt-2)}
+  .btn-g:hover{border-color:var(--azul-cl);color:var(--azul-os)}
+  .btn-ia{background:#ede9fe;color:#5b21b6;border-color:#ddd6fe}
+  .btn-ia:hover{background:#ddd6fe}
+  .btn-ch{padding:6px 11px;font-size:12px;border-radius:8px}
+
+  .pie-panel{
+    margin-top:auto;padding-top:24px;border-top:1px solid var(--bor-2);
+    display:flex;align-items:center;gap:10px;
+  }
+  .pie-panel .izq{font-size:12.5px;color:var(--txt-3)}
+  .pie-panel .der{margin-left:auto;display:flex;gap:9px}
+
+  .aviso{
+    border-radius:10px;padding:12px 15px;font-size:12.8px;line-height:1.55;
+    display:flex;gap:10px;align-items:flex-start;
+  }
+  .aviso svg{flex-shrink:0;margin-top:1px}
+  .aviso.info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+  .aviso.al{background:var(--alerta-bg);border:1px solid var(--alerta-bor);
+    color:var(--alerta)}
+  .aviso.ok{background:var(--ok-bg);border:1px solid var(--ok-bor);color:var(--ok)}
+  .aviso.ia{background:#f5f3ff;border:1px solid #ddd6fe;color:#5b21b6}
+  .aviso b{font-weight:750}
+
+  .malla{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));
+    gap:9px}
+  .cur{
+    border:1px solid var(--bor);border-radius:9px;padding:10px 12px;
+    background:var(--blanco);
+  }
+  .cur b{display:block;font-size:13.5px;font-weight:750}
+  .cur span{font-size:11.5px;color:var(--txt-4)}
+  .cur.nuevo{border-color:var(--azul-cl);background:#f5f7ff}
+  .cur.vacio{border-style:dashed;color:var(--txt-4);display:grid;place-items:center;
+    font-size:12.5px;min-height:56px}
+
+  .zona{
+    border:2px dashed var(--bor);border-radius:var(--r);padding:26px;
+    text-align:center;background:var(--sup);
+  }
+  .zona b{display:block;font-size:14px;margin-top:9px}
+  .zona span{font-size:12.5px;color:var(--txt-3)}
+  .zona svg{margin:0 auto}
+
+  .dos{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+  .resumen li{
+    display:flex;gap:11px;align-items:flex-start;padding:10px 0;
+    border-bottom:1px solid var(--bor-2);list-style:none;font-size:13.2px;
+  }
+  .resumen li:last-child{border-bottom:none}
+  .resumen .ic{width:19px;height:19px;border-radius:50%;flex-shrink:0;
+    display:grid;place-items:center;margin-top:1px}
+  .resumen .ic.ok{background:var(--ok-bg);color:var(--ok)}
+  .resumen .ic.al{background:var(--alerta-bg);color:var(--alerta)}
+  .resumen b{font-weight:650}
+  .resumen p{color:var(--txt-3);font-size:12.2px;margin-top:1px}
+  .resumen .der{margin-left:auto}
+
+  .leyenda{
+    margin-top:24px;background:var(--blanco);border:1px solid var(--bor);
+    border-radius:var(--r);padding:18px 20px;box-shadow:var(--sombra);
+  }
+  .leyenda h3{font-size:13.5px;font-weight:750;margin-bottom:9px}
+  .leyenda ul{margin-left:17px;font-size:13px;color:var(--txt-2);line-height:1.75}
+  .leyenda code{background:var(--sup-2);border-radius:5px;padding:1px 6px;
+    font-size:12px}
+
+  @media(max-width:900px){
+    .cuerpo{grid-template-columns:1fr}
+    .etapas{border-right:none;border-bottom:1px solid var(--bor)}
+    .campos,.dos{grid-template-columns:1fr}
+    .panel{padding:22px}
+  }
+</style>
+</head>
+<body>
+
+<div class="nota">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/>
+    <path d="M12 8h.01M11 12h1v4h1"/></svg>
+  Maqueta para revisión. Nada de lo que se ve está programado todavía: los datos
+  son de ejemplo y los botones solo cambian de paso.
+</div>
+
+<div class="marco">
+  <div class="marco-cab">
+    <h1>Asistente de puesta en marcha</h1>
+    <p>Ocho pasos para que un colegio quede operativo y sus docentes vean su
+       información cargada. Haz clic en los pasos de la izquierda para recorrerlos.</p>
+  </div>
+
+  <div class="app">
+    <div class="barra">
+      <div class="sello">FL</div>
+      <div>
+        <b>Colegio Franz Liszt</b><br>
+        <span>Puesta en marcha · año escolar 2027</span>
+      </div>
+      <div class="der">
+        <span class="chip-rol">Administrador</span>
+      </div>
+    </div>
+
+    <div class="cuerpo">
+      <!-- ── Indicador de etapas ───────────────────────────── -->
+      <aside class="etapas">
+        <div class="avance-cab">
+          <h3>Avance</h3>
+          <b id="pct">38%</b>
+        </div>
+        <div class="barra-avance"><i id="barra" style="width:38%"></i></div>
+        <p class="avance-pie" id="avanceTxt">3 de 8 pasos completos</p>
+
+        <div id="listaPasos"></div>
+
+        <div class="etapas-pie">
+          <b>¿Qué falta para que entren los docentes?</b><br>
+          Cursos, asignaturas y equipo. Los alumnos y la carga horaria pueden ir
+          después, pero el colegio no queda cerrado hasta tenerlos.
+        </div>
+      </aside>
+
+      <!-- ── Panel del paso ────────────────────────────────── -->
+      <section class="panel" id="panel"></section>
+    </div>
+  </div>
+
+  <div class="leyenda">
+    <h3>Decisiones que tomé en esta maqueta, para que las revises</h3>
+    <ul>
+      <li>El <b>indicador vive en la barra lateral</b>, no arriba: con ocho pasos
+          una fila horizontal obliga a abreviar los nombres hasta volverlos
+          ilegibles.</li>
+      <li>Los pasos <b>no se bloquean en cadena</b>, salvo los que de verdad
+          dependen de otro (no se puede matricular sin cursos). Un colegio real
+          llena esto en desorden, con lo que tiene a mano.</li>
+      <li>Cada paso declara <b>qué desbloquea</b>: así el admin entiende por qué
+          le estamos pidiendo el dato.</li>
+      <li>Hay un <b>punto de corte explícito</b> en el paso 5: ahí los docentes ya
+          pueden entrar y ver sus cursos, aunque falte lo demás.</li>
+      <li>Lo marcado con <span class="pill ia">IA</span> usa el modelo. Está
+          separado del resto <b>a propósito</b>: todo se puede hacer a mano si la
+          IA no está disponible.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+/* Maqueta: los datos son fijos y los botones solo navegan entre pasos. */
+const PASOS = [
+  { n:1, tit:'Datos del colegio',      sub:'Completo',  estado:'ok'  },
+  { n:2, tit:'Año escolar y períodos', sub:'Completo',  estado:'ok'  },
+  { n:3, tit:'Cursos',                 sub:'Completo',  estado:'ok'  },
+  { n:4, tit:'Asignaturas',            sub:'En curso',  estado:'act' },
+  { n:5, tit:'Equipo del colegio',     sub:'Pendiente', estado:'' },
+  { n:6, tit:'Matrícula de alumnos',   sub:'Necesita cursos', estado:'' },
+  { n:7, tit:'Carga horaria y jefaturas', sub:'Pendiente', estado:'' },
+  { n:8, tit:'Activar y entregar accesos', sub:'Pendiente', estado:'' },
+];
+
+const ic = {
+  ok:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  al:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
+  info:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>',
+  chispa:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M3 12h4M17 12h4M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>',
+  subir:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
+};
+
+const pie = (izq, atras, sig) => `
+  <div class="pie-panel">
+    <span class="izq">${izq}</span>
+    <div class="der">
+      ${atras ? `<button class="btn btn-g" data-ir="${atras}">Atrás</button>` : ''}
+      <button class="btn btn-p" data-ir="${sig}">${sig > 8 ? 'Finalizar' : 'Guardar y continuar'}</button>
+    </div>
+  </div>`;
+
+const cab = (et, h2, p) =>
+  `<div class="panel-cab"><p class="panel-et">${et}</p><h2>${h2}</h2><p>${p}</p></div>`;
+
+const VISTAS = {
+1: cab('Paso 1 de 8', 'Datos del colegio',
+      'Lo que aparece en la cabecera de todos los informes en Word y PDF. Es lo primero que ve un apoderado cuando recibe un documento.') + `
+  <div class="campos">
+    <div class="campo"><label>Nombre del establecimiento</label>
+      <div class="caja">Colegio Franz Liszt</div></div>
+    <div class="campo"><label>RBD <em>· opcional</em></label>
+      <div class="caja">10452-3</div></div>
+    <div class="campo"><label>RUT del sostenedor</label>
+      <div class="caja">76.543.210-K</div></div>
+    <div class="campo"><label>Rector o director</label>
+      <div class="caja">María Angélica Pereira</div></div>
+    <div class="campo ancho"><label>Bajada institucional <em>· sale bajo el nombre en los informes</em></label>
+      <div class="caja ph">Fundación Educacional Franz Liszt</div></div>
+    <div class="campo"><label>Dirección</label>
+      <div class="caja">Av. Los Leones 1234, Providencia</div></div>
+    <div class="campo"><label>Teléfono</label>
+      <div class="caja ph">+56 2 2345 6789</div></div>
+  </div>
+
+  <div class="cajon" style="margin-top:20px">
+    <div class="cajon-cab"><h4>Logo del establecimiento</h4>
+      <div class="der"><button class="btn btn-g btn-ch">Subir imagen</button></div></div>
+    <div class="cajon-cuerpo" style="display:flex;gap:18px;align-items:center">
+      <div style="width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#1a1a6e,#6b8ef5);display:grid;place-items:center;color:#fff;font-weight:800;font-size:21px">FL</div>
+      <div style="font-size:12.8px;color:var(--txt-3);line-height:1.6">
+        PNG o JPG, idealmente cuadrado y sobre fondo claro.<br>
+        Se usa en los informes, en el portal de apoderados y en la barra lateral.
+      </div>
+    </div>
+  </div>
+  ` + pie('Todo listo en este paso', null, 2),
+
+2: cab('Paso 2 de 8', 'Año escolar y períodos',
+      'Define el año de trabajo y cómo se divide. De esto dependen las notas: una calificación siempre pertenece a un período.') + `
+  <div class="campos" style="margin-bottom:18px">
+    <div class="campo"><label>Año escolar</label><div class="caja">2027</div></div>
+    <div class="campo"><label>Régimen</label><div class="caja">Semestral</div></div>
+  </div>
+
+  <div class="cajon">
+    <div class="cajon-cab"><h4>Períodos</h4>
+      <div class="der"><button class="btn btn-g btn-ch">+ Agregar período</button></div></div>
+    <table class="tabla">
+      <thead><tr><th>Período</th><th>Desde</th><th>Hasta</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><b>Primer semestre</b></td><td>02-03-2027</td><td>09-07-2027</td>
+            <td style="text-align:right"><span class="pill ok">Activo</span></td></tr>
+        <tr><td><b>Segundo semestre</b></td><td>26-07-2027</td><td>03-12-2027</td>
+            <td style="text-align:right"><span class="pill ne">Programado</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="aviso info" style="margin-top:16px">${ic.info}
+    <div>El año 2026 queda intacto y consultable. Cambiar de año no borra nada:
+         cursos, notas e informes del año anterior siguen donde están.</div></div>
+  ` + pie('Todo listo en este paso', 1, 3),
+
+3: cab('Paso 3 de 8', 'Cursos',
+      'Los cursos del año. Son el esqueleto: sin ellos no se puede matricular alumnos ni repartir horas.') + `
+  <div class="cajon">
+    <div class="cajon-cab"><h4>Cursos de 2027</h4>
+      <span class="pill ne">8 cursos</span>
+      <div class="der">
+        <button class="btn btn-ia btn-ch">${ic.chispa} Copiar desde 2026</button>
+        <button class="btn btn-g btn-ch">+ Crear curso</button>
+      </div></div>
+    <div class="cajon-cuerpo">
+      <div class="malla">
+        <div class="cur"><b>1° Básico A</b><span>Sin alumnos</span></div>
+        <div class="cur"><b>2° Básico A</b><span>Sin alumnos</span></div>
+        <div class="cur"><b>3° Básico A</b><span>Sin alumnos</span></div>
+        <div class="cur"><b>4° Básico A</b><span>Sin alumnos</span></div>
+        <div class="cur"><b>5° Básico A</b><span>Sin alumnos</span></div>
+        <div class="cur"><b>6° Básico A</b><span>Sin alumnos</span></div>
+        <div class="cur"><b>7° Básico A</b><span>Sin alumnos</span></div>
+        <div class="cur nuevo"><b>8° Básico A</b><span>Recién creado</span></div>
+        <div class="cur vacio">+ Agregar</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="aviso ia" style="margin-top:16px">${ic.chispa}
+    <div><b>Copiar desde 2026</b> trae la estructura del año pasado y te deja
+    revisarla antes de crear nada. Si un curso dejó de existir, lo sacas de la
+    lista en ese momento.</div></div>
+  ` + pie('Todo listo en este paso', 2, 4),
+
+4: cab('Paso 4 de 8', 'Asignaturas',
+      'Qué se enseña y en qué cursos. Esto es lo que un docente ve en su panel cuando entra por primera vez.') + `
+  <div class="cajon">
+    <div class="cajon-cab"><h4>Asignaturas del colegio</h4>
+      <span class="pill al">Faltan 2 cursos sin asignaturas</span>
+      <div class="der">
+        <button class="btn btn-g btn-ch">Desde el catálogo</button>
+        <button class="btn btn-g btn-ch">+ Crear propia</button>
+      </div></div>
+    <table class="tabla">
+      <thead><tr><th>Asignatura</th><th>Cursos</th><th>Horas semanales</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td><b>Lenguaje y Comunicación</b></td><td>8 de 8</td><td>8 h</td>
+            <td><span class="pill ok">Lista</span></td></tr>
+        <tr><td><b>Matemática</b></td><td>8 de 8</td><td>7 h</td>
+            <td><span class="pill ok">Lista</span></td></tr>
+        <tr><td><b>Historia y Geografía</b></td><td>6 de 8</td><td>4 h</td>
+            <td><span class="pill al">Faltan 7° y 8°</span></td></tr>
+        <tr><td><b>Ciencias Naturales</b></td><td>8 de 8</td><td>4 h</td>
+            <td><span class="pill ok">Lista</span></td></tr>
+        <tr><td><b>Inglés</b></td><td>8 de 8</td><td>3 h</td>
+            <td><span class="pill ok">Lista</span></td></tr>
+        <tr><td><b>Educación Física y Salud</b></td><td>8 de 8</td><td>4 h</td>
+            <td><span class="pill ok">Lista</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="aviso al" style="margin-top:16px">${ic.al}
+    <div>Historia y Geografía no está asignada a <b>7° ni 8° Básico</b>. Si lo
+    dejas así, esos cursos no tendrán dónde poner esas notas.</div></div>
+  ` + pie('Faltan 2 cursos por cubrir', 3, 5),
+
+5: cab('Paso 5 de 8', 'Equipo del colegio',
+      'Docentes, administrativos y directivos. Son los usuarios que se facturan; alumnos y apoderados no.') + `
+  <div class="dos">
+    <div class="cajon">
+      <div class="cajon-cab"><h4>Cargar desde planilla</h4></div>
+      <div class="cajon-cuerpo">
+        <div class="zona">${ic.subir}
+          <b>Arrastra el Excel con el personal</b>
+          <span>Nombre, apellido, correo, rol y jornada contratada</span>
+          <div style="margin-top:13px"><button class="btn btn-g btn-ch">Descargar plantilla</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="cajon">
+      <div class="cajon-cab"><h4>O agregar a mano</h4></div>
+      <div class="cajon-cuerpo">
+        <div class="campos" style="grid-template-columns:1fr">
+          <div class="campo"><label>Nombre y apellido</label><div class="caja ph">Daniela Carreño Soto</div></div>
+          <div class="campo"><label>Correo</label><div class="caja ph">dcarreno@franzliszt.cl</div></div>
+          <div class="campo"><label>Rol</label><div class="caja">Docente</div></div>
+          <div class="campo"><label>Jornada contratada <em>· horas cronológicas</em></label><div class="caja ph">44</div></div>
+        </div>
+        <button class="btn btn-g btn-ch" style="margin-top:14px;width:100%">+ Agregar al equipo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cajon">
+    <div class="cajon-cab"><h4>Equipo cargado</h4><span class="pill ne">0 personas</span></div>
+    <div class="cajon-cuerpo" style="text-align:center;padding:30px;color:var(--txt-4);font-size:13px">
+      Todavía no hay nadie cargado. Sube la planilla o agrega a la primera persona.
+    </div>
+  </div>
+
+  <div class="aviso info" style="margin-top:16px">${ic.info}
+    <div><b>Este es el punto de corte.</b> Con el equipo cargado, un docente ya
+    puede entrar y ver sus cursos y asignaturas, aunque los alumnos y la carga
+    horaria todavía no estén.</div></div>
+  ` + pie('Sin este paso los docentes no pueden entrar', 4, 6),
+
+6: cab('Paso 6 de 8', 'Matrícula de alumnos',
+      'Los alumnos de cada curso. Se carga desde la planilla que el colegio ya tiene, sin reescribir nada.') + `
+  <div class="cajon">
+    <div class="cajon-cab"><h4>Cargar matrícula</h4>
+      <div class="der"><button class="btn btn-g btn-ch">Descargar plantilla con tus cursos</button></div></div>
+    <div class="cajon-cuerpo">
+      <div class="zona">${ic.subir}
+        <b>Arrastra el Excel de matrícula</b>
+        <span>RUT, nombre, apellido y curso. Acepta CSV también.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cajon">
+    <div class="cajon-cab"><h4>Vista previa antes de guardar</h4>
+      <span class="pill ne">248 filas leídas</span></div>
+    <table class="tabla">
+      <thead><tr><th>Alumno</th><th>Curso</th><th>Qué va a pasar</th></tr></thead>
+      <tbody>
+        <tr><td><b>Pedro Muñoz Alarcón</b></td><td>7° Básico A</td>
+            <td><span class="pill ok">Alumno nuevo</span></td></tr>
+        <tr><td><b>Catalina Rojas Vera</b></td><td>8° Básico A</td>
+            <td><span class="pill ne">Pasa de 7° A</span></td></tr>
+        <tr><td><b>Ignacio Soto Pérez</b></td><td>—</td>
+            <td><span class="pill al">Curso no existe: «8° C»</span></td></tr>
+      </tbody>
+    </table>
+    <div class="cajon-cuerpo" style="border-top:1px solid var(--bor-2)">
+      <div class="aviso al">${ic.al}
+        <div><b>3 filas tienen problemas</b> y no se van a guardar. Las otras 245
+        sí. Puedes corregir la planilla y volver a subirla, o seguir y arreglar
+        esas tres a mano.</div></div>
+    </div>
+  </div>
+  ` + pie('Obligatorio para cerrar la puesta en marcha', 5, 7),
+
+7: cab('Paso 7 de 8', 'Carga horaria y jefaturas',
+      'Quién hace qué. Reparte las horas de cada docente según su jornada contratada y define los profesores jefes.') + `
+  <div class="cajon">
+    <div class="cajon-cab"><h4>Reparto de horas</h4>
+      <span class="pill ne">144 h por repartir</span>
+      <div class="der">
+        <button class="btn btn-ia btn-ch">${ic.chispa} Sugerir reparto</button>
+        <button class="btn btn-g btn-ch">Repartir a mano</button>
+      </div></div>
+    <table class="tabla">
+      <thead><tr><th>Docente</th><th>Jornada</th><th>Aula</th><th>Disponibilidad</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td><b>Daniela Carreño</b></td><td>44 h</td><td>38 h</td><td>0 h</td>
+            <td><span class="pill ok">Cuadra</span></td></tr>
+        <tr><td><b>Fernando Chávez</b></td><td>30 h</td><td>20 h</td><td>6 h</td>
+            <td><span class="pill al">Máximo 3 h</span></td></tr>
+        <tr><td><b>Rocío Herrera</b></td><td>44 h</td><td>38 h</td><td>0 h</td>
+            <td><span class="pill ok">Cuadra</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cajon">
+    <div class="cajon-cab"><h4>Profesores jefes</h4>
+      <span class="pill al">2 cursos sin jefatura</span></div>
+    <table class="tabla">
+      <thead><tr><th>Curso</th><th>Profesor jefe</th></tr></thead>
+      <tbody>
+        <tr><td><b>7° Básico A</b></td><td>Daniela Carreño</td></tr>
+        <tr><td><b>8° Básico A</b></td><td style="color:var(--txt-4)">Sin asignar</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="aviso ia" style="margin-top:16px">${ic.chispa}
+    <div><b>Sugerir reparto</b> escribe una propuesta en lenguaje natural
+    («mantén a los de 2026 en sus cursos, Fernando solo en básica») y la
+    plataforma la traduce a horas. Solo rellena lo que está vacío: nunca pisa lo
+    que ya decidiste a mano.</div></div>
+  ` + pie('Opcional para cerrar, necesario para el horario', 6, 8),
+
+8: cab('Paso 8 de 8', 'Activar y entregar accesos',
+      'Último paso. Revisa que todo esté en orden, activa las cuentas y decide cómo entregar las claves.') + `
+  <div class="cajon">
+    <div class="cajon-cab"><h4>Revisión final</h4></div>
+    <div class="cajon-cuerpo">
+      <ul class="resumen">
+        <li><span class="ic ok">${ic.ok}</span>
+          <div><b>Datos del colegio</b><p>Nombre, rector, logo y bajada institucional</p></div>
+          <span class="der pill ok">Listo</span></li>
+        <li><span class="ic ok">${ic.ok}</span>
+          <div><b>Año 2027 con 2 períodos</b><p>Semestral, del 2 de marzo al 3 de diciembre</p></div>
+          <span class="der pill ok">Listo</span></li>
+        <li><span class="ic ok">${ic.ok}</span>
+          <div><b>8 cursos</b><p>De 1° a 8° Básico, una letra por nivel</p></div>
+          <span class="der pill ok">Listo</span></li>
+        <li><span class="ic al">${ic.al}</span>
+          <div><b>6 asignaturas</b><p>Historia y Geografía no cubre 7° ni 8°</p></div>
+          <span class="der pill al">Revisar</span></li>
+        <li><span class="ic ok">${ic.ok}</span>
+          <div><b>14 personas en el equipo</b><p>12 docentes y 2 administradores</p></div>
+          <span class="der pill ok">Listo</span></li>
+        <li><span class="ic ok">${ic.ok}</span>
+          <div><b>245 alumnos matriculados</b><p>3 filas quedaron fuera por errores</p></div>
+          <span class="der pill ok">Listo</span></li>
+        <li><span class="ic al">${ic.al}</span>
+          <div><b>Carga horaria</b><p>Fernando Chávez con 6 h de disponibilidad (máx. 3)</p></div>
+          <span class="der pill al">Revisar</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cajon">
+    <div class="cajon-cab"><h4>Entrega de accesos</h4></div>
+    <div class="cajon-cuerpo">
+      <div class="aviso ok" style="margin-bottom:15px">${ic.ok}
+        <div>Al activar, las <b>14 cuentas</b> quedan habilitadas con una clave
+        temporal que cada persona cambia en su primer ingreso.</div></div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <button class="btn btn-p">Activar y enviar claves ahora</button>
+        <button class="btn btn-g">Activar y enviar después</button>
+        <button class="btn btn-g">Descargar lista para entregar a mano</button>
+      </div>
+      <p style="font-size:12px;color:var(--txt-4);margin-top:12px;line-height:1.6">
+        Si eliges «después», las claves quedan pendientes y las envías cuando
+        quieras, a una persona o a todas, desde Usuarios. Tú también puedes
+        hacerlo desde super admin.</p>
+    </div>
+  </div>
+
+  <div class="aviso al" style="margin-top:16px">${ic.al}
+    <div>Quedan <b>2 asuntos por revisar</b>. Puedes activar igual: no impiden
+    que el colegio funcione, pero conviene resolverlos antes de que empiecen
+    las clases.</div></div>
+  ` + pie('Último paso', 7, 9),
+};
+
+let actual = 4;
+
+function pintar() {
+  const lista = document.getElementById('listaPasos');
+  lista.innerHTML = PASOS.map(p => {
+    const hecho = p.n < 4 || (p.n === 4 && actual > 4);
+    const cls = ['paso'];
+    if (hecho) cls.push('ok');
+    if (p.n === actual) cls.push('act');
+    const sub = hecho ? 'Completo' : (p.n === actual ? 'En curso' : p.sub);
+    return `<button class="${cls.join(' ')}" data-ir="${p.n}">
+      <span class="num">${hecho ? ic.ok : p.n}</span>
+      <span><span class="tit">${p.tit}</span><span class="sub">${sub}</span></span>
+    </button>`;
+  }).join('');
+
+  const hechos = PASOS.filter(p => p.n < 4 || (p.n === 4 && actual > 4)).length;
+  const pct = Math.round(hechos / PASOS.length * 100);
+  document.getElementById('pct').textContent = pct + '%';
+  document.getElementById('barra').style.width = pct + '%';
+  document.getElementById('avanceTxt').textContent =
+    hechos + ' de ' + PASOS.length + ' pasos completos';
+
+  document.getElementById('panel').innerHTML = VISTAS[Math.min(actual, 8)];
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-ir]');
+  if (!b) return;
+  actual = Math.max(1, Math.min(8, parseInt(b.dataset.ir, 10)));
+  pintar();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+pintar();
+</script>
+</body>
+</html>

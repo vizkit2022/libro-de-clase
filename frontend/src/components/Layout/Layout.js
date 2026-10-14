@@ -19,6 +19,7 @@ const SECCIONES = [
     titulo: 'General',
     items: [
       { to: '/dashboard', icono: 'panel', label: 'Panel', roles: ['admin', 'directivo', 'alumno'] },
+      { to: '/onboarding', icono: 'cohete', label: 'Puesta en marcha', roles: ['admin', 'directivo'] },
       { to: '/mis-cursos', icono: 'pizarra', label: 'Mis cursos', roles: ['profesor'] },
       { to: '/apoderado', icono: 'familia', label: 'Mis alumnos', roles: ['apoderado'] },
       { to: '/users', icono: 'personas', label: 'Usuarios', roles: ['admin', 'directivo'] },
@@ -54,6 +55,7 @@ const SECCIONES = [
 // Título de la barra superior según la ruta
 const TITULOS = {
   '/dashboard': ['General', 'Panel'],
+  '/onboarding': ['General', 'Puesta en marcha'],
   '/mis-cursos': ['General', 'Mis cursos'],
   '/apoderado': ['General', 'Mis alumnos'],
   '/users': ['General', 'Usuarios'],

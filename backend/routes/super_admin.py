@@ -44,6 +44,37 @@ def get_stats():
     }), 200
 
 
+@super_admin_bp.route('/onboarding', methods=['GET'])
+@require_super_admin
+def onboarding_de_todos():
+    """Avance de puesta en marcha de cada colegio.
+
+    Reusa el mismo cálculo que ve el administrador del colegio, para que no
+    haya dos verdades sobre el mismo avance.
+    """
+    from routes.onboarding import _calcular, _year_de
+
+    filas = []
+    for s in School.query.order_by(School.name).all():
+        year = _year_de(s)
+        pasos = _calcular(s, year)
+        completos = sum(1 for p in pasos if p['estado'] == 'completo')
+        trabado = next((p['titulo'] for p in pasos
+                        if not p['opcional'] and p['estado'] != 'completo'), None)
+        filas.append({
+            'id': s.id, 'name': s.name, 'is_active': s.is_active,
+            'year': year,
+            'pct': round(completos / len(pasos) * 100),
+            'completos': completos, 'total': len(pasos),
+            'docentes_pueden_entrar': next(
+                p['estado'] == 'completo' for p in pasos if p['clave'] == 'equipo'),
+            'siguiente_paso': trabado,
+            'cerrado_at': (s.onboarding_cerrado_at.isoformat()
+                           if s.onboarding_cerrado_at else None),
+        })
+    return jsonify({'colegios': filas}), 200
+
+
 # ── Gestión de Colegios ──────────────────────────────────────────────────────
 @super_admin_bp.route('/schools', methods=['GET'])
 @require_super_admin
