@@ -435,6 +435,37 @@
     padding:4px 12px;border-radius:999px}
   .precio-pie{text-align:center;font-size:12.5px;color:var(--txt-3);margin-top:26px}
 
+  /* Calculadora */
+  .calc{background:#fff;border:1px solid var(--bor);border-radius:var(--r);
+        box-shadow:var(--sombra);padding:30px;margin-top:30px}
+  .calc h3{font-size:19px;margin-bottom:6px}
+  .calc-d{font-size:14px;color:var(--txt-2);margin-bottom:24px}
+  .calc-lab{display:flex;justify-content:space-between;align-items:baseline;
+            font-size:14px;color:var(--txt-2);margin-bottom:10px}
+  .calc-lab strong{font-size:20px;color:var(--azul);font-variant-numeric:tabular-nums}
+  .calc input[type=range]{width:100%;-webkit-appearance:none;appearance:none;
+            height:6px;border-radius:99px;background:var(--sup-2);outline:none}
+  .calc input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+            width:26px;height:26px;border-radius:50%;background:var(--azul);
+            border:3px solid #fff;box-shadow:0 2px 8px rgba(26,26,110,.3);cursor:pointer}
+  .calc input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;
+            background:var(--azul);border:3px solid #fff;cursor:pointer;
+            box-shadow:0 2px 8px rgba(26,26,110,.3)}
+  .calc input[type=range]:focus-visible{outline:3px solid var(--azul-cl);outline-offset:4px}
+  .calc-escala{display:flex;justify-content:space-between;font-size:12px;
+            color:var(--txt-3);margin-top:8px}
+  .calc-res{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}
+  .calc-dato{background:var(--sup);border:1px solid var(--bor);border-radius:12px;
+            padding:16px 18px}
+  .calc-dato span{display:block;font-size:12px;text-transform:uppercase;
+            letter-spacing:.06em;color:var(--txt-3);margin-bottom:6px}
+  .calc-dato strong{display:block;font-size:24px;color:var(--txt);
+            font-variant-numeric:tabular-nums;line-height:1.2}
+  .calc-dato em{display:block;font-style:normal;font-size:14px;color:var(--txt-2);
+            margin-top:4px;font-variant-numeric:tabular-nums}
+  .calc-pie{font-size:12.5px;color:var(--txt-3);margin-top:18px;line-height:1.5}
+  @media(max-width:560px){.calc{padding:22px}.calc-res{grid-template-columns:1fr}}
+
   /* Perfiles */
   .perfiles{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
   .perfil{background:#fff;border:1px solid var(--bor);border-radius:var(--r);
@@ -1147,6 +1178,35 @@
         <a href="#contacto" class="btn btn-g" style="width:100%;margin-top:22px">Hablar con nosotros</a>
       </div>
     </div>
+    <div class="calc rev">
+      <h3>Calcula lo que pagaría tu colegio</h3>
+      <p class="calc-d">Mueve el control según cuántos docentes y administradores
+         tendrán cuenta. Los estudiantes y apoderados no entran en el cálculo.</p>
+
+      <label class="calc-lab" for="calcN">
+        <span>Docentes y administradores con cuenta</span>
+        <strong id="calcNum">20</strong>
+      </label>
+      <input type="range" id="calcN" min="1" max="80" step="1" value="20"
+             aria-label="Cantidad de docentes y administradores con cuenta">
+      <div class="calc-escala"><span>1</span><span>80</span></div>
+
+      <div class="calc-res">
+        <div class="calc-dato">
+          <span>Al mes</span>
+          <strong id="calcUfMes">14 UF</strong>
+          <em id="calcPesosMes">—</em>
+        </div>
+        <div class="calc-dato">
+          <span>Al año</span>
+          <strong id="calcUfAnio">168 UF</strong>
+          <em id="calcPesosAnio">—</em>
+        </div>
+      </div>
+
+      <p class="calc-pie" id="calcPie">Buscando el valor de la UF de hoy…</p>
+    </div>
+
     <p class="precio-pie">Los valores se expresan en UF y se facturan en pesos según el
        valor del día. No hay costo de instalación.</p>
   </div>
@@ -1441,6 +1501,72 @@
     } else {
       arrancar();
     }
+  });
+
+
+  /* ── Calculadora de valor mensual ─────────────────────────────── */
+  bloque('calculadora', function () {
+    var UF_POR_USUARIO = 0.7;
+    var control = document.getElementById('calcN');
+    if (!control) return;
+
+    var num = document.getElementById('calcNum');
+    var ufMes = document.getElementById('calcUfMes');
+    var ufAnio = document.getElementById('calcUfAnio');
+    var pesosMes = document.getElementById('calcPesosMes');
+    var pesosAnio = document.getElementById('calcPesosAnio');
+    var pie = document.getElementById('calcPie');
+    var uf = null;   // valor de la UF del día; null mientras no se sepa
+
+    function enUf(n) {
+      // 0,7 × 3 = 2,0999... en coma flotante: redondear antes de mostrar
+      var v = Math.round(n * UF_POR_USUARIO * 100) / 100;
+      return v.toLocaleString('es-CL', { maximumFractionDigits: 1 }) + ' UF';
+    }
+
+    function enPesos(n) {
+      if (!uf) return '—';
+      return '$' + Math.round(n * UF_POR_USUARIO * uf)
+                       .toLocaleString('es-CL', { maximumFractionDigits: 0 });
+    }
+
+    function pintar() {
+      var n = parseInt(control.value, 10) || 1;
+      num.textContent = n;
+      ufMes.textContent = enUf(n);
+      ufAnio.textContent = enUf(n * 12);
+      pesosMes.textContent = enPesos(n);
+      pesosAnio.textContent = enPesos(n * 12);
+    }
+
+    control.addEventListener('input', pintar);
+    pintar();
+
+    function sinUf(texto) { pie.textContent = texto; }
+
+    if (typeof fetch !== 'function') {
+      sinUf('Se factura en pesos según el valor de la UF del día de emisión.');
+      return;
+    }
+
+    /* La conversión a pesos se pide al propio servidor, que cachea el
+       valor del día. Si no llega, se muestran solo las UF: un precio en
+       pesos equivocado es peor que no mostrarlo. */
+    fetch('/api/uf')
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (d) {
+        if (!d || !d.valor) return Promise.reject('sin valor');
+        uf = d.valor;
+        var fecha = d.fecha ? d.fecha.split('-').reverse().join('-') : '';
+        pie.textContent = 'Calculado con la UF del ' + fecha + ': $' +
+          uf.toLocaleString('es-CL', { minimumFractionDigits: 2 }) +
+          '. El valor final se factura en pesos según la UF del día de emisión.';
+        pintar();
+      })
+      .catch(function () {
+        sinUf('No pudimos obtener el valor de la UF de hoy, así que mostramos ' +
+              'solo el total en UF. Se factura en pesos según la UF del día.');
+      });
   });
 
 

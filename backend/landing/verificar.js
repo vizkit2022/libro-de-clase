@@ -38,6 +38,15 @@ const dom = new JSDOM(html, {
   beforeParse(win) {
     win.eval(shim);
     win.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+    // jsdom tampoco trae fetch. Se responde la UF para ejercitar el camino
+    // bueno de la calculadora, no solo el de error.
+    win.fetch = url => Promise.resolve({
+      ok: true, status: 200,
+      json: () => Promise.resolve(
+        String(url).includes('/api/uf')
+          ? { valor: 39876.54, fecha: '2026-10-14' }
+          : {}),
+    });
   },
 });
 
@@ -56,10 +65,20 @@ setTimeout(() => {
   console.log('láminas del carrusel:', laminas, '· activa:', activas);
   console.log('bloques .rev sin revelar:', ocultos.length);
   console.log('imágenes con ruta sospechosa:', imgsRotas.length);
+  // La calculadora: con la UF simulada, 20 usuarios tienen que dar
+  // 20 × 0,7 = 14 UF al mes y 14 × 39.876,54 = $558.272.
+  const texto = id => (doc.getElementById(id) || {}).textContent || '';
+  const calc = `${texto('calcUfMes')} · ${texto('calcPesosMes')}`;
+  const calcOk = texto('calcUfMes') === '14 UF' &&
+                 /558\.272/.test(texto('calcPesosMes')) &&
+                 /168 UF/.test(texto('calcUfAnio'));
+  console.log('calculadora (20 usuarios):', calc, calcOk ? '✓' : '✗');
+
   console.log('errores de JavaScript:', errores.length);
   errores.forEach(e => console.log('   ', e));
 
-  const mal = errores.length || ocultos.length || activas !== 1 || imgsRotas.length;
+  const mal = errores.length || ocultos.length || activas !== 1 ||
+              imgsRotas.length || !calcOk;
   console.log(mal ? '\nFALLA' : '\nOK');
   process.exit(mal ? 1 : 0);
 }, 3200);

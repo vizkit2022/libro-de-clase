@@ -1,6 +1,8 @@
 """Sitio público de Kolevia: landing y captura de solicitudes de demo."""
+import json
 import os
 import re
+import urllib.request
 
 from datetime import date
 
@@ -78,6 +80,40 @@ def marcar_lead(lead_id):
         lead.atendida = bool(d['atendida'])
     db.session.commit()
     return jsonify(lead.to_dict()), 200
+
+
+# ── Valor de la UF ────────────────────────────────────────────────────
+
+# Lo pide la calculadora del sitio. Va por el servidor y no directo desde
+# el navegador por dos razones: evita depender del CORS de un tercero y
+# permite cachear, para no golpear el servicio una vez por visita.
+_UF_CACHE = {'dia': None, 'valor': None, 'fecha': None}
+_UF_FUENTE = 'https://mindicador.cl/api/uf'
+
+
+@sitio_bp.route('/api/uf')
+def valor_uf():
+    hoy = date.today()
+    if _UF_CACHE['dia'] == hoy and _UF_CACHE['valor']:
+        return jsonify({'valor': _UF_CACHE['valor'],
+                        'fecha': _UF_CACHE['fecha']}), 200
+    try:
+        peticion = urllib.request.Request(
+            _UF_FUENTE, headers={'User-Agent': 'Kolevia/1.0 (+https://kolevia.cl)'})
+        with urllib.request.urlopen(peticion, timeout=6) as r:
+            datos = json.loads(r.read().decode('utf-8'))
+        punto = (datos.get('serie') or [])[0]
+        valor = round(float(punto['valor']), 2)
+        # Red de seguridad: si la fuente cambia de formato o devuelve una
+        # cifra absurda, es preferible no mostrar pesos a mostrarlos mal.
+        if not 10000 < valor < 200000:
+            raise ValueError('valor fuera de rango: %s' % valor)
+        _UF_CACHE.update({'dia': hoy, 'valor': valor,
+                          'fecha': str(punto.get('fecha') or '')[:10]})
+        return jsonify({'valor': valor, 'fecha': _UF_CACHE['fecha']}), 200
+    except Exception as e:
+        return jsonify({'error': 'La UF de hoy no está disponible',
+                        'detalle': str(e)[:140]}), 503
 
 
 # ── Archivos para buscadores y asistentes ─────────────────────────────
