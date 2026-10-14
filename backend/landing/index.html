@@ -1108,7 +1108,9 @@
 
   // Clave pública de Web3Forms. Es un identificador, no un secreto:
   // no expone el correo de destino, que queda guardado en el servicio.
+  // Mientras no esté cargada, la solicitud igual queda guardada en la base.
   var WEB3FORMS_KEY = 'REEMPLAZAR_CON_TU_ACCESS_KEY';
+  var CLAVE_LISTA = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(WEB3FORMS_KEY);
 
   var form = document.getElementById('f');
   var msg = document.getElementById('msg');
@@ -1132,42 +1134,51 @@
     btn.disabled = true;
     btn.textContent = 'Enviando…';
 
-    // Copia silenciosa en la base, mientras el sitio viva en el mismo servidor.
-    // Si falla no importa: el correo es el canal principal.
-    fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(datos)
-    }).catch(function () {});
-
+    // La base es el registro de verdad: si queda guardada, la solicitud no se
+    // pierde aunque el correo falle.
+    var guardada = false;
     try {
-      var r = await fetch('https://api.web3forms.com/submit', {
+      var rb = await fetch('/api/leads', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          access_key: WEB3FORMS_KEY,
-          subject: 'Kolevia · solicitud de demo de ' + datos.nombre,
-          from_name: 'Sitio Kolevia',
-          replyto: datos.email,
-          nombre: datos.nombre,
-          correo: datos.email,
-          telefono: datos.telefono || '—',
-          colegio: datos.colegio || '—',
-          mensaje: datos.mensaje || '(sin mensaje)'
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
       });
-      var j = await r.json().catch(function () { return {}; });
-      if (!r.ok || j.success === false) {
-        throw new Error(j.message || 'No se pudo enviar la solicitud.');
-      }
+      guardada = rb.ok;
+    } catch (e) { /* sin conexión con el servidor */ }
+
+    // El aviso por correo es adicional y solo corre si la clave está cargada
+    var avisada = false;
+    if (CLAVE_LISTA) {
+      try {
+        var r = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            access_key: WEB3FORMS_KEY,
+            subject: 'Kolevia · solicitud de demo de ' + datos.nombre,
+            from_name: 'Sitio Kolevia',
+            replyto: datos.email,
+            nombre: datos.nombre,
+            correo: datos.email,
+            telefono: datos.telefono || '—',
+            colegio: datos.colegio || '—',
+            mensaje: datos.mensaje || '(sin mensaje)'
+          })
+        });
+        var j = await r.json().catch(function () { return {}; });
+        avisada = r.ok && j.success !== false;
+      } catch (e) { /* el correo falló, pero puede estar guardada */ }
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Solicitar demostración';
+
+    if (guardada || avisada) {
       form.reset();
       aviso('¡Gracias! Recibimos tu solicitud y te contactaremos dentro de 48 horas hábiles.', 'ok');
-    } catch (err) {
-      aviso(err.message + ' Si el problema persiste, escríbenos directamente a '
-            + 'contacto@kolevia.cl', 'err');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Solicitar demostración';
+    } else {
+      aviso('No pudimos enviar tu solicitud. Escríbenos directamente a contacto@kolevia.cl '
+            + 'y te respondemos igual.', 'err');
     }
   });
 </script>
