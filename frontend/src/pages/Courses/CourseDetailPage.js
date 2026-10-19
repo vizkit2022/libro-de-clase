@@ -237,7 +237,7 @@ export default function CourseDetailPage() {
                       <td>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <Link to={`/students/${e.student_id}/life`} className="btn btn-secondary btn-sm">📋 Hoja de vida</Link>
-                          <Link to={`/students/${e.student_id}/ficha`} className="btn btn-secondary btn-sm">🗂️ Ficha</Link>
+                          <Link to={`/students/${e.student_id}/ficha`} className="btn btn-secondary btn-sm">{canEdit ? '✏️ Editar ficha' : '🗂️ Ver ficha'}</Link>
                         </div>
                       </td>
                     </tr>

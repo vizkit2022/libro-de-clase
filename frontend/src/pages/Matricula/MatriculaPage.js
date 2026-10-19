@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import descargarArchivo from '../CargaAcademica/descargar';
 
@@ -212,7 +213,7 @@ export default function MatriculaPage() {
           </div>
 
           {/* Alumnos del curso */}
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="card" style={{ padding: 0, overflow: 'hidden', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10,
               padding: '13px 18px', borderBottom: '1px solid #f1f5f9' }}>
               <h3 style={{ fontSize: 15, fontWeight: 750, margin: 0, flex: 1 }}>
@@ -229,6 +230,7 @@ export default function MatriculaPage() {
                 Este curso no tiene alumnos matriculados.
               </p>
             ) : (
+              <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5 }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
@@ -243,10 +245,17 @@ export default function MatriculaPage() {
                     <tr key={a.enrollment_id} style={{ borderTop: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '9px 14px', color: '#cbd5e1', width: 36 }}>{i + 1}</td>
                       <td style={{ padding: '9px 14px', fontWeight: 600, color: '#0f172a' }}>
-                        {a.apellido}, {a.nombre}
+                        <Link to={`/students/${a.id}/ficha`} title="Ver ficha del alumno"
+                          style={{ color: '#0f172a', textDecoration: 'none' }}>
+                          {a.apellido}, {a.nombre}
+                        </Link>
                       </td>
-                      <td style={{ padding: '9px 14px', color: '#64748b' }}>{a.rut || '—'}</td>
-                      <td style={{ padding: '9px 14px', textAlign: 'right' }}>
+                      <td style={{ padding: '9px 14px', color: '#64748b', whiteSpace: 'nowrap' }}>{a.rut || '—'}</td>
+                      <td style={{ padding: '9px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <Link to={`/students/${a.id}/ficha`} title="Editar la ficha del alumno"
+                          style={{ display: 'inline-block', background: '#eef2ff', borderRadius: 6,
+                            color: '#4338ca', fontSize: 11, padding: '4px 9px', fontWeight: 600,
+                            textDecoration: 'none', marginRight: 6 }}>Editar ficha</Link>
                         <button onClick={() => retirar(a)} title="Retirar del curso"
                           style={{ background: '#fee2e2', border: 'none', borderRadius: 6,
                             cursor: 'pointer', color: '#dc2626', fontSize: 11,
@@ -256,6 +265,7 @@ export default function MatriculaPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </div>
