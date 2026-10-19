@@ -3,7 +3,6 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import UserAvatar, { avatarColor } from '../../components/UserAvatar/UserAvatar';
-import CasosReadOnlyList from '../Convivencia/CasoReadOnly';
 
 const ANN_COLORS = {
   positiva: { bg: '#d1fae5', color: '#065f46', icon: '⭐' },
@@ -254,9 +253,6 @@ export default function StudentLifePage() {
         <button className={`tab ${tab === 'annotations' ? 'active' : ''}`} onClick={() => setTab('annotations')}>
           📝 Anotaciones ({annotations.length})
         </button>
-        {user?.role !== 'alumno' && (
-          <button className={`tab ${tab === 'convivencia' ? 'active' : ''}`} onClick={() => setTab('convivencia')}>🤝 Convivencia</button>
-        )}
         <button className={`tab ${tab === 'info' ? 'active' : ''}`} onClick={() => setTab('info')}>👤 Datos personales</button>
       </div>
 
@@ -532,19 +528,6 @@ export default function StudentLifePage() {
               })}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Convivencia (solo lectura; el backend filtra los casos visibles) */}
-      {tab === 'convivencia' && (
-        <div>
-          {!readOnly && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-              <Link to="/convivencia" className="btn btn-secondary" style={{ textDecoration: 'none' }}>Ir al módulo de Convivencia →</Link>
-            </div>
-          )}
-          <CasosReadOnlyList studentId={parseInt(id)} compact
-            emptyText={`No hay casos de convivencia vinculados a ${student.first_name}.`} />
         </div>
       )}
 

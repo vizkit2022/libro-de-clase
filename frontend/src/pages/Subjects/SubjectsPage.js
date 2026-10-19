@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import AsignarACursos from './AsignarACursos';
 
 const COLORS = ['#EF4444','#F97316','#EAB308','#22C55E','#06B6D4','#3B82F6','#8B5CF6','#EC4899','#10B981','#6366F1'];
 const EMPTY = { name:'', code:'', ministry_code:'', description:'', color:'#6366F1' };
@@ -15,6 +16,7 @@ export default function SubjectsPage() {
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [asignando, setAsignando] = useState(null);  // asignatura a repartir
   const canEdit = ['admin','directivo'].includes(user?.role);
   const showToast = (msg, type='success') => { setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
 
@@ -68,6 +70,11 @@ export default function SubjectsPage() {
                   </div>
                   {canEdit && (
                     <div style={{ display: 'flex', gap: 4 }}>
+                      <button className="btn btn-secondary btn-sm" title="Asignar a todos los cursos"
+                              onClick={() => setAsignando(s)}
+                              style={{ whiteSpace: 'nowrap', fontSize: 12 }}>
+                        📚 A los cursos
+                      </button>
                       <button className="btn btn-secondary btn-sm btn-icon" onClick={() => { setForm({...s}); setEditing(s); setShowModal(true); }}>✏️</button>
                       <button className="btn btn-danger btn-sm btn-icon" onClick={async () => { await axios.delete(`/api/subjects/${s.id}`); fetchData(); }}>🗑️</button>
                     </div>
@@ -153,6 +160,20 @@ export default function SubjectsPage() {
           </div>
         </div>
       )}
+      {asignando && (
+        <AsignarACursos
+          asignatura={asignando}
+          onCerrar={() => setAsignando(null)}
+          onListo={(r) => {
+            setAsignando(null);
+            showToast(r.creados
+              ? `«${r.asignatura}» quedó en ${r.creados} curso${r.creados === 1 ? '' : 's'}`
+              : 'No había cursos nuevos que asignar');
+            fetchData();
+          }}
+        />
+      )}
+
       {toast && <div className="toast-container"><div className={`toast toast-${toast.type}`}>{toast.msg}</div></div>}
     </div>
   );

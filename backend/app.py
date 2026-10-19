@@ -2,7 +2,7 @@ import os
 from flask import Flask, send_from_directory
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from models import db, School, User, Period, Subject, Course, Enrollment, CourseSubject, Grade, Annotation, Subscription, StudentGuardian
+from models import db, School, User, Period, Subject, Course, Enrollment, CourseSubject, Grade, Annotation, Subscription, StudentGuardian, ConvivenciaCase, ConvivenciaCaseStep
 from datetime import datetime, date
 
 # Path to the built React frontend (relative to this file)
@@ -55,12 +55,17 @@ def create_app():
     from routes.subjects import subjects_bp
     from routes.grades import grades_bp
     from routes.annotations import annotations_bp
-    from routes.convivencia import convivencia_bp
     from routes.reports import reports_bp
     from routes.ocr import ocr_bp
     from routes.super_admin import super_admin_bp
     from routes.payments import payments_bp
     from routes.students import students_bp
+    from routes.convivencia import convivencia_bp
+    from routes.carga_academica import carga_bp
+    from routes.sitio import sitio_bp
+    from routes.matricula import matricula_bp
+    from routes.onboarding import onboarding_bp
+    from routes.ia_estado import ia_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -70,12 +75,18 @@ def create_app():
     app.register_blueprint(subjects_bp, url_prefix='/api/subjects')
     app.register_blueprint(grades_bp, url_prefix='/api/grades')
     app.register_blueprint(annotations_bp, url_prefix='/api/annotations')
-    app.register_blueprint(convivencia_bp, url_prefix='/api/convivencia')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
     app.register_blueprint(ocr_bp, url_prefix='/api/ocr')
     app.register_blueprint(super_admin_bp, url_prefix='/api/super-admin')
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
     app.register_blueprint(students_bp, url_prefix='/api/students')
+    app.register_blueprint(convivencia_bp, url_prefix='/api/convivencia')
+    app.register_blueprint(carga_bp, url_prefix='/api/carga-academica')
+    # Sin prefijo: define /inicio y /api/leads. Va antes del catch-all de React.
+    app.register_blueprint(matricula_bp, url_prefix='/api/matricula')
+    app.register_blueprint(onboarding_bp, url_prefix='/api/onboarding')
+    app.register_blueprint(ia_bp, url_prefix='/api/ia')
+    app.register_blueprint(sitio_bp)
 
     # ── Serve React (SPA catch-all) ───────────────────────────────────────────
     @app.route('/', defaults={'path': ''})
@@ -142,11 +153,10 @@ def run_migrations():
                 except Exception:
                     conn.rollback()   # ya existía → ignorar
 
-            # 3. Publicación de notas + apoderado vinculado a casos de convivencia
+            # 3. Publicación de notas
             for table, col, definition in [
                 ('grades',            'is_published',      'BOOLEAN NOT NULL DEFAULT FALSE'),
                 ('grades',            'published_at',      'TIMESTAMP'),
-                ('convivencia_cases', 'apoderado_user_id', 'INTEGER REFERENCES users(id)'),
             ]:
                 try:
                     conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {definition}"))
@@ -163,7 +173,6 @@ def run_migrations():
                 ('schools',           'subscription_expires_at', 'DATETIME'),
                 ('grades',            'is_published',            'BOOLEAN NOT NULL DEFAULT 0'),
                 ('grades',            'published_at',            'DATETIME'),
-                ('convivencia_cases', 'apoderado_user_id',       'INTEGER REFERENCES users(id)'),
             ]:
                 try:
                     conn.execute(text(
@@ -172,6 +181,151 @@ def run_migrations():
                     conn.commit()
                 except Exception:
                     conn.rollback()   # ya existía
+
+        # 3. Agregar columnas Anexo a convivencia_cases
+        if is_postgres:
+            for col, definition in [
+                ('estado',     "VARCHAR(30) DEFAULT 'recepcion'"),
+                ('anx1_data',  'TEXT'),
+                ('anx2_data',  'TEXT'),
+                ('anx3_data',  'TEXT'),
+                ('anx4_data',  'TEXT'),
+                ('anx5_data',  'TEXT'),
+            ]:
+                try:
+                    conn.execute(text(
+                        f"ALTER TABLE convivencia_cases ADD COLUMN {col} {definition}"
+                    ))
+                    conn.commit()
+                    print(f"✅ Migración: convivencia_cases.{col} agregada")
+                except Exception:
+                    conn.rollback()
+        elif is_sqlite:
+            for col, definition in [
+                ('estado',     "VARCHAR(30) DEFAULT 'recepcion'"),
+                ('anx1_data',  'TEXT'),
+                ('anx2_data',  'TEXT'),
+                ('anx3_data',  'TEXT'),
+                ('anx4_data',  'TEXT'),
+                ('anx5_data',  'TEXT'),
+            ]:
+                try:
+                    conn.execute(text(
+                        f"ALTER TABLE convivencia_cases ADD COLUMN {col} {definition}"
+                    ))
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+        # 4. Agregar subject_id a carga_demanda (enlace al catálogo de asignaturas)
+        for col, definition in [('subject_id', 'INTEGER')]:
+            try:
+                conn.execute(text(
+                    f"ALTER TABLE carga_demanda ADD COLUMN {col} {definition}"
+                ))
+                conn.commit()
+                print(f"✅ Migración: carga_demanda.{col} agregada")
+            except Exception:
+                conn.rollback()
+
+        # 4b. schools.logo_url a TEXT: el logo se guarda como data URL base64
+        #     y no cabe en el VARCHAR(500) original
+        if is_postgres:
+            try:
+                conn.execute(text("ALTER TABLE schools ALTER COLUMN logo_url TYPE TEXT"))
+                conn.commit()
+                print("✅ Migración: schools.logo_url ahora es TEXT")
+            except Exception:
+                conn.rollback()
+
+        # 4c. Ámbito y tipo en el catálogo de actividades, para distinguir
+        #     las lectivas (Disponibilidad, Jefatura) de las no lectivas
+        for col, definition in [('ambito', "VARCHAR(20) DEFAULT 'no_lectiva'"),
+                                ('tipo', 'VARCHAR(30)')]:
+            try:
+                conn.execute(text(
+                    f"ALTER TABLE carga_actividades_nl ADD COLUMN {col} {definition}"))
+                conn.commit()
+                print(f"✅ Migración: carga_actividades_nl.{col} agregada")
+            except Exception:
+                conn.rollback()
+
+        # 4d. Líneas adicionales al pie del informe de carga
+        try:
+            conn.execute(text(
+                "ALTER TABLE carga_docentes ADD COLUMN adicionales_json TEXT"))
+            conn.commit()
+            print("✅ Migración: carga_docentes.adicionales_json agregada")
+        except Exception:
+            conn.rollback()
+
+        # 4e. Bajada institucional del colegio
+        try:
+            conn.execute(text(
+                "ALTER TABLE schools ADD COLUMN subtitulo VARCHAR(200)"))
+            conn.commit()
+            print("✅ Migración: schools.subtitulo agregada")
+        except Exception:
+            conn.rollback()
+
+        # 5. Agregar letra a carga_horario_celdas
+        try:
+            conn.execute(text("ALTER TABLE carga_horario_celdas ADD COLUMN letra VARCHAR(5)"))
+            conn.commit()
+            print("✅ Migración: carga_horario_celdas.letra agregada")
+        except Exception:
+            conn.rollback()
+
+        # 6. Columnas de la puesta en marcha
+        for tabla, col, definicion in [
+            ('schools', 'onboarding_year',       'INTEGER'),
+            ('schools', 'onboarding_cerrado_at', 'TIMESTAMP'),
+            ('users',   'debe_cambiar_clave',    'BOOLEAN DEFAULT FALSE'),
+            ('users',   'clave_entregada_at',    'TIMESTAMP'),
+        ]:
+            try:
+                conn.execute(text(
+                    f"ALTER TABLE {tabla} ADD COLUMN {col} {definicion}"))
+                conn.commit()
+                print(f"✅ Migración: {tabla}.{col} agregada")
+            except Exception:
+                conn.rollback()   # ya existía → ignorar
+
+        # 7. Teléfonos: VARCHAR(20) no alcanza para «+56 2 2345 6789 anexo 102»
+        #    y PostgreSQL rechaza el guardado con un 500 sin explicación.
+        if is_postgres:
+            for tabla in ('schools', 'users'):
+                try:
+                    conn.execute(text(
+                        f"ALTER TABLE {tabla} ALTER COLUMN phone TYPE VARCHAR(50)"))
+                    conn.commit()
+                    print(f"✅ Migración: {tabla}.phone ampliado a 50")
+                except Exception:
+                    conn.rollback()
+
+        # La tabla convivencia_bitacora se crea automáticamente por db.create_all()
+
+
+def _ensure_all_default_periods():
+    """Crea Semestre 1 y 2 del año actual en todos los colegios que no los tengan."""
+    from datetime import date as date_cls
+    year = datetime.utcnow().year
+    schools = School.query.all()
+    created = 0
+    for s in schools:
+        if Period.query.filter_by(school_id=s.id, year=year).count() == 0:
+            db.session.add_all([
+                Period(school_id=s.id, name=f'Semestre 1 {year}', period_type='semestral',
+                       year=year, number=1, is_active=True,
+                       start_date=date_cls(year, 3, 1), end_date=date_cls(year, 7, 31)),
+                Period(school_id=s.id, name=f'Semestre 2 {year}', period_type='semestral',
+                       year=year, number=2, is_active=True,
+                       start_date=date_cls(year, 8, 1), end_date=date_cls(year, 12, 31)),
+            ])
+            created += 1
+    if created:
+        db.session.commit()
+        print(f"✅ Períodos creados en {created} colegios")
 
 
 def seed_authorization_templates():
@@ -201,6 +355,11 @@ def seed_data():
             db.session.add(sa)
             db.session.commit()
             print("✅ Super Admin creado: superadmin@sistema.cl / super123")
+        # Asegurar períodos en todos los colegios existentes
+        try:
+            _ensure_all_default_periods()
+        except Exception as e:
+            print(f"[warn] ensure periods: {e}")
         return
 
     print("🌱 Creando datos de ejemplo...")

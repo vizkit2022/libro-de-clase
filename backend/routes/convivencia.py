@@ -1,293 +1,358 @@
-"""
-Rutas de Convivencia Escolar — Gestión de casos (Anexos 1-5).
-"""
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
-from models import db, ConvivenciaCase, ConvivenciaBitacora, User, StudentGuardian
-from datetime import datetime, date
-import json
-from routes.access import current_claims, guardian_student_ids, is_staff, forbidden
+from models import (db, ConvivenciaCase, ConvivenciaCaseStep, ConvivenciaBitacora,
+                    User, Course, CONVIVENCIA_PROTOCOL_STEPS)
+from datetime import date, datetime
+from sqlalchemy import extract, func
+import json as json_lib
 
 convivencia_bp = Blueprint('convivencia', __name__)
 
-def _school_id():
-    return get_jwt().get('school_id')
 
-def _user_id():
-    return int(get_jwt().get('sub', 0))
-
-def _require_roles(*roles):
-    claims = get_jwt()
-    return claims.get('role') in roles
-
-def _next_numero(school_id):
-    year = datetime.utcnow().year
-    count = ConvivenciaCase.query.filter_by(school_id=school_id).count() + 1
-    return f"CV-{year}-{count:03d}"
-
-def _parse_date(v):
-    if not v: return None
-    try: return date.fromisoformat(v[:10])
-    except: return None
-
-def _parse_dt(v):
-    if not v: return None
-    try: return datetime.fromisoformat(v)
-    except: return None
-
-def _json_str(v):
-    if v is None: return None
-    return json.dumps(v, ensure_ascii=False)
-
-def _normalize_people(entries, school_id):
-    """Normaliza afectados/involucrados: valida student_id (debe ser alumno del colegio)
-    y completa nombre/curso desde la ficha del alumno si vienen vacíos."""
-    out = []
-    for e in entries or []:
-        if not isinstance(e, dict):
-            continue
-        item = {'nombre': (e.get('nombre') or '').strip(), 'curso': (e.get('curso') or '').strip()}
-        sid = e.get('student_id')
-        if sid:
-            student = User.query.filter_by(id=int(sid), school_id=school_id, role='alumno').first()
-            if student:
-                item['student_id'] = student.id
-                if not item['nombre']:
-                    item['nombre'] = f"{student.first_name} {student.last_name}"
-        if item['nombre'] or item['curso'] or item.get('student_id'):
-            out.append(item)
-    return out
-
-def _validate_apoderado(apoderado_user_id, school_id):
-    if not apoderado_user_id:
-        return None
-    ap = User.query.filter_by(id=int(apoderado_user_id), school_id=school_id, role='apoderado').first()
-    return ap.id if ap else None
-
-def _case_for_viewer(case, me):
-    """Devuelve el caso si el usuario puede verlo (o None).
-    Equipo docente: todo el colegio. Apoderado: casos vinculados a él o a sus alumnos. Alumno: ninguno."""
-    if is_staff(me['role']):
-        return case
-    if me['role'] == 'apoderado':
-        if case.is_visible_to_guardian(me['user_id'], guardian_student_ids(me['user_id'])):
-            return case
-    return None
+def school_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        claims = get_jwt()
+        if not claims.get('school_id'):
+            return jsonify({'error': 'Sin colegio asignado'}), 403
+        return f(*args, **kwargs)
+    return decorated
 
 
-# ── CRUD Casos ───────────────────────────────────────────────────────────────
+# ── Catálogos ──────────────────────────────────────────────────────────
 
-@convivencia_bp.route('/', methods=['GET'])
+@convivencia_bp.route('/catalogs', methods=['GET'])
 @jwt_required()
-def list_cases():
-    sid = _school_id()
-    me = current_claims()
-    if me['role'] == 'alumno':
-        return forbidden()
-    estado = request.args.get('estado')
+def get_catalogs():
+    from models import CONVIVENCIA_PROCEDURES, CONVIVENCIA_TYPIFICATIONS, CONVIVENCIA_PROTOCOL_STEPS
+    return jsonify({
+        'procedures': CONVIVENCIA_PROCEDURES,
+        'typifications': CONVIVENCIA_TYPIFICATIONS,
+        'protocol_steps': CONVIVENCIA_PROTOCOL_STEPS,
+    }), 200
+
+
+# ── Dashboard ──────────────────────────────────────────────────────────
+
+@convivencia_bp.route('/dashboard', methods=['GET'])
+@jwt_required()
+@school_required
+def get_dashboard():
+    claims = get_jwt()
+    school_id = claims.get('school_id')
+    year = request.args.get('year', date.today().year, type=int)
+
+    cases = ConvivenciaCase.query.filter_by(school_id=school_id, year=year).all()
+
+    # Por mes
+    by_month = {m: 0 for m in range(1, 13)}
+    for c in cases:
+        if c.date:
+            by_month[c.date.month] += 1
+
+    # Por procedimiento
+    by_procedure = {}
+    for c in cases:
+        p = c.procedure or 'Sin procedimiento'
+        by_procedure[p] = by_procedure.get(p, 0) + 1
+
+    # Por profesional
+    by_professional = {}
+    for c in cases:
+        name = (f"{c.professional.first_name} {c.professional.last_name}"
+                if c.professional else 'Sin asignar')
+        by_professional[name] = by_professional.get(name, 0) + 1
+
+    # Por tipificación
+    by_typification = {}
+    for c in cases:
+        t = c.typification or 'Sin tipificación'
+        by_typification[t] = by_typification.get(t, 0) + 1
+
+    # Por estado
+    open_cases = sum(1 for c in cases if c.status == 'abierto')
+    closed_cases = sum(1 for c in cases if c.status == 'cerrado')
+
+    return jsonify({
+        'year': year,
+        'total': len(cases),
+        'open': open_cases,
+        'closed': closed_cases,
+        'by_month': [{'month': m, 'count': by_month[m]} for m in range(1, 13)],
+        'by_procedure': [{'name': k, 'count': v} for k, v in by_procedure.items()],
+        'by_professional': [{'name': k, 'count': v} for k, v in by_professional.items()],
+        'by_typification': [{'name': k, 'count': v} for k, v in by_typification.items()],
+    }), 200
+
+
+# ── Casos ──────────────────────────────────────────────────────────────
+
+@convivencia_bp.route('/cases', methods=['GET'])
+@jwt_required()
+@school_required
+def get_cases():
+    claims = get_jwt()
+    school_id = claims.get('school_id')
+    year = request.args.get('year', date.today().year, type=int)
+    status_filter = request.args.get('status')  # abierto | cerrado | all
     student_id = request.args.get('student_id', type=int)
-    q = ConvivenciaCase.query.filter_by(school_id=sid)
-    if estado:
-        q = q.filter_by(estado=estado)
-    cases = q.order_by(ConvivenciaCase.created_at.desc()).all()
 
-    if me['role'] == 'apoderado':
-        my_students = guardian_student_ids(me['user_id'])
-        cases = [c for c in cases if c.is_visible_to_guardian(me['user_id'], my_students)]
-        if student_id and student_id not in my_students:
-            return forbidden()
-
+    query = ConvivenciaCase.query.filter_by(school_id=school_id, year=year)
+    if status_filter and status_filter != 'all':
+        query = query.filter_by(status=status_filter)
     if student_id:
-        cases = [c for c in cases if student_id in c.linked_student_ids()]
+        query = query.filter_by(student_id=student_id)
+
+    cases = query.order_by(ConvivenciaCase.date.desc()).all()
     return jsonify([c.to_dict() for c in cases]), 200
 
 
-@convivencia_bp.route('/', methods=['POST'])
+@convivencia_bp.route('/cases/<int:case_id>', methods=['GET'])
 @jwt_required()
+@school_required
+def get_case(case_id):
+    claims = get_jwt()
+    case = ConvivenciaCase.query.filter_by(
+        id=case_id, school_id=claims.get('school_id')
+    ).first_or_404()
+    return jsonify(case.to_dict()), 200
+
+
+@convivencia_bp.route('/cases', methods=['POST'])
+@jwt_required()
+@school_required
 def create_case():
-    if not _require_roles('admin', 'directivo', 'profesor'):
-        return jsonify({'error': 'Sin permisos'}), 403
-    sid = _school_id()
+    claims = get_jwt()
+    school_id = claims.get('school_id')
+    user_id = int(claims.get('sub', 0))
     data = request.get_json()
+
+    # Número correlativo
+    year = data.get('year', date.today().year)
+    last = (ConvivenciaCase.query
+            .filter_by(school_id=school_id, year=year)
+            .order_by(ConvivenciaCase.case_number.desc())
+            .first())
+    next_number = (last.case_number + 1) if last else 1
+
     case = ConvivenciaCase(
-        school_id=sid,
-        numero_caso=_next_numero(sid),
-        estado='recepcion',
-        created_by_id=_user_id(),
-        # Anexo 1
-        fecha_recepcion=_parse_dt(data.get('fecha_recepcion')),
-        quien_recibe=data.get('quien_recibe'),
-        apoderado_user_id=_validate_apoderado(data.get('apoderado_user_id'), sid),
-        afectados=_json_str(_normalize_people(data.get('afectados', []), sid)),
-        involucrados=_json_str(_normalize_people(data.get('involucrados', []), sid)),
-        descripcion_hechos=data.get('descripcion_hechos'),
-        tipificacion=data.get('tipificacion'),
-        tipificacion_otro=data.get('tipificacion_otro'),
-        medidas_inmediatas=_json_str(data.get('medidas_inmediatas', [])),
+        school_id=school_id,
+        case_number=next_number,
+        year=year,
+        student_id=data.get('student_id') or None,
+        course_id=data.get('course_id') or None,
+        professional_id=data.get('professional_id') or None,
+        title=data['title'],
+        date=date.fromisoformat(data['date']),
+        procedure=data.get('procedure'),
+        typification=data.get('typification'),
+        motive=data.get('motive'),
+        agreements=data.get('agreements'),
+        status=data.get('status', 'abierto'),
+        criticality=data.get('criticality', 'media'),
+        created_by=user_id,
     )
     db.session.add(case)
+    db.session.flush()  # get case.id
+
+    # Crear pasos del protocolo automáticamente
+    for i, step_name in enumerate(CONVIVENCIA_PROTOCOL_STEPS, start=1):
+        step = ConvivenciaCaseStep(
+            case_id=case.id,
+            step_number=i,
+            name=step_name,
+            status='pending',
+        )
+        db.session.add(step)
+
     db.session.commit()
     return jsonify(case.to_dict()), 201
 
 
-@convivencia_bp.route('/<int:case_id>', methods=['GET'])
+@convivencia_bp.route('/cases/<int:case_id>', methods=['PUT'])
 @jwt_required()
-def get_case(case_id):
-    sid = _school_id()
-    me = current_claims()
-    case = ConvivenciaCase.query.filter_by(id=case_id, school_id=sid).first_or_404()
-    if _case_for_viewer(case, me) is None:
-        return forbidden()
-    return jsonify(case.to_dict()), 200
-
-
-@convivencia_bp.route('/<int:case_id>', methods=['PUT'])
-@jwt_required()
+@school_required
 def update_case(case_id):
-    if not _require_roles('admin', 'directivo', 'profesor'):
-        return jsonify({'error': 'Sin permisos'}), 403
-    sid = _school_id()
-    case = ConvivenciaCase.query.filter_by(id=case_id, school_id=sid).first_or_404()
+    claims = get_jwt()
+    case = ConvivenciaCase.query.filter_by(
+        id=case_id, school_id=claims.get('school_id')
+    ).first_or_404()
     data = request.get_json()
 
-    # Estado
-    if 'estado' in data:
-        case.estado = data['estado']
+    for field in ['title', 'procedure', 'typification', 'motive',
+                  'agreements', 'status', 'criticality', 'estado',
+                  'professional_id', 'student_id', 'course_id']:
+        if field in data:
+            setattr(case, field, data[field] or None if field.endswith('_id') else data[field])
+    if 'date' in data and data['date']:
+        case.date = date.fromisoformat(data['date'])
 
-    # Anexo 1
-    for f in ['quien_recibe', 'descripcion_hechos', 'tipificacion', 'tipificacion_otro']:
-        if f in data: setattr(case, f, data[f])
-    if 'fecha_recepcion' in data: case.fecha_recepcion = _parse_dt(data['fecha_recepcion'])
-    if 'afectados' in data: case.afectados = _json_str(_normalize_people(data['afectados'], sid))
-    if 'involucrados' in data: case.involucrados = _json_str(_normalize_people(data['involucrados'], sid))
-    if 'medidas_inmediatas' in data: case.medidas_inmediatas = _json_str(data['medidas_inmediatas'])
-    if 'apoderado_user_id' in data: case.apoderado_user_id = _validate_apoderado(data['apoderado_user_id'], sid)
+    # Guardar datos de Anexos
+    for anx in ['anx1_data', 'anx2_data', 'anx3_data', 'anx4_data', 'anx5_data']:
+        if anx in data:
+            setattr(case, anx, json_lib.dumps(data[anx]) if data[anx] is not None else None)
 
-    # Anexo 2
-    for f in ['apoderado_nombre', 'apoderado_rut', 'apoderado_parentesco', 'apoderado_telefono',
-              'entrevistador', 'entrevistador_cargo', 'motivo_citacion', 'declaracion_descargos',
-              'compromiso_familia', 'compromiso_convivencia',
-              'entrevista_hora_inicio', 'entrevista_hora_termino']:
-        if f in data: setattr(case, f, data[f])
-    if 'entrevista_fecha' in data: case.entrevista_fecha = _parse_date(data['entrevista_fecha'])
-    if 'entrevista_proximo_monitoreo' in data: case.entrevista_proximo_monitoreo = _parse_date(data['entrevista_proximo_monitoreo'])
-
-    # Anexo 3
-    for f in ['coordinador_cargo', 'observaciones_especialistas']:
-        if f in data: setattr(case, f, data[f])
-    if 'seguimiento_proximo_monitoreo' in data: case.seguimiento_proximo_monitoreo = _parse_date(data['seguimiento_proximo_monitoreo'])
-
-    # Anexo 4
-    for f in ['intervencion_curso', 'intervencion_asignatura', 'intervencion_profesional',
-              'intervencion_cargo', 'intervencion_objetivo', 'intervencion_contenidos',
-              'intervencion_observaciones', 'intervencion_registrado_libro']:
-        if f in data: setattr(case, f, data[f])
-    if 'intervencion_fecha' in data: case.intervencion_fecha = _parse_date(data['intervencion_fecha'])
-    if 'intervencion_fecha_libro' in data: case.intervencion_fecha_libro = _parse_date(data['intervencion_fecha_libro'])
-
-    # Anexo 5
-    for f in ['apelacion_apoderado', 'apelacion_rut', 'apelacion_parentesco',
-              'apelacion_medida', 'apelacion_fundamentos']:
-        if f in data: setattr(case, f, data[f])
-    if 'apelacion_fecha' in data: case.apelacion_fecha = _parse_date(data['apelacion_fecha'])
-    if 'apelacion_documentos' in data: case.apelacion_documentos = _json_str(data['apelacion_documentos'])
-
-    case.updated_at = datetime.utcnow()
     db.session.commit()
     return jsonify(case.to_dict()), 200
 
 
-@convivencia_bp.route('/<int:case_id>/avanzar', methods=['POST'])
+# ── Avanzar etapa ─────────────────────────────────────────────────────
+
+ESTADO_FLOW = ['recepcion', 'entrevista', 'seguimiento', 'intervencion_grupal', 'apelacion', 'cerrado']
+
+@convivencia_bp.route('/cases/<int:case_id>/avanzar', methods=['POST'])
 @jwt_required()
-def avanzar_etapa(case_id):
-    """Avanza al siguiente estado del caso."""
-    if not _require_roles('admin', 'directivo', 'profesor'):
-        return jsonify({'error': 'Sin permisos'}), 403
-    sid = _school_id()
-    case = ConvivenciaCase.query.filter_by(id=case_id, school_id=sid).first_or_404()
-    flujo = ['recepcion', 'entrevista', 'seguimiento', 'intervencion_grupal', 'apelacion', 'cerrado']
+@school_required
+def avanzar_estado(case_id):
+    claims = get_jwt()
+    case = ConvivenciaCase.query.filter_by(
+        id=case_id, school_id=claims.get('school_id')
+    ).first_or_404()
+
+    estado_actual = case.estado or 'recepcion'
     try:
-        idx = flujo.index(case.estado)
-        if idx < len(flujo) - 1:
-            case.estado = flujo[idx + 1]
-            case.updated_at = datetime.utcnow()
-            db.session.commit()
+        idx = ESTADO_FLOW.index(estado_actual)
     except ValueError:
-        pass
+        idx = 0
+
+    if idx < len(ESTADO_FLOW) - 1:
+        case.estado = ESTADO_FLOW[idx + 1]
+        if case.estado == 'cerrado':
+            case.status = 'cerrado'
+    db.session.commit()
     return jsonify(case.to_dict()), 200
 
 
-# ── Listas para vincular alumnos y apoderados a un caso ─────────────────────
+# ── Bitácora de seguimiento ───────────────────────────────────────────
 
-@convivencia_bp.route('/alumnos', methods=['GET'])
+@convivencia_bp.route('/cases/<int:case_id>/bitacora', methods=['GET'])
 @jwt_required()
-def list_alumnos():
-    """Alumnos activos del colegio con su curso actual (para el selector de afectados/involucrados)."""
-    if not _require_roles('admin', 'directivo', 'profesor'):
-        return forbidden()
-    from models import Enrollment
-    sid = _school_id()
-    alumnos = User.query.filter_by(school_id=sid, role='alumno', is_active=True).order_by(User.last_name, User.first_name).all()
-    out = []
-    for a in alumnos:
-        enr = Enrollment.query.filter_by(student_id=a.id, is_active=True).order_by(Enrollment.year.desc()).first()
-        out.append({
-            'id': a.id, 'full_name': f"{a.first_name} {a.last_name}",
-            'course_id': enr.course_id if enr else None,
-            'course_name': enr.course.name if enr and enr.course else None,
-        })
-    return jsonify(out), 200
+@school_required
+def get_bitacora(case_id):
+    claims = get_jwt()
+    ConvivenciaCase.query.filter_by(id=case_id, school_id=claims.get('school_id')).first_or_404()
+    entries = ConvivenciaBitacora.query.filter_by(case_id=case_id).order_by(ConvivenciaBitacora.fecha).all()
+    return jsonify([e.to_dict() for e in entries]), 200
 
 
-@convivencia_bp.route('/apoderados', methods=['GET'])
+@convivencia_bp.route('/cases/<int:case_id>/bitacora', methods=['POST'])
 @jwt_required()
-def list_apoderados():
-    """Apoderados activos del colegio con sus alumnos (para vincular el caso a un apoderado)."""
-    if not _require_roles('admin', 'directivo', 'profesor'):
-        return forbidden()
-    sid = _school_id()
-    apods = User.query.filter_by(school_id=sid, role='apoderado', is_active=True).order_by(User.last_name, User.first_name).all()
-    out = []
-    for ap in apods:
-        rels = StudentGuardian.query.filter_by(guardian_id=ap.id).all()
-        out.append({
-            'id': ap.id, 'full_name': f"{ap.first_name} {ap.last_name}",
-            'rut': ap.rut, 'phone': ap.phone,
-            'students': [{'id': r.student_id,
-                          'full_name': f"{r.student.first_name} {r.student.last_name}" if r.student else '',
-                          'relationship': r.relationship} for r in rels],
-        })
-    return jsonify(out), 200
-
-
-# ── Bitácora (Anexo 3) ───────────────────────────────────────────────────────
-
-@convivencia_bp.route('/<int:case_id>/bitacora', methods=['POST'])
-@jwt_required()
+@school_required
 def add_bitacora(case_id):
-    if not _require_roles('admin', 'directivo', 'profesor'):
-        return jsonify({'error': 'Sin permisos'}), 403
-    sid = _school_id()
-    ConvivenciaCase.query.filter_by(id=case_id, school_id=sid).first_or_404()
+    claims = get_jwt()
+    user_id = int(claims.get('sub', 0))
+    ConvivenciaCase.query.filter_by(id=case_id, school_id=claims.get('school_id')).first_or_404()
     data = request.get_json()
     entry = ConvivenciaBitacora(
         case_id=case_id,
-        fecha=_parse_date(data.get('fecha')),
-        tipo_accion=data.get('tipo_accion'),
-        observaciones=data.get('observaciones'),
-        created_by_id=_user_id(),
+        fecha=date.fromisoformat(data['fecha']) if data.get('fecha') else None,
+        tipo_accion=data.get('tipo_accion', ''),
+        observaciones=data.get('observaciones', ''),
+        created_by_id=user_id,
     )
     db.session.add(entry)
     db.session.commit()
     return jsonify(entry.to_dict()), 201
 
 
-@convivencia_bp.route('/<int:case_id>/bitacora/<int:entry_id>', methods=['DELETE'])
+@convivencia_bp.route('/cases/<int:case_id>/bitacora/<int:entry_id>', methods=['DELETE'])
 @jwt_required()
+@school_required
 def delete_bitacora(case_id, entry_id):
-    if not _require_roles('admin', 'directivo'):
-        return jsonify({'error': 'Sin permisos'}), 403
+    claims = get_jwt()
+    ConvivenciaCase.query.filter_by(id=case_id, school_id=claims.get('school_id')).first_or_404()
     entry = ConvivenciaBitacora.query.filter_by(id=entry_id, case_id=case_id).first_or_404()
     db.session.delete(entry)
     db.session.commit()
     return jsonify({'ok': True}), 200
+
+
+# ── Pasos del protocolo ────────────────────────────────────────────────
+
+@convivencia_bp.route('/cases/<int:case_id>/steps/<int:step_id>', methods=['PUT'])
+@jwt_required()
+@school_required
+def update_step(case_id, step_id):
+    claims = get_jwt()
+    case = ConvivenciaCase.query.filter_by(
+        id=case_id, school_id=claims.get('school_id')
+    ).first_or_404()
+    step = ConvivenciaCaseStep.query.filter_by(id=step_id, case_id=case_id).first_or_404()
+
+    data = request.get_json()
+    if 'status' in data:
+        step.status = data['status']
+        if data['status'] == 'completed' and not step.completed_at:
+            step.completed_at = datetime.utcnow()
+        elif data['status'] != 'completed':
+            step.completed_at = None
+    if 'notes' in data:
+        step.notes = data['notes']
+
+    db.session.commit()
+    return jsonify(step.to_dict()), 200
+
+
+# ── Extracción de caso desde imagen (IA) ───────────────────────────────
+
+@convivencia_bp.route('/extract-from-image', methods=['POST'])
+@jwt_required()
+@school_required
+def extract_from_image():
+    import base64, json as json_lib
+    from servicios import ia
+    from models import CONVIVENCIA_PROCEDURES, CONVIVENCIA_TYPIFICATIONS
+
+    file = request.files.get('image')
+    if not file:
+        return jsonify({'error': 'No se envió imagen'}), 400
+
+    mime = file.content_type or 'image/jpeg'
+    img_data = base64.standard_b64encode(file.read()).decode('utf-8')
+
+    client = ia.cliente()
+    if client is None:
+        return jsonify({'error': 'La lectura automática no está disponible: falta '
+                                 'configurar ANTHROPIC_API_KEY en el servidor.'}), 503
+
+    prompt = f"""Eres un asistente de convivencia escolar chileno. Analiza la imagen adjunta y extrae la información del caso de convivencia.
+
+Devuelve SOLO un JSON con estos campos (deja vacío si no aparece en la imagen):
+{{
+  "title": "título breve del caso",
+  "date": "YYYY-MM-DD o vacío",
+  "typification": "uno de: {', '.join(CONVIVENCIA_TYPIFICATIONS)} o vacío",
+  "procedure": "uno de: {', '.join(CONVIVENCIA_PROCEDURES)} o vacío",
+  "criticality": "alta, media o baja",
+  "motive": "descripción del motivo o situación",
+  "agreements": "acuerdos o compromisos si los hay",
+  "student_name": "nombre del estudiante si aparece",
+  "professional_name": "nombre del profesional si aparece"
+}}
+
+Responde SOLO con el JSON, sin markdown ni explicaciones."""
+
+    try:
+        msg = client.messages.create(
+            model=ia.modelo(),
+            max_tokens=1024,
+            messages=[{
+                'role': 'user',
+                'content': [
+                    {'type': 'image', 'source': {'type': 'base64', 'media_type': mime, 'data': img_data}},
+                    {'type': 'text', 'text': prompt}
+                ]
+            }]
+        )
+        raw = ia.limpiar_json(msg.content[0].text)
+        result = json_lib.loads(raw)
+        return jsonify(result), 200
+    except json_lib.JSONDecodeError:
+        return jsonify({'error': 'La lectura automática no entendió el documento. '
+                                 'Prueba con una foto más nítida, o escribe el caso '
+                                 'a mano.'}), 422
+    except Exception as e:
+        # Sin el texto crudo del SDK: trae el JSON de la respuesta y el
+        # request_id, que no le dicen nada a quien registra un caso.
+        return jsonify({'error': ia.explicar_error(e)}), 502

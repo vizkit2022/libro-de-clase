@@ -35,6 +35,54 @@ export default function CourseDetailPage() {
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [enrollStudent, setEnrollStudent] = useState('');
   const [subjectForm, setSubjectForm] = useState({ subject_id:'', teacher_id:'', hours_per_week:2 });
+  const [editandoJefe, setEditandoJefe] = useState(false);
+  const [guardandoJefe, setGuardandoJefe] = useState(false);
+
+  // Vuelve a leer el curso: lo usan todas las acciones que lo modifican
+  const recargarCurso = async () => {
+    const { data } = await axios.get(`/api/courses/${id}`);
+    setCourse(data);
+  };
+
+  const definirJefe = async (teacherId) => {
+    setGuardandoJefe(true);
+    try {
+      await axios.put(`/api/courses/${id}`, { head_teacher_id: teacherId || null });
+      await recargarCurso();
+      setEditandoJefe(false);
+      setToast({ msg: teacherId ? 'Profesor jefe actualizado' : 'Se quitó el profesor jefe',
+                 type: 'success' });
+    } catch (e) {
+      setToast({ msg: e.response?.data?.error || 'No se pudo guardar', type: 'error' });
+    }
+    setGuardandoJefe(false);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const cambiarAsignatura = async (csId, campo, valor) => {
+    try {
+      await axios.put(`/api/courses/${id}/subjects/${csId}`, { [campo]: valor });
+      await recargarCurso();
+    } catch (e) {
+      setToast({ msg: e.response?.data?.error || 'No se pudo guardar', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const quitarAsignatura = async (cs) => {
+    if (!window.confirm(
+      `¿Quitar ${cs.subject?.name} de ${course.name}?\n\n` +
+      `La asignatura sigue existiendo en el colegio: solo deja de dictarse en este curso.`
+    )) return;
+    try {
+      await axios.delete(`/api/courses/${id}/subjects/${cs.id}`);
+      await recargarCurso();
+      setToast({ msg: 'Asignatura quitada del curso', type: 'success' });
+    } catch (e) {
+      setToast({ msg: e.response?.data?.error || 'No se pudo quitar', type: 'error' });
+    }
+    setTimeout(() => setToast(null), 3000);
+  };
   const canEdit = ['admin','directivo'].includes(user?.role);
 
   const showToast = (msg, type='success') => { setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
@@ -87,10 +135,49 @@ export default function CourseDetailPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 12 }}>
           <div>
             <h1 className="page-title">{course.name}</h1>
-            <p className="page-subtitle">
-              {course.head_teacher ? `👨‍🏫 Prof. Jefe: ${course.head_teacher.first_name} ${course.head_teacher.last_name}` : '👨‍🏫 Sin profesor jefe'} ·
-              👥 {course.student_count} alumnos · 📚 {course.subjects?.length} asignaturas
-            </p>
+            <div className="page-subtitle" style={{ display: 'flex', alignItems: 'center',
+              gap: 14, flexWrap: 'wrap' }}>
+              {/* Profesor jefe, editable en el mismo lugar donde se lee */}
+              {editandoJefe ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <select autoFocus disabled={guardandoJefe}
+                    defaultValue={course.head_teacher_id || ''}
+                    onChange={e => definirJefe(e.target.value ? parseInt(e.target.value) : null)}
+                    style={{ padding: '5px 9px', border: `1px solid ${primary}`, borderRadius: 7,
+                      fontSize: 13, fontFamily: 'inherit' }}>
+                    <option value="">Sin profesor jefe</option>
+                    {allTeachers.map(t => (
+                      <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
+                    ))}
+                  </select>
+                  <button onClick={() => setEditandoJefe(false)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#94a3b8', fontSize: 16 }}>×</button>
+                </span>
+              ) : (
+                <button onClick={() => canEdit && setEditandoJefe(true)}
+                  title={canEdit ? 'Definir profesor jefe' : ''}
+                  style={{ background: 'none', border: 'none', padding: 0,
+                    font: 'inherit', color: 'inherit', display: 'flex', alignItems: 'center',
+                    gap: 6, cursor: canEdit ? 'pointer' : 'default' }}>
+                  {course.head_teacher
+                    ? `Prof. jefe: ${course.head_teacher.first_name} ${course.head_teacher.last_name}`
+                    : <span style={{ color: '#b45309', fontWeight: 600 }}>Sin profesor jefe</span>}
+                  {canEdit && <span style={{ color: primary, fontSize: 12,
+                    fontWeight: 700 }}>{course.head_teacher ? 'cambiar' : 'definir'}</span>}
+                </button>
+              )}
+              <span>· {course.student_count} alumnos</span>
+              <button onClick={() => setTab('subjects')}
+                style={{ background: 'none', border: 'none', padding: 0, font: 'inherit',
+                  color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                  gap: 6 }}>
+                · {course.subjects?.length || 0} asignaturas
+                {canEdit && !course.subjects?.length && (
+                  <span style={{ color: primary, fontSize: 12, fontWeight: 700 }}>agregar</span>
+                )}
+              </button>
+            </div>
           </div>
           {canEdit && (
             <Link to={`/students/import?course_id=${id}`} className="btn btn-secondary" style={{ textDecoration: 'none' }}>
@@ -202,10 +289,44 @@ export default function CourseDetailPage() {
                       </div>
                     </div>
 
-                    <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>
-                      👨‍🏫 {cs.teacher ? `${cs.teacher.first_name} ${cs.teacher.last_name}` : 'Sin profesor'}<br />
-                      🕐 {cs.hours_per_week} hrs/semana
-                    </p>
+                    {canEdit ? (
+                      <div style={{ margin: '0 0 12px', display: 'flex', flexDirection: 'column',
+                        gap: 7 }}>
+                        <select value={cs.teacher_id || ''}
+                          onChange={e => cambiarAsignatura(cs.id, 'teacher_id',
+                            e.target.value ? parseInt(e.target.value) : null)}
+                          style={{ width: '100%', padding: '6px 9px', border: '1px solid #e2e8f0',
+                            borderRadius: 7, fontSize: 12.5, fontFamily: 'inherit',
+                            color: cs.teacher ? '#334155' : '#b45309' }}>
+                          <option value="">Sin profesor</option>
+                          {allTeachers.map(t => (
+                            <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
+                          ))}
+                        </select>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                          <input type="number" min={0} max={45} defaultValue={cs.hours_per_week}
+                            onBlur={e => {
+                              const n = parseInt(e.target.value);
+                              if (!isNaN(n) && n !== cs.hours_per_week) {
+                                cambiarAsignatura(cs.id, 'hours_per_week', n);
+                              }
+                            }}
+                            style={{ width: 58, padding: '6px 9px', border: '1px solid #e2e8f0',
+                              borderRadius: 7, fontSize: 12.5, fontFamily: 'inherit',
+                              textAlign: 'center' }} />
+                          <span style={{ fontSize: 12, color: '#64748b', flex: 1 }}>hrs/semana</span>
+                          <button onClick={() => quitarAsignatura(cs)} title="Quitar del curso"
+                            style={{ background: '#fef2f2', border: '1px solid #fecaca',
+                              borderRadius: 7, cursor: 'pointer', color: '#dc2626',
+                              fontSize: 11, padding: '4px 9px', fontWeight: 650 }}>Quitar</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>
+                        {cs.teacher ? `${cs.teacher.first_name} ${cs.teacher.last_name}` : 'Sin profesor'}<br />
+                        {cs.hours_per_week} hrs/semana
+                      </p>
+                    )}
 
                     {/* Botón ficha del currículo */}
                     <Link

@@ -73,7 +73,7 @@ export default function ApoderadoPage() {
         <div>
           <h1 className="page-title">🏠 Mis alumnos</h1>
           <p className="page-subtitle">
-            Hola, {user?.first_name}. Aquí puedes hacer seguimiento a tus alumnos: calificaciones publicadas por sus profesores, anotaciones y casos de convivencia. Esta vista es solo de lectura.
+            Hola, {user?.first_name}. Aquí puedes hacer seguimiento a tus alumnos: calificaciones publicadas por sus profesores y anotaciones. Esta vista es solo de lectura.
           </p>
         </div>
       </div>
@@ -246,16 +246,6 @@ export default function ApoderadoPage() {
                     onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                   >
                     📋 Ver hoja de vida completa
-                  </Link>
-                  <Link
-                    to={`/students/${s.id}/life?tab=convivencia`}
-                    style={{
-                      display: 'block', textAlign: 'center', padding: '8px 0', marginTop: 8,
-                      background: '#fff', color: primary, border: `1px solid ${primary}55`,
-                      borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none',
-                    }}
-                  >
-                    🤝 Casos de convivencia
                   </Link>
                   <Link
                     to={`/students/${s.id}/ficha`}

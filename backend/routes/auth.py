@@ -64,6 +64,13 @@ def change_password():
     if not user.check_password(data.get('current_password', '')):
         return jsonify({'error': 'Contraseña actual incorrecta'}), 400
 
-    user.set_password(data.get('new_password', ''))
+    nueva = data.get('new_password') or ''
+    if len(nueva) < 6:
+        return jsonify({'error': 'La nueva contraseña debe tener al menos 6 '
+                                 'caracteres'}), 400
+
+    user.set_password(nueva)
+    # Si venía con clave temporal del asistente, ya cumplió su propósito
+    user.debe_cambiar_clave = False
     db.session.commit()
     return jsonify({'message': 'Contraseña actualizada'}), 200

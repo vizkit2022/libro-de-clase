@@ -118,6 +118,20 @@ export default function SchoolsManagementPage() {
   );
 }
 
+// ── Field helper (fuera del componente para evitar remount en cada keystroke) ──
+function Field({ label, field, type = 'text', placeholder = '', value, onChange }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>{label}</label>
+      <input
+        type={type} value={value || ''} placeholder={placeholder}
+        onChange={e => onChange(field, e.target.value)}
+        style={{ width: '100%', padding: '9px 14px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 14, boxSizing: 'border-box', outline: 'none' }}
+      />
+    </div>
+  );
+}
+
 // ── Formulario: Nuevo / Editar Colegio ────────────────────────────────────────
 export function SchoolFormPage() {
   const { id } = useParams();
@@ -127,9 +141,9 @@ export function SchoolFormPage() {
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: '', rut: '', address: '', phone: '', email: '', website: '',
-    rector: '', plan: 'free',
+    rector: '', subtitulo: '', plan: 'free',
     primary_color: '#2563EB', secondary_color: '#1E40AF', accent_color: '#3B82F6',
-    admin_email: '', admin_first_name: '', admin_last_name: '', admin_password: 'colegio123',
+    admin_email: '', admin_first_name: '', admin_last_name: '', admin_password: 'colegio123', admin_role: 'admin',
   });
 
   useEffect(() => {
@@ -160,17 +174,6 @@ export function SchoolFormPage() {
     }
   };
 
-  const Field = ({ label, field, type = 'text', placeholder = '' }) => (
-    <div style={{ marginBottom: 16 }}>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>{label}</label>
-      <input
-        type={type} value={form[field] || ''} placeholder={placeholder}
-        onChange={e => handleChange(field, e.target.value)}
-        style={{ width: '100%', padding: '9px 14px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 14, boxSizing: 'border-box', outline: 'none' }}
-      />
-    </div>
-  );
-
   return (
     <div style={{ padding: 32, maxWidth: 800 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
@@ -194,13 +197,22 @@ export function SchoolFormPage() {
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 20px' }}>🏫 Información del Colegio</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-            <div style={{ gridColumn: '1/-1' }}><Field label="Nombre *" field="name" placeholder="Colegio San Patricio" /></div>
-            <Field label="RUT" field="rut" placeholder="12.345.678-9" />
-            <Field label="Email" field="email" type="email" placeholder="contacto@colegio.cl" />
-            <Field label="Teléfono" field="phone" placeholder="+56 2 2345 6789" />
-            <Field label="Sitio Web" field="website" placeholder="https://www.colegio.cl" />
-            <div style={{ gridColumn: '1/-1' }}><Field label="Dirección" field="address" placeholder="Av. Principal 1234, Santiago" /></div>
-            <div style={{ gridColumn: '1/-1' }}><Field label="Rector/a" field="rector" placeholder="Nombre del rector" /></div>
+            <div style={{ gridColumn: '1/-1' }}>
+              <Field label="Nombre *" field="name" placeholder="Colegio San Patricio"
+                value={form.name} onChange={handleChange} />
+            </div>
+            <Field label="RUT" field="rut" placeholder="12.345.678-9" value={form.rut} onChange={handleChange} />
+            <Field label="Email" field="email" type="email" placeholder="contacto@colegio.cl" value={form.email} onChange={handleChange} />
+            <Field label="Teléfono" field="phone" placeholder="+56 2 2345 6789" value={form.phone} onChange={handleChange} />
+            <Field label="Sitio Web" field="website" placeholder="https://www.colegio.cl" value={form.website} onChange={handleChange} />
+            <div style={{ gridColumn: '1/-1' }}>
+              <Field label="Dirección" field="address" placeholder="Av. Principal 1234, Santiago" value={form.address} onChange={handleChange} />
+            </div>
+            <div style={{ gridColumn: '1/-1' }}>
+              <Field label="Rector/a" field="rector" placeholder="Nombre del rector" value={form.rector} onChange={handleChange} />
+              <Field label="Bajada institucional" field="subtitulo"
+                placeholder="Institución Teresiana" value={form.subtitulo} onChange={handleChange} />
+            </div>
           </div>
 
           {/* Plan */}
@@ -227,19 +239,35 @@ export function SchoolFormPage() {
           </div>
         </div>
 
-        {/* Admin inicial (solo al crear) */}
-        {isNew && (
-          <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>👤 Administrador Inicial (opcional)</h3>
-            <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>Crea el primer usuario admin del colegio</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-              <div style={{ gridColumn: '1/-1' }}><Field label="Email del Admin" field="admin_email" type="email" placeholder="admin@colegio.cl" /></div>
-              <Field label="Nombre" field="admin_first_name" placeholder="Juan" />
-              <Field label="Apellido" field="admin_last_name" placeholder="González" />
-              <Field label="Contraseña inicial" field="admin_password" placeholder="colegio123" />
+        {/* Crear usuario admin — disponible al crear Y al editar */}
+        <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>
+            👤 {isNew ? 'Administrador Inicial' : 'Crear Usuario para este Colegio'} <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: 13 }}>(opcional)</span>
+          </h3>
+          <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>
+            {isNew ? 'Crea el primer usuario admin del colegio.' : 'Si dejas el email en blanco, no se crea ningún usuario.'}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
+            <div style={{ gridColumn: '1/-1' }}>
+              <Field label="Email" field="admin_email" type="email" placeholder="admin@colegio.cl"
+                value={form.admin_email} onChange={handleChange} />
+            </div>
+            <Field label="Nombre" field="admin_first_name" placeholder="Juan" value={form.admin_first_name} onChange={handleChange} />
+            <Field label="Apellido" field="admin_last_name" placeholder="González" value={form.admin_last_name} onChange={handleChange} />
+            <Field label="Contraseña inicial" field="admin_password" placeholder="colegio123" value={form.admin_password} onChange={handleChange} />
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#64748b', textTransform:'uppercase', marginBottom:6 }}>Rol</label>
+              <select
+                value={form.admin_role || 'admin'}
+                onChange={e => handleChange({ target: { name: 'admin_role', value: e.target.value } })}
+                style={{ width:'100%', padding:'9px 12px', border:'1px solid #e2e8f0', borderRadius:8, fontSize:14 }}>
+                <option value="admin">Admin</option>
+                <option value="directivo">Directivo</option>
+                <option value="profesor">Profesor</option>
+              </select>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Colores */}
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
@@ -360,16 +388,27 @@ export function SchoolDetailPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: '#64748b', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1 }}>Información</h3>
-          {[['RUT', school.rut], ['Email', school.email], ['Teléfono', school.phone], ['Rector/a', school.rector], ['Dirección', school.address]].map(([k, v]) => (
+          {[['RUT', school.rut], ['Email', school.email], ['Teléfono', school.phone], ['Rector/a', school.rector], ['Bajada', school.subtitulo], ['Dirección', school.address]].map(([k, v]) => (
             v ? <div key={k} style={{ display: 'flex', gap: 8, marginBottom: 10, fontSize: 14 }}>
               <span style={{ color: '#94a3b8', minWidth: 80 }}>{k}:</span>
               <span style={{ color: '#374151', fontWeight: 500 }}>{v}</span>
             </div> : null
           ))}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10, fontSize: 14 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 4, fontSize: 14 }}>
             <span style={{ color: '#94a3b8', minWidth: 80 }}>Usuarios:</span>
-            <span style={{ color: '#374151', fontWeight: 500 }}>{school.user_count || 0}</span>
+            <span style={{ color: '#374151', fontWeight: 600 }}>
+              {school.user_count || 0}
+              <span style={{ color: '#94a3b8', fontWeight: 400, marginLeft: 6, fontSize: 13 }}>
+                facturables
+              </span>
+            </span>
           </div>
+          <p style={{ fontSize: 12.5, color: '#94a3b8', margin: '0 0 0 88px', lineHeight: 1.5 }}>
+            Docentes y administradores. No se cobran
+            {' '}{school.otros_usuarios?.alumnos ?? 0} alumnos
+            {school.otros_usuarios?.apoderados
+              ? ` ni ${school.otros_usuarios.apoderados} apoderados` : ''}.
+          </p>
         </div>
 
         {/* Estado del plan */}
@@ -401,6 +440,73 @@ export function SchoolDetailPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Usuarios facturables */}
+      <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+        marginBottom: 20, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 24px',
+          borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#64748b', margin: 0,
+              textTransform: 'uppercase', letterSpacing: 1 }}>Usuarios del colegio</h3>
+            <p style={{ fontSize: 12.5, color: '#94a3b8', margin: '3px 0 0' }}>
+              Los que determinan el valor del plan
+            </p>
+          </div>
+          {Object.entries(school.usuarios_por_rol || {})
+            .filter(([r]) => ['admin', 'directivo', 'profesor'].includes(r))
+            .map(([rol, n]) => (
+              <span key={rol} style={{ fontSize: 11.5, fontWeight: 700, padding: '3px 10px',
+                borderRadius: 999, background: '#e0e5fb', color: '#2a2eb0' }}>
+                {n} {rol === 'profesor' ? (n === 1 ? 'docente' : 'docentes') : rol}
+              </span>
+            ))}
+        </div>
+
+        {!school.usuarios?.length ? (
+          <p style={{ padding: 32, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
+            Este colegio todavía no tiene docentes ni administradores cargados.
+          </p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5 }}>
+            <thead>
+              <tr style={{ background: '#f8fafc' }}>
+                {['Nombre', 'Correo', 'Rol', 'Estado', 'Último ingreso'].map(h => (
+                  <th key={h} style={{ padding: '9px 24px', textAlign: 'left', fontSize: 11,
+                    textTransform: 'uppercase', color: '#64748b', fontWeight: 700 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {school.usuarios.map(u => (
+                <tr key={u.id} style={{ borderTop: '1px solid #f1f5f9',
+                  opacity: u.is_active ? 1 : 0.62 }}>
+                  <td style={{ padding: '10px 24px', fontWeight: 600, color: '#0f172a' }}>
+                    {u.nombre}
+                  </td>
+                  <td style={{ padding: '10px 24px', color: '#64748b' }}>{u.email}</td>
+                  <td style={{ padding: '10px 24px', color: '#475569',
+                    textTransform: 'capitalize' }}>{u.role}</td>
+                  <td style={{ padding: '10px 24px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px',
+                      borderRadius: 999,
+                      background: u.is_active ? '#dcfce7' : '#f1f5f9',
+                      color: u.is_active ? '#166534' : '#64748b' }}>
+                      {u.is_active ? 'activo' : 'sin acceso'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 24px', color: '#94a3b8', fontSize: 12.5 }}>
+                    {u.last_login
+                      ? new Date(u.last_login).toLocaleDateString('es-CL',
+                          { day: '2-digit', month: 'short', year: 'numeric' })
+                      : 'nunca'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Sección de Pago / Suscripción */}

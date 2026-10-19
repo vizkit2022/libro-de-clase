@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kolevia · Libro de clases digital y gestión escolar para colegios de Chile</title>
+<meta name="description" content="Plataforma chilena de gestión escolar: libro de clases digital, calificaciones, carga horaria docente según la Tabla Legal del MINEDUC, convivencia escolar con los anexos oficiales y portal de apoderados.">
+<link rel="canonical" href="https://kolevia.cl/">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta name="author" content="Kolevia">
+<meta name="geo.region" content="CL">
+<meta name="theme-color" content="#3b4fd8">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta property="og:site_name" content="Kolevia">
+<meta property="og:url" content="https://kolevia.cl/">
+<meta property="og:title" content="Kolevia · Libro de clases digital y gestión escolar para colegios de Chile">
+<meta property="og:description" content="Libro de clases, calificaciones, carga horaria según la Tabla Legal del MINEDUC y convivencia escolar con los anexos oficiales. Todo en una plataforma.">
+<meta property="og:image" content="https://kolevia.cl/inicio/img/og-kolevia.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Kolevia, tecnología para educar">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kolevia · Gestión escolar para colegios de Chile">
+<meta name="twitter:description" content="Libro de clases digital, carga horaria MINEDUC y convivencia escolar en una sola plataforma.">
+<meta name="twitter:image" content="https://kolevia.cl/inicio/img/og-kolevia.jpg">
+
+<link rel="icon" type="image/png" href="/inicio/img/favicon.png">
+<link rel="apple-touch-icon" href="/inicio/img/kolevia-isotipo.png">
+
+<!-- Datos estructurados: le dicen a buscadores y asistentes qué es esto, a
+     quién sirve y qué resuelve, sin que tengan que deducirlo del texto. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://kolevia.cl/#organizacion",
+      "name": "Kolevia",
+      "url": "https://kolevia.cl/",
+      "logo": "https://kolevia.cl/inicio/img/kolevia-isotipo.png",
+      "image": "https://kolevia.cl/inicio/img/og-kolevia.jpg",
+      "description": "Plataforma chilena de gestión escolar para colegios de educación básica y media.",
+      "areaServed": { "@type": "Country", "name": "Chile" },
+      "knowsLanguage": "es-CL"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://kolevia.cl/#sitio",
+      "url": "https://kolevia.cl/",
+      "name": "Kolevia",
+      "inLanguage": "es-CL",
+      "publisher": { "@id": "https://kolevia.cl/#organizacion" }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://kolevia.cl/#plataforma",
+      "name": "Kolevia",
+      "applicationCategory": "BusinessApplication",
+      "applicationSubCategory": "Gestión escolar",
+      "operatingSystem": "Navegador web",
+      "url": "https://kolevia.cl/",
+      "inLanguage": "es-CL",
+      "description": "Libro de clases digital, calificaciones, carga horaria docente según la Tabla Legal del MINEDUC, convivencia escolar con los anexos oficiales, reportes y portal de apoderados.",
+      "featureList": [
+        "Libro de clases digital",
+        "Calificaciones por asignatura y período",
+        "Carga horaria docente según la Tabla Legal del MINEDUC",
+        "Convivencia escolar con los anexos oficiales",
+        "Matrícula con carga desde Excel",
+        "Reportes en Word y PDF",
+        "Portal de apoderados",
+        "Administración de varios establecimientos"
+      ],
+      "audience": {
+        "@type": "EducationalAudience",
+        "educationalRole": "Equipo directivo, jefes de departamento, docentes y encargados de convivencia escolar"
+      },
+      "provider": { "@id": "https://kolevia.cl/#organizacion" },
+      "offers": {
+        "@type": "Offer",
+        "name": "Plan Base",
+        "price": "0.7",
+        "priceCurrency": "CLF",
+        "description": "0,7 UF por usuario al mes, contando docentes y administradores. Estudiantes y apoderados no se cobran.",
+        "availability": "https://schema.org/InStock"
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root{
+    --azul:#3b4fd8; --azul-cl:#6b8ef5; --azul-os:#2a2eb0; --azul-noc:#1a1a6e;
+    --verde:#7cc496;
+    --gris:#111827; --gris-2:#1f2937; --gris-3:#374151;
+    --txt:#111827; --txt-2:#4b5563; --txt-3:#6b7280;
+    --bor:#e5e7eb; --sup:#f9fafb; --sup-2:#f3f4f6;
+    --max:1140px; --r:14px;
+    --sombra:0 1px 2px rgba(17,24,39,.04),0 8px 24px rgba(17,24,39,.06);
+    --sombra-lg:0 24px 60px rgba(26,26,110,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--txt);background:#fff;line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  img,svg{display:block;max-width:100%}
+  a{color:inherit;text-decoration:none}
+  .env{max-width:var(--max);margin:0 auto;padding:0 24px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+  /* ── Marca ─────────────────────────────────────────────── */
+  .marca{display:flex;align-items:center;gap:10px}
+  .marca-txt{display:block;font-size:21px;font-weight:800;letter-spacing:-.025em;
+    color:var(--gris);line-height:1.05}
+  .marca-bloque{display:block}
+  .marca-sub{display:block;font-size:8.6px;letter-spacing:.17em;text-transform:uppercase;
+    color:var(--txt-4);font-weight:650;margin-top:2px;white-space:nowrap}
+  .pie .marca-sub{color:rgba(255,255,255,.45);font-size:9.5px;letter-spacing:.15em}
+  .pie .marca-txt{color:#fff}
+
+  /* ── Navegación ────────────────────────────────────────── */
+  header{
+    position:sticky;top:0;z-index:50;background:rgba(255,255,255,.88);
+    backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--bor);
+  }
+  .nav{display:flex;align-items:center;gap:28px;height:68px}
+  .nav-links{display:flex;gap:22px;margin-left:auto;align-items:center}
+  .nav-links a{font-size:14.5px;font-weight:500;color:var(--txt-2);transition:color .15s;
+    white-space:nowrap}
+  .nav-links a:hover{color:var(--azul-os)}
+  .nav-acc{display:flex;gap:10px;align-items:center}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:11px 20px;border-radius:10px;font-size:14.5px;font-weight:650;
+    border:1px solid transparent;cursor:pointer;transition:.18s;white-space:nowrap;
+    font-family:inherit;
+  }
+  .btn-p{background:var(--azul);color:#fff;box-shadow:0 1px 2px rgba(59,79,216,.3)}
+  .btn-p:hover{background:var(--azul-os);transform:translateY(-1px);box-shadow:0 6px 18px rgba(59,79,216,.26)}
+  .btn-g{background:#fff;color:var(--gris-2);border-color:var(--bor)}
+  .btn-g:hover{border-color:var(--azul);color:var(--azul-os)}
+  .btn-cl{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.3)}
+  .btn-cl:hover{background:rgba(255,255,255,.18)}
+  .btn-lg{padding:14px 26px;font-size:15.5px}
+  .btn:disabled{opacity:.55;cursor:default;transform:none}
+
+  /* ── Hero ──────────────────────────────────────────────── */
+  .hero{
+    position:relative;overflow:hidden;
+    background:
+      radial-gradient(900px 420px at 88% -8%, rgba(107,142,245,.14), transparent 62%),
+      radial-gradient(700px 420px at 4% 108%, rgba(59,79,216,.08), transparent 60%),
+      #fff;
+    border-bottom:1px solid var(--bor);
+  }
+  .hero .env{display:grid;grid-template-columns:1.06fr .94fr;gap:56px;align-items:center;
+    padding-top:72px;padding-bottom:72px}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;
+    background:rgba(59,79,216,.09);color:var(--azul-os);font-size:12.5px;font-weight:700;
+    letter-spacing:.02em;margin-bottom:20px;border:1px solid rgba(59,79,216,.18);
+  }
+  .eyebrow b{width:6px;height:6px;border-radius:50%;background:var(--azul);display:block}
+  h1{font-size:clamp(32px,3.9vw,50px);line-height:1.1;letter-spacing:-.032em;font-weight:800;
+    text-wrap:balance}
+  h1 .deg{
+    background:linear-gradient(100deg,var(--azul) 10%,var(--azul-cl) 90%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .bajada{font-size:17px;color:var(--txt-2);margin-top:16px;max-width:530px}
+  .hero-ctas{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+  .cifras{display:flex;gap:34px;margin-top:34px;padding-top:22px;border-top:1px solid var(--bor);flex-wrap:wrap}
+  .cifra strong{display:block;font-size:27px;font-weight:800;color:var(--gris);letter-spacing:-.02em}
+  .cifra span{font-size:12.5px;color:var(--txt-3);font-weight:500}
+
+
+  /* ── Hero con carrusel de fondo ─────────────────────────── */
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--bor)}
+  .hero-fondo{position:absolute;inset:0;z-index:0}
+  .hero-fondo .dia{position:absolute;inset:0;margin:0;opacity:0;
+    transition:opacity 1.1s cubic-bezier(.4,0,.2,1);will-change:opacity}
+  .hero-fondo .dia.act{opacity:1}
+  .hero-fondo .dia img{width:100%;height:100%;object-fit:cover}
+  .hero-fondo .dia.act img{animation:deriva 11s ease-out forwards}
+  .velo{position:absolute;inset:0;z-index:1}
+  .hero .env.hero-txt{position:relative;z-index:2;display:block;max-width:var(--max)}
+  .carru-puntos{position:absolute;z-index:3;display:flex;gap:7px}
+  .hero-ctas{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+
+  .hero .env.hero-txt{padding-top:54px;padding-bottom:62px;max-width:980px}
+  .velo{background:
+    linear-gradient(100deg, rgba(14,16,46,.93) 0%, rgba(14,16,46,.78) 46%, rgba(14,16,46,.45) 100%),
+    linear-gradient(to top, rgba(14,16,46,.6), transparent 42%)}
+  .hero h1,.hero .cifra strong{color:#fff}
+  .hero h1 .deg{background:linear-gradient(100deg,#a9bdf9 5%,#9ad9b4 95%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .bajada{color:rgba(255,255,255,.8);max-width:580px}
+  .hero .eyebrow{background:rgba(255,255,255,.12);color:#dbe3ff;
+    border-color:rgba(255,255,255,.22)}
+  .hero .eyebrow b{background:#9ad9b4}
+  .hero .cifras{border-top-color:rgba(255,255,255,.16)}
+  .hero .cifra span{color:rgba(255,255,255,.6)}
+  .hero .btn-g{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.3);
+    backdrop-filter:blur(6px)}
+  .hero .btn-g:hover{background:rgba(255,255,255,.2);color:#fff}
+  .carru-puntos{right:28px;bottom:26px}
+  .pt{background:rgba(255,255,255,.3)}
+  .pt s{background:#fff}
+
+  /* ── Carrusel (restos del estilo anterior) ─────────────── */
+  .carru{position:relative}
+  .carru-marco{
+    position:relative;aspect-ratio:4/3;border-radius:18px;overflow:hidden;
+    background:var(--gris);box-shadow:var(--sombra-lg);isolation:isolate;
+  }
+  .dia{
+    position:absolute;inset:0;margin:0;opacity:0;
+    transition:opacity .9s cubic-bezier(.4,0,.2,1);
+    will-change:opacity;pointer-events:none;
+  }
+  .dia.act{opacity:1;pointer-events:auto}
+  .dia img{width:100%;height:100%;object-fit:cover;transform:scale(1.06)}
+  /* Ken Burns: solo la lámina visible se mueve, muy lento */
+  .dia.act img{animation:deriva 9s ease-out forwards}
+  @keyframes deriva{
+    from{transform:scale(1.02) translate3d(0,0,0)}
+    to{transform:scale(1.11) translate3d(-1.2%,-1.4%,0)}
+  }
+  .dia figcaption{
+    position:absolute;left:0;right:0;bottom:0;padding:46px 24px 22px;
+    color:#fff;font-size:15.5px;font-weight:650;letter-spacing:-.01em;
+    background:linear-gradient(transparent,rgba(16,20,45,.82));
+    transform:translateY(10px);opacity:0;
+    transition:transform .7s cubic-bezier(.2,.7,.3,1) .18s,opacity .7s ease .18s;
+  }
+  .dia.act figcaption{transform:none;opacity:1}
+
+  .carru-fl{
+    position:absolute;top:50%;margin-top:-20px;width:40px;height:40px;border-radius:50%;
+    border:none;cursor:pointer;display:grid;place-items:center;z-index:3;
+    background:rgba(255,255,255,.9);color:var(--gris);backdrop-filter:blur(6px);
+    opacity:0;transition:opacity .25s,transform .25s,background .2s;
+    box-shadow:0 4px 14px rgba(16,20,45,.2);
+  }
+  .carru-fl.ant{left:14px;transform:translateX(-6px)}
+  .carru-fl.sig{right:14px;transform:translateX(6px)}
+  .carru:hover .carru-fl,.carru-fl:focus-visible{opacity:1;transform:translateX(0)}
+  .carru-fl:hover{background:#fff}
+
+  .carru-puntos{display:flex;gap:7px;justify-content:center;margin-top:16px}
+  .pt{width:30px;height:4px;padding:0;border:none;background:var(--bor);border-radius:2px;
+    cursor:pointer;overflow:hidden;transition:background .25s}
+  .pt s{display:block;height:100%;width:0;background:var(--azul);text-decoration:none;
+    border-radius:2px}
+  .pt.act s{animation:avance var(--lapso,5.6s) linear forwards}
+  .carru.quieto .pt.act s{animation-play-state:paused}
+  @keyframes avance{from{width:0}to{width:100%}}
+
+  /* ── Revelado al entrar en pantalla ────────────────────── */
+  .rev{opacity:0;transform:translateY(22px);
+    transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1)}
+  .rev.vis{opacity:1;transform:none}
+  .rev-g > *{opacity:0;transform:translateY(20px);
+    transition:opacity .6s cubic-bezier(.2,.7,.3,1),transform .6s cubic-bezier(.2,.7,.3,1)}
+  .rev-g.vis > *{opacity:1;transform:none}
+  .rev-g.vis > *:nth-child(2){transition-delay:.07s}
+  .rev-g.vis > *:nth-child(3){transition-delay:.14s}
+  .rev-g.vis > *:nth-child(4){transition-delay:.21s}
+  .rev-g.vis > *:nth-child(5){transition-delay:.28s}
+  .rev-g.vis > *:nth-child(6){transition-delay:.35s}
+  .rev-g.vis > *:nth-child(7){transition-delay:.42s}
+  .rev-g.vis > *:nth-child(8){transition-delay:.49s}
+  .rev-g.vis > *:nth-child(9){transition-delay:.56s}
+  .rev-g.vis > *:nth-child(10){transition-delay:.63s}
+
+  /* Entrada del hero, sin esperar al scroll */
+  .hero .env > div > *{animation:sube .75s cubic-bezier(.2,.7,.3,1) both}
+  .hero .env > div > *:nth-child(2){animation-delay:.08s}
+  .hero .env > div > *:nth-child(3){animation-delay:.16s}
+  .hero .env > div > *:nth-child(4){animation-delay:.24s}
+  .hero .env > div > *:nth-child(5){animation-delay:.32s}
+  .hero-txt > *{animation:sube .8s cubic-bezier(.2,.7,.3,1) both}
+  @keyframes sube{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+
+  .banda-mock{padding-top:0}
+  .mock-centro{max-width:860px;margin:0 auto}
+
+  /* Quien pidió menos movimiento, no lo recibe */
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+      transition-duration:.01ms !important;scroll-behavior:auto !important}
+    .rev,.rev-g > *{opacity:1;transform:none}
+  }
+
+  /* Mockup del producto */
+  .mock{
+    border-radius:16px;overflow:hidden;background:#fff;
+    border:1px solid var(--bor);box-shadow:var(--sombra-lg);
+  }
+  .mock-bar{display:flex;align-items:center;gap:6px;padding:11px 14px;background:var(--sup);
+    border-bottom:1px solid var(--bor)}
+  .mock-bar i{width:9px;height:9px;border-radius:50%;background:#d1d5db;display:block}
+  .mock-url{margin-left:10px;font-size:11px;color:var(--txt-3);background:#fff;
+    border:1px solid var(--bor);border-radius:6px;padding:3px 10px}
+  .mock-cuerpo{display:grid;grid-template-columns:132px 1fr;min-height:318px}
+  .mock-side{background:var(--gris);padding:14px 10px;display:flex;flex-direction:column;gap:3px}
+  .mock-side .ml{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;
+    font-size:10.5px;color:#9ca3af;font-weight:500}
+  .mock-side .ml.on{background:rgba(107,142,245,.16);color:#a9bdf9;font-weight:650}
+  .mock-side .ml u{width:5px;height:5px;border-radius:1px;background:currentColor;display:block;
+    text-decoration:none;opacity:.75}
+  .mock-main{padding:16px;background:var(--sup)}
+  .mock-h{font-size:12.5px;font-weight:750;color:var(--gris);margin-bottom:12px}
+  .mock-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:13px}
+  .mock-kpi{background:#fff;border:1px solid var(--bor);border-radius:9px;padding:10px}
+  .mock-kpi b{display:block;font-size:17px;font-weight:800;color:var(--gris);line-height:1.2}
+  .mock-kpi span{font-size:8.5px;color:var(--txt-3);text-transform:uppercase;letter-spacing:.05em;font-weight:650}
+  .mock-fila{background:#fff;border:1px solid var(--bor);border-radius:9px;padding:11px 12px}
+  .mock-br{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .mock-br:last-child{margin-bottom:0}
+  .mock-br em{font-style:normal;font-size:9.5px;color:var(--txt-2);width:74px;font-weight:550}
+  .mock-br i{flex:1;height:6px;border-radius:3px;background:var(--sup-2);overflow:hidden;display:block}
+  .mock-br i s{display:block;height:100%;border-radius:3px;background:var(--azul-cl);text-decoration:none}
+  .mock-br b{font-size:9px;color:var(--azul-os);font-weight:750;width:36px;text-align:right}
+
+  /* ── Secciones ─────────────────────────────────────────── */
+  section{padding:80px 0}
+  .sec-sup{background:var(--sup)}
+  .cab{text-align:center;max-width:680px;margin:0 auto 48px}
+  .cab .et{font-size:12.5px;font-weight:750;color:var(--azul);text-transform:uppercase;
+    letter-spacing:.09em;margin-bottom:12px}
+  h2{font-size:clamp(26px,3.3vw,37px);line-height:1.17;letter-spacing:-.028em;font-weight:800}
+  .cab p{color:var(--txt-2);margin-top:14px;font-size:16.5px}
+
+  .props{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .prop{background:#fff;border:1px solid var(--bor);border-radius:var(--r);padding:28px;
+    box-shadow:var(--sombra)}
+  .prop .ico{width:44px;height:44px;border-radius:11px;background:rgba(59,79,216,.1);
+    display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .prop h3{font-size:17px;font-weight:750;margin-bottom:8px;letter-spacing:-.015em}
+  .prop p{font-size:14.5px;color:var(--txt-2)}
+
+  /* Módulos */
+  .mods{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .mod{background:#fff;border:1px solid var(--bor);border-radius:var(--r);padding:24px;
+    transition:.2s;position:relative;overflow:hidden}
+  .mod:hover{border-color:rgba(59,79,216,.45);transform:translateY(-3px);
+    box-shadow:0 16px 36px rgba(26,26,110,.09)}
+  .mod .ico{width:40px;height:40px;border-radius:10px;background:rgba(59,79,216,.1);
+    display:flex;align-items:center;justify-content:center;margin-bottom:15px}
+  .mod h3{font-size:16px;font-weight:750;margin-bottom:7px;letter-spacing:-.012em}
+  .mod p{font-size:14px;color:var(--txt-2)}
+  .mod .tag{position:absolute;top:16px;right:16px;font-size:9.5px;font-weight:800;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--azul-os);
+    background:rgba(59,79,216,.11);padding:3px 9px;border-radius:999px}
+
+  /* Destacado */
+  .dest{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center}
+  .dest + .dest{margin-top:76px}
+  .dest.inv .vis{order:-1}
+  .dest h3{font-size:clamp(22px,2.6vw,29px);line-height:1.22;letter-spacing:-.025em;
+    font-weight:800;margin-bottom:16px}
+  .dest .et{font-size:12px;font-weight:750;color:var(--azul);text-transform:uppercase;
+    letter-spacing:.09em;margin-bottom:11px}
+  .lista{list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:11px}
+  .lista li{display:flex;gap:11px;font-size:14.8px;color:var(--txt-2);align-items:flex-start}
+  .lista svg{flex-shrink:0;margin-top:4px}
+  .vis{background:#fff;border:1px solid var(--bor);border-radius:var(--r);padding:22px;
+    box-shadow:var(--sombra)}
+
+  .tabla{width:100%;border-collapse:collapse;font-size:12.5px}
+  .tabla th{background:var(--sup-2);padding:8px 11px;text-align:left;font-size:9.5px;
+    text-transform:uppercase;letter-spacing:.055em;color:var(--txt-3);font-weight:750}
+  .tabla td{padding:9px 11px;border-top:1px solid var(--bor);color:var(--txt-2)}
+  .tabla .ok{color:#15803d;font-weight:750}
+  .tabla .al{color:#b45309;font-weight:750}
+  .pill{font-size:10px;font-weight:750;padding:2px 9px;border-radius:999px}
+  .pill.v{background:#dcfce7;color:#166534}
+  .pill.a{background:#fef3c7;color:#92400e}
+
+  .pasos{display:flex;flex-direction:column;gap:3px}
+  .paso{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;
+    border:1px solid var(--bor)}
+  .paso.hecho{background:rgba(22,163,74,.06);border-color:rgba(22,163,74,.3)}
+  .paso.act{background:rgba(59,79,216,.1);border-color:var(--azul)}
+  .paso i{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:10.5px;font-weight:800;font-style:normal;flex-shrink:0;
+    background:var(--sup-2);color:var(--txt-3)}
+  .paso.hecho i{background:#16a34a;color:#fff}
+  .paso.act i{background:var(--gris);color:#fff}
+  .paso span{font-size:13px;font-weight:600;color:var(--txt-2)}
+  .paso em{margin-left:auto;font-style:normal;font-size:10.5px;color:var(--txt-3)}
+
+  /* Colegios */
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;
+    max-width:760px;margin:0 auto;justify-content:center}
+  .cols:has(> :only-child){max-width:430px}
+  .col{background:#fff;border:1px solid var(--bor);border-radius:var(--r);padding:28px;
+    display:flex;gap:18px;align-items:center;box-shadow:var(--sombra)}
+  .col .esc{width:58px;height:58px;border-radius:13px;display:flex;align-items:center;
+    justify-content:center;font-weight:800;font-size:19px;color:#fff;flex-shrink:0;
+    letter-spacing:-.02em}
+  .col h3{font-size:16px;font-weight:750;letter-spacing:-.012em}
+  .col p{font-size:13.5px;color:var(--txt-3);margin-top:3px}
+  .col .usa{font-size:11.5px;color:var(--azul-os);font-weight:650;margin-top:7px}
+
+  /* Escenarios de ejemplo. El rótulo no es decorativo: es lo que
+     distingue un caso ilustrativo de un cliente real, así que va en el
+     encabezado del bloque y repetido en cada tarjeta. */
+  .ejemplos{margin-top:60px}
+  .ejemplos-cab{text-align:center;max-width:680px;margin:0 auto 10px}
+  .ejemplos-cab h3{font-size:24px;letter-spacing:-.02em}
+  .ejemplos-cab p{font-size:15px;color:var(--txt-2);margin-top:8px}
+  .aviso-ej{display:inline-flex;align-items:center;gap:8px;margin:18px auto 30px;
+    background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:99px;
+    padding:8px 16px;font-size:12.5px;font-weight:600;line-height:1.4;text-align:left}
+  .aviso-ej svg{flex-shrink:0}
+  .ejs{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px}
+  .ej{background:#fff;border:1px solid var(--bor);border-radius:var(--r);padding:26px;
+    box-shadow:var(--sombra);display:flex;flex-direction:column}
+  .ej-tag{align-self:flex-start;background:var(--sup-2);color:var(--txt-3);
+    border-radius:6px;padding:3px 9px;font-size:10.5px;font-weight:750;
+    text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px}
+  .ej h4{font-size:16.5px;font-weight:750;letter-spacing:-.012em}
+  .ej-datos{font-size:13px;color:var(--txt-3);margin-top:4px}
+  .ej-proc{font-size:13.5px;color:var(--txt-2);margin-top:14px;line-height:1.6}
+  .ej-cita{border-left:3px solid var(--azul-cl);padding-left:14px;margin-top:18px;
+    font-size:14px;color:var(--txt);line-height:1.6;font-style:italic}
+  .ej-firma{font-size:12px;color:var(--txt-3);margin-top:10px;font-style:normal}
+
+  /* Planes */
+  .planes{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:880px;margin:0 auto}
+  .plan{background:#fff;border:1px solid var(--bor);border-radius:16px;padding:32px;
+    position:relative;box-shadow:var(--sombra);display:flex;flex-direction:column}
+  .plan:first-child{border:2px solid var(--azul);box-shadow:0 16px 40px rgba(26,26,110,.1)}
+  .plan h3{font-size:19px;font-weight:800;letter-spacing:-.018em}
+  .plan-d{font-size:14px;color:var(--txt-2);margin-top:8px;min-height:44px}
+  .precio{display:flex;align-items:baseline;gap:10px;margin:22px 0 12px;
+    padding-bottom:20px;border-bottom:1px solid var(--bor)}
+  .precio strong{font-size:38px;font-weight:800;color:var(--gris);letter-spacing:-.03em;
+    line-height:1}
+  .plan-esp .precio strong{font-size:27px}
+  .precio span{font-size:12.5px;color:var(--txt-3);line-height:1.35;font-weight:550}
+  .plan-n{font-size:12.5px;color:var(--txt-3);margin-bottom:16px;line-height:1.5}
+  .plan .lista{margin-top:0;gap:9px;flex:1}
+  .plan .lista li{font-size:14px}
+  .plan-tag{position:absolute;top:-11px;right:26px;font-size:10.5px;font-weight:800;
+    letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--gris-2);
+    padding:4px 12px;border-radius:999px}
+  .precio-pie{text-align:center;font-size:12.5px;color:var(--txt-3);margin-top:26px}
+
+  /* Calculadora, dentro de la tarjeta del plan */
+  .calc{margin-top:22px;padding-top:20px;border-top:1px solid var(--bor)}
+  .calc-t{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:14px}
+  .calc-lab{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+            font-size:13px;color:var(--txt-2);margin-bottom:9px}
+  .calc-lab strong{font-size:19px;color:var(--azul);font-variant-numeric:tabular-nums}
+  .calc input[type=range]{width:100%;-webkit-appearance:none;appearance:none;
+            height:6px;border-radius:99px;background:var(--sup-2);outline:none;cursor:pointer}
+  .calc input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+            width:22px;height:22px;border-radius:50%;background:var(--azul);
+            border:3px solid #fff;box-shadow:0 2px 8px rgba(26,26,110,.3);cursor:pointer}
+  .calc input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;
+            background:var(--azul);border:3px solid #fff;cursor:pointer;
+            box-shadow:0 2px 8px rgba(26,26,110,.3)}
+  .calc input[type=range]:focus-visible{outline:3px solid var(--azul-cl);outline-offset:4px}
+  .calc-escala{display:flex;justify-content:space-between;font-size:11.5px;
+            color:var(--txt-3);margin-top:7px}
+  .calc-tot{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+            background:var(--sup);border:1px solid var(--bor);border-radius:12px;
+            padding:13px 16px;margin-top:16px}
+  .calc-tot span{font-size:12px;text-transform:uppercase;letter-spacing:.06em;
+            color:var(--txt-3)}
+  .calc-tot b{display:block;font-size:21px;color:var(--txt);line-height:1.15;
+            text-align:right;font-variant-numeric:tabular-nums}
+  .calc-tot em{display:block;font-style:normal;font-size:13.5px;color:var(--txt-2);
+            margin-top:2px;text-align:right;font-variant-numeric:tabular-nums}
+  .calc-pie{font-size:11.5px;color:var(--txt-3);margin-top:12px;line-height:1.5}
+
+  /* Perfiles */
+  .perfiles{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+  .perfil{background:#fff;border:1px solid var(--bor);border-radius:var(--r);
+    padding:26px;box-shadow:var(--sombra)}
+  .perfil h3{font-size:17.5px;font-weight:780;letter-spacing:-.018em;margin-bottom:2px}
+  .perfil .rol{font-size:11.5px;font-weight:700;color:var(--azul);text-transform:uppercase;
+    letter-spacing:.06em;margin-bottom:12px}
+  .perfil .desc{font-size:14.5px;color:var(--txt-2)}
+  .perfil .lista{margin-top:14px;gap:8px}
+  .perfil .lista li{font-size:13.5px}
+
+  /* Testimonios */
+  .citas{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;
+    max-width:900px;margin:0 auto}
+  .cita{background:#fff;border:1px solid var(--bor);border-radius:var(--r);
+    padding:28px;margin:0;box-shadow:var(--sombra);position:relative}
+  .cita blockquote{margin:0 0 20px;font-size:15.5px;line-height:1.6;color:var(--txt)}
+  .cita figcaption{display:flex;align-items:center;gap:12px;
+    border-top:1px solid var(--bor);padding-top:16px}
+  .cita .ini{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:grid;
+    place-items:center;font-size:14px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--azul),var(--azul-cl))}
+  .cita figcaption b{display:block;font-size:14px;font-weight:750;color:#0f172a}
+  .cita figcaption i{display:block;font-style:normal;font-size:12.5px;color:var(--txt-3);
+    margin-top:1px}
+
+  /* Preguntas frecuentes */
+  .faqs{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+  .faq{background:#fff;border:1px solid var(--bor);border-radius:var(--r);
+    overflow:hidden;box-shadow:var(--sombra)}
+  .faq[open]{border-color:rgba(59,79,216,.4)}
+  .faq summary{display:flex;align-items:center;gap:12px;padding:16px 20px;
+    cursor:pointer;list-style:none;user-select:none;font-size:15.5px;
+    font-weight:650;color:#0f172a;letter-spacing:-.011em}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";margin-left:auto;font-size:20px;color:var(--azul);
+    font-weight:400;line-height:1;transition:transform .2s}
+  .faq[open] summary::after{content:"\2212"}
+  .faq summary:hover{background:#fafbff}
+  .faq .resp{padding:0 20px 18px;font-size:14.5px;color:var(--txt-2);line-height:1.62}
+  .faq .resp p{margin:0 0 10px}
+  .faq .resp p:last-child{margin-bottom:0}
+  .faq .resp a{color:var(--azul);font-weight:600}
+
+  /* Nosotros */
+  .nos{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:8px}
+  .nos .b{background:#fff;border:1px solid var(--bor);border-radius:var(--r);padding:28px}
+  .nos h3{font-size:15px;font-weight:750;margin-bottom:10px;color:var(--azul-os);
+    text-transform:uppercase;letter-spacing:.055em;font-size:12px}
+  .nos p{font-size:14.5px;color:var(--txt-2)}
+
+  /* Contacto */
+  .cta{background:
+      radial-gradient(760px 380px at 12% -22%, rgba(107,142,245,.26), transparent 60%),
+      linear-gradient(145deg,var(--gris) 0%,var(--azul-noc) 125%);
+    color:#fff}
+  .cta .env{display:grid;grid-template-columns:1fr 1.02fr;gap:56px;align-items:center}
+  .cta h2{color:#fff}
+  .cta .sub{color:rgba(255,255,255,.76);margin-top:14px;font-size:16.5px}
+  .cta .vent{list-style:none;margin-top:26px;display:flex;flex-direction:column;gap:12px}
+  .cta .vent li{display:flex;gap:11px;align-items:center;font-size:14.8px;
+    color:rgba(255,255,255,.9)}
+
+  .form{background:#fff;border-radius:16px;padding:30px;box-shadow:0 26px 60px rgba(0,0,0,.26)}
+  .form h3{font-size:18px;font-weight:780;color:var(--gris);margin-bottom:5px;letter-spacing:-.018em}
+  .form .ayuda{font-size:13.5px;color:var(--txt-3);margin-bottom:20px}
+  .campo{margin-bottom:14px}
+  .campo label{display:block;font-size:12px;font-weight:700;color:var(--gris-3);
+    margin-bottom:6px;letter-spacing:.015em}
+  .campo input,.campo textarea{
+    width:100%;padding:11px 13px;border:1px solid var(--bor);border-radius:9px;
+    font-size:14.5px;font-family:inherit;color:var(--txt);background:#fff;transition:.15s;
+  }
+  .campo input:focus,.campo textarea:focus{
+    outline:none;border-color:var(--azul);box-shadow:0 0 0 3px rgba(59,79,216,.14)}
+  .campo textarea{resize:vertical;min-height:76px}
+  .dos{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .msg{padding:13px 15px;border-radius:10px;font-size:14px;margin-top:14px;display:none;line-height:1.5}
+  .msg.ok{display:block;background:#d1fae5;color:#065f46;border:1px solid #a9bdf9}
+  .msg.err{display:block;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+  .legal{font-size:11.5px;color:var(--txt-3);margin-top:13px;text-align:center}
+
+  /* Pie */
+  .pie{background:var(--gris);color:rgba(255,255,255,.62);padding:56px 0 26px}
+  .pie-grid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:38px}
+  .pie p{font-size:14px;margin-top:14px;max-width:290px}
+  .pie h4{color:#fff;font-size:12px;font-weight:750;text-transform:uppercase;
+    letter-spacing:.08em;margin-bottom:15px}
+  .pie ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .pie a{font-size:14px;transition:color .15s}
+  .pie a:hover{color:var(--azul-cl)}
+  .pie-fin{border-top:1px solid rgba(255,255,255,.1);margin-top:42px;padding-top:22px;
+    display:flex;justify-content:space-between;gap:16px;font-size:13px;flex-wrap:wrap}
+
+  /* Responsive */
+  @media (max-width:980px){
+    .hero .env,.cta .env{grid-template-columns:1fr;gap:42px}
+    .dest{grid-template-columns:1fr;gap:32px}
+    .dest.inv .vis{order:0}
+    .props,.mods,.nos{grid-template-columns:repeat(2,1fr)}
+    .perfiles,.citas{grid-template-columns:1fr}
+    .pie-grid{grid-template-columns:1fr 1fr;gap:30px}
+    .nav-links{display:none}
+  }
+  @media (max-width:820px){
+    /* Las dos tarjetas de plan no caben lado a lado bajo este ancho y
+       estaban empujando la página 200px a la derecha. */
+    .planes{grid-template-columns:1fr;max-width:460px}
+  }
+  @media (max-width:640px){
+    section{padding:56px 0}
+    .hero .env{padding-top:48px;padding-bottom:48px}
+    .props,.mods,.cols,.nos,.perfiles,.citas,.ejs{grid-template-columns:1fr}
+    .cifras{gap:24px}
+    .dos{grid-template-columns:1fr}
+    .pie-grid{grid-template-columns:1fr}
+    .nav-acc .btn-g{display:none}
+    /* El encabezado no cabía: la bajada de la marca no se encoge (nowrap)
+       y el botón quedaba encima del logo. */
+    .nav{gap:14px}
+    .nav-acc{margin-left:auto}
+    header .marca{min-width:0}
+    header .marca img{width:34px;height:34px}
+    header .marca-txt{font-size:19px}
+    header .marca-sub{font-size:7.4px;letter-spacing:.11em}
+    .nav-acc .btn{padding:9px 15px;font-size:13.5px}
+    .mock-cuerpo{grid-template-columns:1fr}
+    .mock-side{flex-direction:row;overflow:auto}
+    .vis{padding:16px}
+    .calc-lab{flex-wrap:wrap}
+  }
+  @media (max-width:370px){
+    /* Pantallas muy angostas: antes que el botón pise la marca, la bajada
+       se va. En el pie sigue estando. */
+    header .marca-sub{display:none}
+  }
+
+  /* Un hijo de grid o flex no se encoge por debajo de su contenido salvo
+     que se le diga: sin esto, una tabla ancha estira su columna y arrastra
+     toda la página. Pasó con la tabla de carga académica en el móvil. */
+  .dest>*,.planes>*,.mods>*,.props>*,.ejs>*,.cols>*,.perfiles>*,.citas>*,
+  .mock-cuerpo>*,.pie-grid>*{min-width:0}
+  .vis{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tabla{min-width:280px}
+  /* Red de seguridad: nada debería desbordar, pero si algo se cuela no
+     queremos que el visitante pueda arrastrar la página entera de lado.
+     Va en <body> y no en <html> para no romper el scroll pegajoso. */
+  body{overflow-x:clip}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "es-CL",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "¿Kolevia cumple con la normativa del MINEDUC?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Los módulos siguen los formatos oficiales. La carga horaria docente se calcula con la Tabla Legal del MINEDUC —proporción 65/35, artículos 69 y 80 del DFL N°1 de 1996— para las 44 jornadas de la tabla, repartiendo horas de aula, no lectivas y recreo. La convivencia escolar usa los campos de los anexos oficiales y los informes salen en el formato que el establecimiento ya entrega."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Cómo migramos los datos que tenemos en planillas?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "La matrícula se carga desde Excel o CSV con una plantilla que incluye los cursos reales de tu colegio. Antes de guardar nada ves una vista previa fila por fila: cuáles son alumnos nuevos, cuáles cambian de curso y cuáles tienen un problema que corregir. Los cursos, asignaturas y docentes también se cargan en la puesta en marcha. Te acompañamos en ese proceso."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Cuánto cuesta y qué se cuenta como usuario?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "El Plan Base son 0,7 UF por usuario al mes, y se cuentan solo docentes y administradores. Los estudiantes y apoderados usan la plataforma sin costo adicional, así que un colegio de 600 alumnos con 30 docentes paga sobre 30, no sobre 630. Si el valor no calza con la realidad del establecimiento, está el Plan Especial: conversamos la situación y nos adaptamos."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Hay que instalar algo en el colegio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Kolevia funciona en el navegador, así que se entra desde cualquier computador, tablet o teléfono con internet. No hay servidor que mantener ni programa que actualizar, y las mejoras llegan solas."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Los apoderados y estudiantes pueden entrar?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sí. Cada apoderado entra con su cuenta y ve las notas y anotaciones de sus pupilos. El colegio decide a quién le habilita el acceso y cuándo."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Qué pasa con los datos de nuestros estudiantes?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Los datos son del establecimiento, no de Kolevia. Cada colegio ve únicamente los suyos, incluso cuando un sostenedor administra varios desde el mismo panel, y cada persona accede solo a lo que su rol permite. La información se puede exportar en cualquier momento: los informes salen en Word y PDF."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Sirve para un colegio con varias sedes o para un sostenedor?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sí. Un sostenedor administra varios establecimientos desde un mismo panel, cada uno con su identidad, sus cursos, sus docentes y sus datos separados."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿En cuánto tiempo queda funcionando?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Depende de en qué estado estén los datos del colegio. Con las listas de curso ordenadas en una planilla, la matrícula y los cursos quedan cargados el mismo día. Lo que suele tomar más es definir la carga horaria del año, porque ahí hay decisiones pedagógicas de por medio."
+      }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<!-- Isotipo reutilizable: arco abierto (360) + K -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="kg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6b8ef5"/><stop offset="1" stop-color="#2a2eb0"/>
+    </linearGradient>
+    <symbol id="tic" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="10" fill="rgba(59,79,216,.13)"/>
+      <path d="m6 10.2 2.7 2.7L14.2 7.4" fill="none" stroke="#3b4fd8"
+            stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="tic-cl" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="10" fill="rgba(107,142,245,.22)"/>
+      <path d="m6 10.2 2.7 2.7L14.2 7.4" fill="none" stroke="#a9bdf9"
+            stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header>
+  <div class="env nav">
+    <a href="#inicio" class="marca" aria-label="Kolevia, ir al inicio">
+      <img src="/inicio/img/kolevia-isotipo.png" width="40" height="40" alt="">
+      <span class="marca-bloque">
+        <span class="marca-txt">Kolevia</span>
+        <span class="marca-sub">Tecnología para educar</span>
+      </span>
+    </a>
+    <nav class="nav-links">
+      <a href="#modulos">Módulos</a>
+      <a href="#carga">Carga académica</a>
+      <a href="#perfiles">Para quién es</a>
+      <a href="#precios">Planes</a>
+      <a href="#colegios">Colegios</a>
+      <a href="#preguntas">Preguntas</a>
+      <a href="#nosotros">Nosotros</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <div class="nav-acc">
+      <a href="/login" class="btn btn-g">Ingresar</a>
+      <a href="#contacto" class="btn btn-p">Pedir demo</a>
+    </div>
+  </div>
+</header>
+
+<main id="inicio">
+
+<section class="hero">
+  <div class="hero-fondo" id="carru">
+    <figure class="dia act">
+      <img src="/inicio/img/aula-1.jpg" alt="" loading="eager" decoding="async">
+    </figure>
+    <figure class="dia">
+      <img src="/inicio/img/aula-2.jpg" alt="" loading="lazy" decoding="async">
+    </figure>
+    <figure class="dia">
+      <img src="/inicio/img/aula-3.jpg" alt="" loading="lazy" decoding="async">
+    </figure>
+    <div class="velo"></div>
+    <div class="carru-puntos" role="tablist" aria-label="Cambiar imagen de fondo">
+      <button type="button" class="pt act" role="tab" aria-label="Imagen 1"><s></s></button>
+      <button type="button" class="pt" role="tab" aria-label="Imagen 2"><s></s></button>
+      <button type="button" class="pt" role="tab" aria-label="Imagen 3"><s></s></button>
+    </div>
+  </div>
+  <div class="env hero-txt">
+      <span class="eyebrow"><b></b> Plataforma educacional 360</span>
+      <h1>La gestión de tu colegio,
+          <span class="deg">ordenada de principio a fin</span></h1>
+      <p class="bajada">
+        Libro de clases digital, calificaciones, convivencia escolar y carga horaria
+        docente en un solo lugar. Pensado para la realidad de los colegios chilenos
+        y la normativa del MINEDUC.
+      </p>
+      <div class="hero-ctas">
+        <a href="#contacto" class="btn btn-p btn-lg">Pedir una demo</a>
+        <a href="#modulos" class="btn btn-g btn-lg">Ver los módulos</a>
+      </div>
+      <div class="cifras">
+        <div class="cifra"><strong>10</strong><span>módulos integrados</span></div>
+        <div class="cifra"><strong>44</strong><span>jornadas de la Tabla Legal</span></div>
+        <div class="cifra"><strong>100%</strong><span>en la nube, sin instalar</span></div>
+      </div>
+  </div>
+</section>
+
+<section class="banda-mock">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Así se ve por dentro</p>
+      <h2>El estado de tu colegio, de una mirada</h2>
+      <p>Cada módulo muestra lo que falta antes de que el problema llegue al papel.</p>
+    </div>
+    <div class="mock-centro rev">
+    <div class="mock" aria-hidden="true">
+      <div class="mock-bar">
+        <i></i><i></i><i></i>
+        <span class="mock-url">kolevia.cl/carga-academica</span>
+      </div>
+      <div class="mock-cuerpo">
+        <div class="mock-side">
+          <div class="ml"><u></u>Dashboard</div>
+          <div class="ml"><u></u>Cursos</div>
+          <div class="ml"><u></u>Calificaciones</div>
+          <div class="ml"><u></u>Convivencia</div>
+          <div class="ml on"><u></u>Carga Académica</div>
+          <div class="ml"><u></u>Reportes</div>
+        </div>
+        <div class="mock-main">
+          <div class="mock-h">Carga Académica 2027</div>
+          <div class="mock-kpis">
+            <div class="mock-kpi"><b>100%</b><span>Cobertura</span></div>
+            <div class="mock-kpi"><b>6/6</b><span>Cuadrados</span></div>
+            <div class="mock-kpi"><b>0</b><span>Alertas</span></div>
+          </div>
+          <div class="mock-fila">
+            <div class="mock-br"><em>Lenguaje</em><i><s style="width:100%"></s></i><b>90/90</b></div>
+            <div class="mock-br"><em>Taller</em><i><s style="width:100%"></s></i><b>36/36</b></div>
+            <div class="mock-br"><em>Electivos</em><i><s style="width:100%"></s></i><b>18/18</b></div>
+            <div class="mock-br"><em>Matemática</em><i><s style="width:78%"></s></i><b>70/90</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Por qué Kolevia</p>
+      <h2>Una plataforma que entiende cómo funciona un colegio</h2>
+      <p>No es un software genérico adaptado. Cada módulo sigue los procesos y formatos
+         con los que ya trabajan los equipos directivos en Chile.</p>
+    </div>
+    <div class="props rev-g">
+      <div class="prop">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+          stroke="#3b4fd8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 7v14M3 18V5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2M21 18V5a2 2 0 0 0-2-2h-5a2 2 0 0 0-2 2"/>
+          </svg></div>
+        <h3>Normativa al día</h3>
+        <p>La carga horaria se calcula con la Tabla Legal del MINEDUC y la convivencia
+           escolar usa los anexos oficiales. Los informes salen listos para firmar.</p>
+      </div>
+      <div class="prop">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+          stroke="#3b4fd8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16v16H4z"/><path d="M4 10h16M10 4v16"/></svg></div>
+        <h3>Todo conversa entre sí</h3>
+        <p>El reparto de horas alimenta el libro de clases, y el libro alimenta los
+           informes. Lo que cargas una vez no se vuelve a escribir.</p>
+      </div>
+      <div class="prop">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+          stroke="#3b4fd8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6 9 17l-5-5"/></svg></div>
+        <h3>Te avisa antes del error</h3>
+        <p>Si un curso queda con dos profesores o una jornada no cuadra, lo ves en
+           pantalla al momento. No en marzo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec-sup" id="modulos">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Módulos</p>
+      <h2>Una solución para cada área</h2>
+      <p>Diez módulos integrados. Activa los que tu establecimiento necesita.</p>
+    </div>
+    <div class="mods rev-g">
+      <div class="mod">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <h3>Libro de Clases Digital</h3>
+        <p>Cursos, asignaturas, matrícula y registro diario, con la estructura que exige
+           la normativa.</p>
+      </div>
+      <div class="mod">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></div>
+        <h3>Calificaciones</h3>
+        <p>Notas por asignatura y período, con promedios y escalas configurables por
+           establecimiento.</p>
+      </div>
+      <div class="mod">
+        <span class="tag">Destacado</span>
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div>
+        <h3>Carga Académica</h3>
+        <p>Reparte las horas de cada docente según su jornada contratada, con la Tabla
+           Legal del MINEDUC aplicada automáticamente.</p>
+      </div>
+      <div class="mod">
+        <span class="tag">Destacado</span>
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.9"/></svg></div>
+        <h3>Convivencia Escolar</h3>
+        <p>Casos por etapas con los anexos oficiales: recepción, entrevista, seguimiento,
+           intervención y apelación.</p>
+      </div>
+      <div class="mod">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3v18h18"/><path d="m7 15 3.5-4 3 2.5L20 7"/></svg></div>
+        <h3>Reportes</h3>
+        <p>Informes por curso, asignatura y estudiante, exportables a Word y PDF con el
+           logo del colegio.</p>
+      </div>
+      <div class="mod">
+        <span class="tag">Con IA</span>
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9V6a2 2 0 0 1 2-2h3M16 4h3a2 2 0 0 1 2 2v3M21 15v3a2 2 0 0 1-2 2h-3M8 20H5a2 2 0 0 1-2-2v-3"/>
+          <circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>Escaneo de anotaciones</h3>
+        <p>Fotografía el registro en papel y la plataforma transcribe la anotación al
+           libro digital.</p>
+      </div>
+      <div class="mod">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/>
+          <path d="m19 8 2 2 3-3"/></svg></div>
+        <h3>Portal de Apoderados</h3>
+        <p>Cada familia entra con su cuenta y ve las notas, los cursos y las anotaciones
+           de sus pupilos.</p>
+      </div>
+      <div class="mod">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+        <h3>Períodos Académicos</h3>
+        <p>Semestres o trimestres configurables, con fechas de inicio y cierre por año
+           lectivo.</p>
+      </div>
+      <div class="mod">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2 3 7v6c0 5 3.8 8.8 9 10 5.2-1.2 9-5 9-10V7z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <h3>Usuarios y Roles</h3>
+        <p>Dirección, docentes, apoderados y estudiantes, cada uno con acceso solo a lo
+           que le corresponde.</p>
+      </div>
+      <div class="mod">
+        <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b4fd8"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></div>
+        <h3>Multi-colegio</h3>
+        <p>Para sostenedores y redes: administra varios establecimientos desde un mismo
+           panel, cada uno con su identidad.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="carga">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Lo que nos distingue</p>
+      <h2>Dos procesos que nadie más resuelve completos</h2>
+    </div>
+
+    <div class="dest rev">
+      <div>
+        <p class="et">Carga Académica</p>
+        <h3>Reparte las horas docentes sin descuadres</h3>
+        <p style="font-size:15.5px;color:var(--txt-2)">
+          Ingresa la jornada contratada de cada profesor y la plataforma calcula sus horas
+          de aula, no lectivas y recreo según la Tabla Legal del MINEDUC. Luego reparte las
+          asignaturas y te avisa si algo no cierra.
+        </p>
+        <ul class="lista">
+          <li><svg width="19" height="19"><use href="#tic"/></svg>
+              Las 44 jornadas de la tabla, de 1 a 44 horas cronológicas.</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>
+              Detecta si un curso quedó con dos profesores o sin ninguno.</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>
+              Controla el tope de horas de disponibilidad por docente.</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>
+              Sugerencia automática de reparto, que puedes revisar antes de aplicar.</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>
+              Informe por docente y horario semanal, en Word y PDF.</li>
+        </ul>
+      </div>
+      <div class="vis">
+        <table class="tabla">
+          <thead><tr><th>Docente</th><th>Jornada</th><th>Aula</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td>M. Fuentes</td><td>44 h</td><td class="ok">38/38</td>
+                <td><span class="pill v">cuadrado</span></td></tr>
+            <tr><td>R. Oyarzún</td><td>43 h</td><td class="ok">37/37</td>
+                <td><span class="pill v">cuadrado</span></td></tr>
+            <tr><td>C. Bustamante</td><td>39 h</td><td class="ok">34/34</td>
+                <td><span class="pill v">cuadrado</span></td></tr>
+            <tr><td>P. Riquelme</td><td>42 h</td><td class="al">33/36</td>
+                <td><span class="pill a">faltan 3</span></td></tr>
+            <tr><td>A. Sepúlveda</td><td>37 h</td><td class="ok">32/32</td>
+                <td><span class="pill v">cuadrado</span></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:11.5px;color:var(--txt-3);margin-top:12px;text-align:center">
+          Jornada = horas de aula × 45 min + recreo + horas no lectivas
+        </p>
+      </div>
+    </div>
+
+    <div class="dest inv rev">
+      <div>
+        <p class="et">Convivencia Escolar</p>
+        <h3>Cada caso, con su protocolo completo</h3>
+        <p style="font-size:15.5px;color:var(--txt-2)">
+          Los casos avanzan por etapas y cada una tiene su formulario, siguiendo los anexos
+          oficiales. En cualquier momento imprimes el informe de la etapa, listo para el
+          expediente.
+        </p>
+        <ul class="lista">
+          <li><svg width="19" height="19"><use href="#tic"/></svg>
+              Cinco etapas con los campos de los anexos 1 al 5.</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>
+              Bitácora de seguimiento con fecha, acción y observaciones.</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>
+              Tipificación de la falta y registro de medidas adoptadas.</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>
+              Informe imprimible por cada etapa del proceso.</li>
+        </ul>
+      </div>
+      <div class="vis">
+        <div class="pasos">
+          <div class="paso hecho"><i>✓</i><span>Recepción del caso</span><em>Anexo 1</em></div>
+          <div class="paso hecho"><i>✓</i><span>Entrevista con apoderado</span><em>Anexo 2</em></div>
+          <div class="paso act"><i>3</i><span>Seguimiento individual</span><em>Anexo 3</em></div>
+          <div class="paso"><i>4</i><span>Intervención grupal</span><em>Anexo 4</em></div>
+          <div class="paso"><i>5</i><span>Apelación</span><em>Anexo 5</em></div>
+        </div>
+        <p style="font-size:11.5px;color:var(--txt-3);margin-top:14px;text-align:center">
+          Caso CV-2027-014 · en seguimiento
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="perfiles">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Para quién es</p>
+      <h2>Cada rol entra a lo suyo</h2>
+      <p>Una misma plataforma, pero cada persona ve lo que le corresponde y nada más.</p>
+    </div>
+    <div class="perfiles rev-g">
+      <article class="perfil">
+        <h3>Equipo directivo</h3>
+        <p class="rol">Dirección y UTP</p>
+        <p class="desc">Ve el estado del colegio completo: matrícula, cobertura de la
+          carga horaria, casos de convivencia abiertos y qué está sin resolver. Define
+          períodos, cursos y quién accede a qué.</p>
+        <ul class="lista">
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Panel con lo que requiere atención</li>
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Informes listos para firmar</li>
+        </ul>
+      </article>
+
+      <article class="perfil">
+        <h3>Jefes de departamento</h3>
+        <p class="rol">Coordinación académica</p>
+        <p class="desc">Reparten las horas de su departamento entre los docentes
+          respetando la jornada de cada uno, y ven al instante si un curso quedó sin
+          profesor o con dos.</p>
+        <ul class="lista">
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Reparto asistido que respeta la Tabla Legal</li>
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Informe del departamento en Word y PDF</li>
+        </ul>
+      </article>
+
+      <article class="perfil">
+        <h3>Docentes</h3>
+        <p class="rol">Profesores de aula y jefes de curso</p>
+        <p class="desc">Entran a sus cursos, registran calificaciones y anotaciones, y
+          consultan su carga y su horario semanal sin pedírselo a nadie.</p>
+        <ul class="lista">
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Sus cursos y asignaturas a mano</li>
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Anotaciones desde una foto del registro</li>
+        </ul>
+      </article>
+
+      <article class="perfil">
+        <h3>Convivencia escolar</h3>
+        <p class="rol">Encargados y duplas psicosociales</p>
+        <p class="desc">Llevan cada caso por sus cinco etapas con los anexos oficiales,
+          registran la bitácora de seguimiento e imprimen el informe de la etapa para
+          el expediente.</p>
+        <ul class="lista">
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Protocolo completo, no una planilla</li>
+          <li><svg width="18" height="18"><use href="#tic"/></svg>Trazabilidad de medidas y acuerdos</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="sec-sup" id="testimonios">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Lo que dicen quienes la usan</p>
+      <h2>Desde el colegio, no desde el folleto</h2>
+    </div>
+    <div class="citas rev-g">
+      <figure class="cita">
+        <blockquote>
+          Antes llegaba a marzo con las planillas de notas a medio llenar y sin
+          saber qué curso me faltaba. Ahora entro, veo mis cursos y registro
+          apenas termino la clase.
+        </blockquote>
+        <figcaption>
+          <span class="ini">RH</span>
+          <span>
+            <b>Rocío Herrera</b>
+            <i>Profesora · Colegio Franz Liszt</i>
+          </span>
+        </figcaption>
+      </figure>
+
+      <figure class="cita">
+        <blockquote>
+          Lo que más me ordenó fue tener el caso completo en un solo lugar. Cada
+          etapa con su anexo, la bitácora al día, y el informe listo para imprimir
+          cuando lo piden. Dejé de armarlos a mano.
+        </blockquote>
+        <figcaption>
+          <span class="ini">DA</span>
+          <span>
+            <b>Darinka Alfaro</b>
+            <i>Encargada de Convivencia Escolar · Colegio Franz Liszt</i>
+          </span>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="colegios">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Comunidad Kolevia</p>
+      <h2>Colegios que ya trabajan con nosotros</h2>
+      <p>El establecimiento donde nació la plataforma y que hoy la usa a diario.</p>
+    </div>
+    <div class="cols rev-g">
+      <div class="col">
+        <div class="esc" style="background:linear-gradient(135deg,#1a1a6e,#6b8ef5)">FL</div>
+        <div>
+          <h3>Colegio Franz Liszt</h3>
+          <p>Enseñanza básica</p>
+          <p class="usa">Libro de clases · Calificaciones · Carga académica · Apoderados</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ejemplos">
+      <div class="ejemplos-cab rev">
+        <h3>Cómo se ve el proceso en distintos colegios</h3>
+        <p>Tres realidades habituales en Chile y qué parte de la plataforma
+           resuelve cada una.</p>
+        <p class="aviso-ej">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+          </svg>
+          Ejemplos ilustrativos: los establecimientos, las personas y las frases
+          de este bloque son ficticios y sirven para mostrar el flujo de trabajo.
+          No son clientes de Kolevia.
+        </p>
+      </div>
+
+      <div class="ejs rev-g">
+        <div class="ej">
+          <span class="ej-tag">Ejemplo ficticio</span>
+          <h4>Colegio Los Aromos</h4>
+          <p class="ej-datos">480 alumnos · 26 docentes · Básica completa</p>
+          <p class="ej-proc">Carga una planilla con la jornada contratada de cada
+             profesor. La plataforma reparte horas lectivas y no lectivas según la
+             Tabla Legal, avisa de los descuadres y publica el resultado al libro
+             de clases.</p>
+          <p class="ej-cita">«El reparto de horas vivía en una planilla que entendía
+             una sola persona. Ahora el cuadre lo hace el sistema y el informe sale
+             listo para firma.»</p>
+          <p class="ej-firma">Jefa de UTP · personaje de ejemplo</p>
+        </div>
+
+        <div class="ej">
+          <span class="ej-tag">Ejemplo ficticio</span>
+          <h4>Liceo Pedro de Valdivia Sur</h4>
+          <p class="ej-datos">820 alumnos · Básica y media · Dos jornadas</p>
+          <p class="ej-proc">Cada caso de convivencia avanza por las cinco etapas de
+             los anexos oficiales, con responsable y fecha en cada paso, y un informe
+             imprimible por etapa.</p>
+          <p class="ej-cita">«Cuando nos piden el expediente de un caso, está completo:
+             se ve en qué etapa va, quién lo tomó y qué se hizo en cada una.»</p>
+          <p class="ej-firma">Encargado de convivencia escolar · personaje de ejemplo</p>
+        </div>
+
+        <div class="ej">
+          <span class="ej-tag">Ejemplo ficticio</span>
+          <h4>Escuela Las Vertientes</h4>
+          <p class="ej-datos">90 alumnos · Rural multigrado · 6 docentes</p>
+          <p class="ej-proc">Matrícula cargada desde la planilla que ya tenían, con
+             vista previa que separa alumnos nuevos de cambios de curso antes de
+             aplicar nada.</p>
+          <p class="ej-cita">«Somos seis profesores y nadie tiene tiempo de administrar
+             un sistema. Necesitábamos algo que funcionara el primer día.»</p>
+          <p class="ej-firma">Directora · personaje de ejemplo</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec-sup" id="precios">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Planes</p>
+      <h2>Pagas por quien administra, no por cada alumno</h2>
+      <p>El cobro se calcula sobre docentes y administradores. Estudiantes y apoderados
+         usan la plataforma sin costo adicional.</p>
+    </div>
+    <div class="planes rev-g">
+      <div class="plan">
+        <h3>Plan Base</h3>
+        <p class="plan-d">Todos los módulos, para colegios que necesitan ordenar su
+           gestión pedagógica completa.</p>
+        <div class="precio">
+          <strong>0,7 UF</strong>
+          <span>por usuario<br>al mes</span>
+        </div>
+        <p class="plan-n">Se cuentan docentes y administradores con cuenta activa.
+           Estudiantes y apoderados no pagan.</p>
+        <ul class="lista">
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Los diez módulos incluidos</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Usuarios ilimitados para estudiantes y apoderados</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Informes en Word y PDF con el logo del colegio</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Acompañamiento en la carga inicial de datos</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Actualizaciones y soporte incluidos</li>
+        </ul>
+        <a href="#contacto" class="btn btn-p" style="width:100%;margin-top:22px">Pedir una demo</a>
+
+        <div class="calc">
+          <p class="calc-t">Calcula lo que pagaría tu colegio</p>
+          <label class="calc-lab" for="calcN">
+            <span>Docentes y administradores con cuenta</span>
+            <strong id="calcNum">20</strong>
+          </label>
+          <input type="range" id="calcN" min="1" max="80" step="1" value="20"
+                 aria-label="Cantidad de docentes y administradores con cuenta">
+          <div class="calc-escala"><span>1</span><span>80</span></div>
+          <p class="calc-tot">
+            <span>Al mes</span>
+            <span><b id="calcUfMes">14 UF</b><em id="calcPesosMes">&mdash;</em></span>
+          </p>
+          <p class="calc-pie" id="calcPie">Buscando el valor de la UF de hoy&hellip;</p>
+        </div>
+      </div>
+
+      <div class="plan plan-esp">
+        <span class="plan-tag">A medida</span>
+        <h3>Plan Especial</h3>
+        <p class="plan-d">Para colegios con necesidades específicas, y también para
+           establecimientos que hoy no pueden costear el plan base.</p>
+        <div class="precio">
+          <strong>Conversemos</strong>
+          <span>valor según<br>el alcance</span>
+        </div>
+        <p class="plan-n">Conversamos tu situación y nos adaptamos. Ningún colegio
+           debería quedarse fuera por el precio.</p>
+        <ul class="lista">
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Módulos adaptados a tus procesos internos</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Informes con formatos propios del establecimiento</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Integraciones con sistemas que ya uses</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Redes y sostenedores con varios establecimientos</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Valores ajustados a la realidad económica del colegio</li>
+          <li><svg width="19" height="19"><use href="#tic"/></svg>Condiciones de implementación a convenir</li>
+        </ul>
+        <a href="#contacto" class="btn btn-g" style="width:100%;margin-top:22px">Hablar con nosotros</a>
+      </div>
+    </div>
+    <p class="precio-pie">Los valores se expresan en UF y se facturan en pesos según el
+       valor del día. No hay costo de instalación.</p>
+  </div>
+</section>
+
+<section id="nosotros">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Quiénes somos</p>
+      <h2>Cerca de quienes hacen funcionar un colegio</h2>
+      <p>Kolevia nace trabajando codo a codo con equipos de UTP, no desde un escritorio.</p>
+    </div>
+    <div class="nos rev-g">
+      <div class="b">
+        <h3>Origen</h3>
+        <p>Partimos como plataforma de apoyo al Colegio Franz Liszt. Trabajando ahí
+           conocimos la problemática de cerca: la carga horaria armada en planillas
+           sueltas, los protocolos de convivencia en carpetas de papel y los mismos
+           datos escritos tres veces en lugares distintos. Nos propusimos ordenar ese
+           trabajo sin pedirle al colegio que cambiara su forma de trabajar.</p>
+      </div>
+      <div class="b">
+        <h3>Cómo trabajamos</h3>
+        <p>Cada módulo se diseña sobre los formatos que el colegio ya usa. Si un informe
+           se entrega en Word con cierto formato, la plataforma lo genera igual, para que
+           nadie tenga que cambiar su manera de trabajar.</p>
+      </div>
+      <div class="b">
+        <h3>Hacia dónde vamos</h3>
+        <p>Completar el círculo de la gestión pedagógica —asistencia, planificación y
+           comunicación con las familias— manteniendo lo que nos importa: que la
+           plataforma avise antes de que el error llegue al papel.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="preguntas">
+  <div class="env">
+    <div class="cab rev">
+      <p class="et">Preguntas frecuentes</p>
+      <h2>Lo que nos preguntan los colegios</h2>
+      <p>Si falta algo, escribinos y lo respondemos sin vueltas.</p>
+    </div>
+    <div class="faqs rev">
+      <details class="faq">
+        <summary>¿Kolevia cumple con la normativa del MINEDUC?</summary>
+        <div class="resp"><p>Los módulos siguen los formatos oficiales. La carga horaria docente se calcula con la Tabla Legal del MINEDUC —proporción 65/35, artículos 69 y 80 del DFL N°1 de 1996— para las 44 jornadas de la tabla, repartiendo horas de aula, no lectivas y recreo. La convivencia escolar usa los campos de los anexos oficiales y los informes salen en el formato que el establecimiento ya entrega.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Cómo migramos los datos que tenemos en planillas?</summary>
+        <div class="resp"><p>La matrícula se carga desde Excel o CSV con una plantilla que incluye los cursos reales de tu colegio. Antes de guardar nada ves una vista previa fila por fila: cuáles son alumnos nuevos, cuáles cambian de curso y cuáles tienen un problema que corregir.</p><p>Los cursos, asignaturas y docentes también se cargan en la puesta en marcha. Te acompañamos en ese proceso.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Cuánto cuesta y qué se cuenta como usuario?</summary>
+        <div class="resp"><p>El Plan Base son 0,7 UF por usuario al mes, y se cuentan solo docentes y administradores. Los estudiantes y apoderados usan la plataforma sin costo adicional, así que un colegio de 600 alumnos con 30 docentes paga sobre 30, no sobre 630.</p><p>Si el valor no calza con la realidad del establecimiento, está el Plan Especial: conversamos la situación y nos adaptamos.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Hay que instalar algo en el colegio?</summary>
+        <div class="resp"><p>No. Kolevia funciona en el navegador, así que se entra desde cualquier computador, tablet o teléfono con internet. No hay servidor que mantener ni programa que actualizar, y las mejoras llegan solas.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Los apoderados y estudiantes pueden entrar?</summary>
+        <div class="resp"><p>Sí. Cada apoderado entra con su cuenta y ve las notas y anotaciones de sus pupilos. El colegio decide a quién le habilita el acceso y cuándo.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Qué pasa con los datos de nuestros estudiantes?</summary>
+        <div class="resp"><p>Los datos son del establecimiento, no de Kolevia. Cada colegio ve únicamente los suyos, incluso cuando un sostenedor administra varios desde el mismo panel, y cada persona accede solo a lo que su rol permite.</p><p>La información se puede exportar en cualquier momento: los informes salen en Word y PDF.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Sirve para un colegio con varias sedes o para un sostenedor?</summary>
+        <div class="resp"><p>Sí. Un sostenedor administra varios establecimientos desde un mismo panel, cada uno con su identidad, sus cursos, sus docentes y sus datos separados.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿En cuánto tiempo queda funcionando?</summary>
+        <div class="resp"><p>Depende de en qué estado estén los datos del colegio. Con las listas de curso ordenadas en una planilla, la matrícula y los cursos quedan cargados el mismo día. Lo que suele tomar más es definir la carga horaria del año, porque ahí hay decisiones pedagógicas de por medio.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="cta" id="contacto">
+  <div class="env">
+    <div>
+      <h2>Conoce Kolevia con tus propios datos</h2>
+      <p class="sub">Déjanos tus datos y coordinamos una demostración con la realidad
+         de tu establecimiento. Sin compromiso.</p>
+      <ul class="vent">
+        <li><svg width="20" height="20"><use href="#tic-cl"/></svg>
+            Demostración guiada sobre tu propia estructura de cursos</li>
+        <li><svg width="20" height="20"><use href="#tic-cl"/></svg>
+            Acompañamiento en la carga inicial de datos</li>
+        <li><svg width="20" height="20"><use href="#tic-cl"/></svg>
+            Activa solo los módulos que tu colegio necesita</li>
+      </ul>
+    </div>
+
+    <form class="form rev" id="f" novalidate>
+      <h3>Solicitar una demostración</h3>
+      <p class="ayuda">Te respondemos dentro de las siguientes 48 horas hábiles.</p>
+
+      <div class="campo">
+        <label for="nombre">Nombre y apellido *</label>
+        <input id="nombre" name="nombre" type="text" required autocomplete="name"
+               placeholder="María González">
+      </div>
+      <div class="campo">
+        <label for="email">Correo electrónico *</label>
+        <input id="email" name="email" type="email" required autocomplete="email"
+               placeholder="maria@colegio.cl">
+      </div>
+      <div class="dos">
+        <div class="campo">
+          <label for="telefono">Teléfono</label>
+          <input id="telefono" name="telefono" type="tel" autocomplete="tel"
+                 placeholder="+56 9 1234 5678">
+        </div>
+        <div class="campo">
+          <label for="colegio">Colegio</label>
+          <input id="colegio" name="colegio" type="text" placeholder="Nombre del establecimiento">
+        </div>
+      </div>
+      <div class="campo">
+        <label for="mensaje">¿Qué necesitas resolver?</label>
+        <textarea id="mensaje" name="mensaje"
+                  placeholder="Cuéntanos qué procesos te gustaría ordenar"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-p btn-lg" id="enviar" style="width:100%">
+        Solicitar demostración
+      </button>
+      <div class="msg" id="msg" role="status" aria-live="polite"></div>
+      <p class="legal">Usamos tus datos solo para contactarte por esta solicitud.</p>
+    </form>
+  </div>
+</section>
+
+</main>
+
+<footer class="pie">
+  <div class="env">
+    <div class="pie-grid">
+      <div>
+        <div class="marca">
+          <img src="/inicio/img/kolevia-isotipo.png" width="36" height="36" alt="">
+          <div>
+            <span class="marca-txt">Kolevia</span>
+            <span class="marca-sub">Tecnología para educar</span>
+          </div>
+        </div>
+        <p>Plataforma educacional 360 para colegios chilenos. La gestión pedagógica
+           completa, en un solo lugar.</p>
+      </div>
+      <div>
+        <h4>Plataforma</h4>
+        <ul>
+          <li><a href="#modulos">Módulos</a></li>
+          <li><a href="#carga">Carga académica</a></li>
+          <li><a href="#carga">Convivencia escolar</a></li>
+          <li><a href="#precios">Planes y precios</a></li>
+          <li><a href="/login">Ingresar</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Empresa</h4>
+        <ul>
+          <li><a href="#nosotros">Quiénes somos</a></li>
+          <li><a href="#colegios">Colegios</a></li>
+          <li><a href="#contacto">Pedir demo</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contacto</h4>
+        <ul>
+          <li><a href="#contacto">Formulario de contacto</a></li>
+          <li><a href="#preguntas">Preguntas frecuentes</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="pie-fin">
+      <span>© <span id="anio">2026</span> Kolevia. Todos los derechos reservados.</span>
+      <a href="/login" style="color:var(--azul-cl);font-weight:600">Ingresar a la plataforma →</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('anio').textContent = new Date().getFullYear();
+
+  var sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Cada bloque va aislado. Un error en uno no puede dejar la página
+  // en blanco impidiendo que corran los siguientes.
+  function bloque(nombre, fn) {
+    try { fn(); } catch (e) { console.error('[kolevia] ' + nombre, e); }
+  }
+
+  /* El revelado va primero a propósito: es de lo que depende que se vea
+     el contenido, así que no puede quedar detrás de nada que falle. */
+  /* ── Revelado progresivo al hacer scroll ──────────────────────── */
+  bloque('revelado', function () {
+    var objetivos = document.querySelectorAll('.rev, .rev-g');
+    if (!objetivos.length) return;
+    if (sinMovimiento || !('IntersectionObserver' in window)) {
+      objetivos.forEach(function (el) { el.classList.add('vis'); });
+      return;
+    }
+    var ojo = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('vis');
+        ojo.unobserve(e.target);     // una sola vez: no parpadea al volver
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+    objetivos.forEach(function (el) { ojo.observe(el); });
+
+    // Si algo impide que el observador dispare, el contenido igual se muestra.
+    // Prefiero perder la animación antes que dejar la página en blanco.
+    setTimeout(function () {
+      objetivos.forEach(function (el) { el.classList.add('vis'); });
+    }, 2500);
+  });
+
+  /* ── Carrusel del hero ────────────────────────────────────────── */
+  bloque('carrusel', function () {
+    var caja = document.getElementById('carru');
+    if (!caja) return;
+
+    var laminas = caja.querySelectorAll('.dia');
+    var puntos = caja.querySelectorAll('.pt');
+    var LAPSO = 5600;
+    var actual = 0;
+    var reloj = null;
+
+    function mostrar(i) {
+      i = (i + laminas.length) % laminas.length;
+      if (i === actual) return;
+      laminas[actual].classList.remove('act');
+      puntos[actual].classList.remove('act');
+      actual = i;
+      laminas[i].classList.add('act');
+      // Reiniciar la barra de avance del punto activo
+      var barra = puntos[i].querySelector('s');
+      barra.style.animation = 'none';
+      void barra.offsetWidth;
+      barra.style.animation = '';
+      puntos[i].classList.add('act');
+    }
+
+    function arrancar() {
+      if (sinMovimiento) return;
+      detener();
+      reloj = setInterval(function () { mostrar(actual + 1); }, LAPSO);
+      caja.classList.remove('quieto');
+    }
+    function detener() {
+      if (reloj) { clearInterval(reloj); reloj = null; }
+      caja.classList.add('quieto');
+    }
+
+    // El hero de fondo no lleva flechas; el de tarjeta sí. Puede no haberlas.
+    var flAnt = caja.querySelector('.ant');
+    var flSig = caja.querySelector('.sig');
+    if (flAnt) flAnt.addEventListener('click', function () { mostrar(actual - 1); arrancar(); });
+    if (flSig) flSig.addEventListener('click', function () { mostrar(actual + 1); arrancar(); });
+    puntos.forEach(function (p, i) {
+      p.addEventListener('click', function () { mostrar(i); arrancar(); });
+    });
+
+    // Pausa mientras el usuario mira o navega con el teclado
+    caja.addEventListener('mouseenter', detener);
+    caja.addEventListener('mouseleave', arrancar);
+    caja.addEventListener('focusin', detener);
+    caja.addEventListener('focusout', arrancar);
+
+    // Flechas del teclado cuando el carrusel está enfocado
+    caja.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft') { mostrar(actual - 1); arrancar(); }
+      if (e.key === 'ArrowRight') { mostrar(actual + 1); arrancar(); }
+    });
+
+    // No gastar ciclos ni datos con la pestaña oculta
+    document.addEventListener('visibilitychange', function () {
+      document.hidden ? detener() : arrancar();
+    });
+
+    // Ni cuando el carrusel quedó fuera de pantalla
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) {
+        es[0].isIntersecting ? arrancar() : detener();
+      }, { threshold: 0.25 }).observe(caja);
+    } else {
+      arrancar();
+    }
+  });
+
+
+  /* ── Calculadora de valor mensual ─────────────────────────────── */
+  bloque('calculadora', function () {
+    var UF_POR_USUARIO = 0.7;
+    var control = document.getElementById('calcN');
+    if (!control) return;
+
+    var num = document.getElementById('calcNum');
+    var ufMes = document.getElementById('calcUfMes');
+    var pesosMes = document.getElementById('calcPesosMes');
+    var pie = document.getElementById('calcPie');
+    var uf = null;   // valor de la UF del día; null mientras no se sepa
+
+    function enUf(n) {
+      // 0,7 × 3 = 2,0999... en coma flotante: redondear antes de mostrar
+      var v = Math.round(n * UF_POR_USUARIO * 100) / 100;
+      return v.toLocaleString('es-CL', { maximumFractionDigits: 1 }) + ' UF';
+    }
+
+    function enPesos(n) {
+      if (!uf) return '—';
+      return '$' + Math.round(n * UF_POR_USUARIO * uf)
+                       .toLocaleString('es-CL', { maximumFractionDigits: 0 });
+    }
+
+    function pintar() {
+      var n = parseInt(control.value, 10) || 1;
+      num.textContent = n;
+      ufMes.textContent = enUf(n);
+      pesosMes.textContent = enPesos(n);
+    }
+
+    control.addEventListener('input', pintar);
+    pintar();
+
+    function sinUf(texto) { pie.textContent = texto; }
+
+    if (typeof fetch !== 'function') {
+      sinUf('Se factura en pesos según el valor de la UF del día de emisión.');
+      return;
+    }
+
+    /* La conversión a pesos se pide al propio servidor, que cachea el
+       valor del día. Si no llega, se muestran solo las UF: un precio en
+       pesos equivocado es peor que no mostrarlo. */
+    fetch('/api/uf')
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (d) {
+        if (!d || !d.valor) return Promise.reject('sin valor');
+        uf = d.valor;
+        var fecha = d.fecha ? d.fecha.split('-').reverse().join('-') : '';
+        // d.rezagado: el servicio de la UF no respondió y se usó el último
+        // valor bueno. La fecha va igual, así que el dato no engaña.
+        pie.textContent = 'Calculado con la UF del ' + fecha + ': $' +
+          uf.toLocaleString('es-CL', { minimumFractionDigits: 2 }) +
+          '. El valor final se factura en pesos según la UF del día de emisión.';
+        pintar();
+      })
+      .catch(function () {
+        sinUf('No pudimos obtener el valor de la UF de hoy, así que mostramos ' +
+              'solo el total en UF. Se factura en pesos según la UF del día.');
+      });
+  });
+
+
+  /* ── Sombra del encabezado al despegarse del borde ────────────── */
+  bloque('sombra', function () {
+    var cab = document.querySelector('header');
+    var marcado = false;
+    addEventListener('scroll', function () {
+      var pasado = scrollY > 8;
+      if (pasado !== marcado) {
+        marcado = pasado;
+        cab.style.boxShadow = pasado ? '0 1px 16px rgba(16,20,45,.07)' : 'none';
+      }
+    }, { passive: true });
+  });
+
+  // Clave pública de Web3Forms. Es un identificador, no un secreto:
+  // no expone el correo de destino, que queda guardado en el servicio.
+  // Mientras no esté cargada, la solicitud igual queda guardada en la base.
+  var WEB3FORMS_KEY = '0b90a78b-e045-43d2-b3b2-1f4230ec1ec8';
+  var CLAVE_LISTA = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(WEB3FORMS_KEY);
+
+  var form = document.getElementById('f');
+  var msg = document.getElementById('msg');
+  var btn = document.getElementById('enviar');
+
+  function aviso(texto, clase) {
+    msg.textContent = texto;
+    msg.className = 'msg ' + clase;
+  }
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var datos = Object.fromEntries(new FormData(form).entries());
+    datos.origen = 'sitio-kolevia';
+
+    if (!datos.nombre.trim() || !datos.email.trim()) {
+      aviso('Completa tu nombre y tu correo para poder responderte.', 'err');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+
+    // La base es el registro de verdad: si queda guardada, la solicitud no se
+    // pierde aunque el correo falle.
+    var guardada = false;
+    try {
+      var rb = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+      });
+      guardada = rb.ok;
+    } catch (e) { /* sin conexión con el servidor */ }
+
+    // El aviso por correo es adicional y solo corre si la clave está cargada
+    var avisada = false;
+    if (CLAVE_LISTA) {
+      try {
+        var r = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            access_key: WEB3FORMS_KEY,
+            subject: 'Kolevia · solicitud de demo de ' + datos.nombre,
+            from_name: 'Sitio Kolevia',
+            replyto: datos.email,
+            nombre: datos.nombre,
+            correo: datos.email,
+            telefono: datos.telefono || '—',
+            colegio: datos.colegio || '—',
+            mensaje: datos.mensaje || '(sin mensaje)'
+          })
+        });
+        var j = await r.json().catch(function () { return {}; });
+        avisada = r.ok && j.success !== false;
+      } catch (e) { /* el correo falló, pero puede estar guardada */ }
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Solicitar demostración';
+
+    if (guardada || avisada) {
+      form.reset();
+      aviso('¡Gracias! Recibimos tu solicitud y te contactaremos dentro de 48 horas hábiles.', 'ok');
+    } else {
+      aviso('No pudimos enviar tu solicitud. Vuelve a intentarlo en unos minutos, '
+            + 'por favor.', 'err');
+    }
+  });
+</script>
+</body>
+</html>

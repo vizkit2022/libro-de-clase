@@ -17,16 +17,22 @@ import ApoderadoPage from './pages/Apoderado/ApoderadoPage';
 import OcrAnnotationPage from './pages/Management/OcrAnnotationPage';
 import SubjectCurriculumPage from './pages/Courses/SubjectCurriculumPage';
 import ProfesorPage from './pages/Profesor/ProfesorPage';
-import ConvivenciaPage from './pages/Convivencia/ConvivenciaPage';
-import ApoderadoConvivenciaPage from './pages/Apoderado/ApoderadoConvivenciaPage';
 import StudentFichaPage from './pages/Students/StudentFichaPage';
 import StudentImportPage from './pages/Students/StudentImportPage';
+import ConvivenciaDashboard from './pages/Convivencia/ConvivenciaDashboard';
+import ConvivenciaCasosPage, { ConvivenciaCasoForm } from './pages/Convivencia/ConvivenciaCasosPage';
+import ConvivenciaCasoDetail from './pages/Convivencia/ConvivenciaCasoDetail';
+import CargaAcademicaDashboard from './pages/CargaAcademica/CargaAcademicaDashboard';
+import CargaDocenteDetail from './pages/CargaAcademica/CargaDocenteDetail';
+import MatriculaPage from './pages/Matricula/MatriculaPage';
+import OnboardingPage from './pages/Onboarding/OnboardingPage';
 
 // Super Admin
 import SuperAdminLayout from './pages/SuperAdmin/SuperAdminLayout';
 import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard';
 import SchoolsManagementPage, { SchoolFormPage, SchoolDetailPage } from './pages/SuperAdmin/SchoolsManagementPage';
 import SubscriptionsPage from './pages/SuperAdmin/SubscriptionsPage';
+import AdminsPage from './pages/SuperAdmin/AdminsPage';
 
 const RedirectByRole = () => {
   const { user } = useAuth();
@@ -75,6 +81,7 @@ export default function App() {
             <Route path="schools/:id" element={<SchoolDetailPage />} />
             <Route path="schools/:id/edit" element={<SchoolFormPage />} />
             <Route path="subscriptions" element={<SubscriptionsPage />} />
+            <Route path="admins" element={<AdminsPage />} />
           </Route>
 
           {/* App normal de colegios */}
@@ -85,6 +92,7 @@ export default function App() {
           }>
             <Route index element={<RedirectByRole />} />
             <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="onboarding" element={<PrivateRoute roles={['admin','directivo']}><OnboardingPage /></PrivateRoute>} />
             <Route path="users" element={<PrivateRoute roles={['admin','directivo']}><UsersPage /></PrivateRoute>} />
             <Route path="parameters" element={<PrivateRoute roles={['admin','directivo']}><ParametersPage /></PrivateRoute>} />
             <Route path="periods" element={<PrivateRoute roles={['admin','directivo']}><PeriodsPage /></PrivateRoute>} />
@@ -96,12 +104,20 @@ export default function App() {
             <Route path="students/import" element={<PrivateRoute roles={['admin','directivo']}><StudentImportPage /></PrivateRoute>} />
             <Route path="students/:id/ficha" element={<PrivateRoute roles={['admin','directivo','profesor','apoderado','alumno']}><StudentFichaPage /></PrivateRoute>} />
             <Route path="students/:id/life" element={<PrivateRoute roles={['admin','directivo','profesor','apoderado','alumno']}><StudentLifePage /></PrivateRoute>} />
-            <Route path="convivencia" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaPage /></PrivateRoute>} />
-            <Route path="apoderado/convivencia" element={<PrivateRoute roles={['apoderado']}><ApoderadoConvivenciaPage /></PrivateRoute>} />
             <Route path="reports" element={<PrivateRoute roles={['admin','directivo','profesor']}><ReportsPage /></PrivateRoute>} />
             <Route path="apoderado" element={<PrivateRoute roles={['apoderado']}><ApoderadoPage /></PrivateRoute>} />
             <Route path="mis-cursos" element={<PrivateRoute roles={['profesor']}><ProfesorPage /></PrivateRoute>} />
             <Route path="ocr-annotations" element={<PrivateRoute roles={['admin','directivo','profesor']}><OcrAnnotationPage /></PrivateRoute>} />
+            {/* Módulo Convivencia */}
+            <Route path="convivencia" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaDashboard /></PrivateRoute>} />
+            <Route path="convivencia/casos" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasosPage /></PrivateRoute>} />
+            <Route path="convivencia/casos/nuevo" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoForm /></PrivateRoute>} />
+            <Route path="convivencia/casos/:id" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoDetail /></PrivateRoute>} />
+            <Route path="convivencia/casos/:id/editar" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoForm /></PrivateRoute>} />
+            {/* Módulo Carga Académica */}
+            <Route path="matricula" element={<PrivateRoute roles={['admin','directivo']}><MatriculaPage /></PrivateRoute>} />
+            <Route path="carga-academica" element={<PrivateRoute roles={['admin','directivo']}><CargaAcademicaDashboard /></PrivateRoute>} />
+            <Route path="carga-academica/docentes/:id" element={<PrivateRoute roles={['admin','directivo']}><CargaDocenteDetail /></PrivateRoute>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
