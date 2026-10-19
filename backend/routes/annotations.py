@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
-from models import db, Annotation
+from models import db, Annotation, User
 from datetime import date
+from routes.access import current_claims, allowed_student_ids, forbidden
 
 annotations_bp = Blueprint('annotations', __name__)
 
@@ -9,14 +10,20 @@ annotations_bp = Blueprint('annotations', __name__)
 @jwt_required()
 def get_annotations():
     claims = get_jwt()
+    me = current_claims()
     school_id = claims.get('school_id')
     student_id = request.args.get('student_id', type=int)
     course_id = request.args.get('course_id', type=int)
     annotation_type = request.args.get('type')
 
-    query = Annotation.query.join(
-        __import__('models').User, Annotation.student_id == __import__('models').User.id
-    ).filter(__import__('models').User.school_id == school_id)
+    query = Annotation.query.join(User, Annotation.student_id == User.id).filter(User.school_id == school_id)
+
+    # Apoderado / alumno: solo anotaciones de sus alumnos
+    allowed = allowed_student_ids(me)
+    if allowed is not None:
+        if not allowed:
+            return jsonify([]), 200
+        query = query.filter(Annotation.student_id.in_(allowed))
 
     if student_id:
         query = query.filter(Annotation.student_id == student_id)
@@ -54,6 +61,8 @@ def create_annotation():
 @jwt_required()
 def update_annotation(annotation_id):
     claims = get_jwt()
+    if claims.get('role') not in ['admin', 'directivo', 'profesor']:
+        return forbidden()
     annotation = Annotation.query.get_or_404(annotation_id)
     data = request.get_json()
     for field in ['annotation_type', 'title', 'description']:

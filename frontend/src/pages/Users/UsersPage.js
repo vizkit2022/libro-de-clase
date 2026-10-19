@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import UserAvatar, { avatarColor, compressImage } from '../../components/UserAvatar/UserAvatar';
+import UserAvatar, { avatarColor, compressImage, useUserPhoto } from '../../components/UserAvatar/UserAvatar';
 
 const ROLES = ['admin','directivo','profesor','apoderado','alumno'];
 
@@ -12,10 +12,9 @@ function PhotoUploadSection({ editing, form, pendingPhoto, setPendingPhoto, prim
 
   // Foto que mostrar: pendingPhoto (preview) > foto existente > iniciales
   const previewSrc = pendingPhoto || null;
-  const API_BASE = process.env.REACT_APP_API_URL || '';
-  const existingPhotoUrl = (!pendingPhoto && editing?.has_photo && editing?.id)
-    ? `${API_BASE}/api/users/${editing.id}/photo`
-    : null;
+  // La foto requiere autenticación: se descarga vía axios (Bearer) como blob
+  const { url: fetchedPhotoUrl } = useUserPhoto(editing?.id, !!(editing?.has_photo && editing?.id));
+  const existingPhotoUrl = !pendingPhoto ? fetchedPhotoUrl : null;
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];

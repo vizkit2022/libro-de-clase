@@ -2,15 +2,19 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from models import db, Grade, Annotation, Enrollment, Course, User, Period, CourseSubject
 from sqlalchemy import func
+from routes.access import current_claims, can_view_student, only_published, is_staff, forbidden
 
 reports_bp = Blueprint('reports', __name__)
 
 @reports_bp.route('/course/<int:course_id>/grades', methods=['GET'])
 @jwt_required()
 def course_grades_report(course_id):
-    """Informe de notas completo de un curso por período"""
+    """Informe de notas completo de un curso por período (solo equipo docente)"""
+    me = current_claims()
+    if not is_staff(me['role']):
+        return forbidden()
     period_id = request.args.get('period_id', type=int)
-    course = Course.query.get_or_404(course_id)
+    course = Course.query.filter_by(id=course_id, school_id=me['school_id']).first_or_404()
     enrollments = Enrollment.query.filter_by(course_id=course_id, is_active=True).all()
 
     report = {'course': course.to_dict(), 'students': []}
@@ -50,15 +54,30 @@ def course_grades_report(course_id):
 @reports_bp.route('/student/<int:student_id>/life', methods=['GET'])
 @jwt_required()
 def student_life_report(student_id):
-    """Hoja de vida completa del alumno"""
-    student = User.query.get_or_404(student_id)
-    grades = Grade.query.filter_by(student_id=student_id).all()
+    """Hoja de vida completa del alumno.
+    Apoderado: solo sus alumnos vinculados y solo notas publicadas. Alumno: solo él mismo."""
+    me = current_claims()
+    if not can_view_student(me, student_id):
+        return forbidden()
+    student = User.query.filter_by(id=student_id, school_id=me['school_id']).first_or_404()
+    grades_q = Grade.query.filter_by(student_id=student_id)
+    if only_published(me):
+        grades_q = grades_q.filter(Grade.is_published == True)
+    grades = grades_q.all()
     annotations = Annotation.query.filter_by(student_id=student_id).order_by(Annotation.date.desc()).all()
     enrollments = Enrollment.query.filter_by(student_id=student_id).all()
 
+    enrollments_data = []
+    for e in enrollments:
+        d = e.to_dict()
+        d['course_name'] = e.course.name if e.course else None
+        enrollments_data.append(d)
+
     return jsonify({
         'student': student.to_dict(),
-        'enrollments': [e.to_dict() for e in enrollments],
+        'read_only': not is_staff(me['role']),
+        'only_published': only_published(me),
+        'enrollments': enrollments_data,
         'grades': [g.to_dict() for g in grades],
         'annotations': [a.to_dict() for a in annotations],
         'annotations_summary': {
@@ -74,6 +93,8 @@ def student_life_report(student_id):
 def school_summary():
     """Resumen general del colegio"""
     claims = get_jwt()
+    if claims.get('role') not in ('admin', 'directivo', 'profesor', 'super_admin'):
+        return forbidden()
     school_id = claims.get('school_id')
     year = request.args.get('year', 2026, type=int)
 

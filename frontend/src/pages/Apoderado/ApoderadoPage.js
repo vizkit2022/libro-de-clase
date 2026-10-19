@@ -62,8 +62,8 @@ export default function ApoderadoPage() {
     return '#ef4444';
   };
 
-  const getCourseFromEnrollments = (life) => {
-    return life?.enrollments?.[0]?.course_name || null;
+  const getCourseFromEnrollments = (life, s) => {
+    return life?.enrollments?.[0]?.course_name || s?.course_name || null;
   };
 
   return (
@@ -73,7 +73,7 @@ export default function ApoderadoPage() {
         <div>
           <h1 className="page-title">🏠 Mis alumnos</h1>
           <p className="page-subtitle">
-            Hola, {user?.first_name}. Aquí puedes hacer seguimiento a tus alumnos.
+            Hola, {user?.first_name}. Aquí puedes hacer seguimiento a tus alumnos: calificaciones publicadas por sus profesores, anotaciones y casos de convivencia. Esta vista es solo de lectura.
           </p>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function ApoderadoPage() {
             const annotations = life?.annotations || [];
             const posCount = annotations.filter(a => a.annotation_type === 'positiva').length;
             const negCount = annotations.filter(a => a.annotation_type === 'negativa').length;
-            const courseName = getCourseFromEnrollments(life);
+            const courseName = getCourseFromEnrollments(life, s);
 
             return (
               <div key={s.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -123,7 +123,7 @@ export default function ApoderadoPage() {
                       </p>
                       {courseName && (
                         <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 0' }}>
-                          📚 {courseName}
+                          📚 {courseName}{s.relationship ? ` · ${s.relationship}` : ''}
                         </p>
                       )}
                       {!life && (
@@ -192,7 +192,7 @@ export default function ApoderadoPage() {
                     </>
                   ) : life ? (
                     <p style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', padding: '6px 0' }}>
-                      Sin calificaciones registradas aún
+                      Sin calificaciones publicadas aún
                     </p>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', padding: '6px 0' }}>
@@ -246,6 +246,26 @@ export default function ApoderadoPage() {
                     onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                   >
                     📋 Ver hoja de vida completa
+                  </Link>
+                  <Link
+                    to={`/students/${s.id}/life?tab=convivencia`}
+                    style={{
+                      display: 'block', textAlign: 'center', padding: '8px 0', marginTop: 8,
+                      background: '#fff', color: primary, border: `1px solid ${primary}55`,
+                      borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none',
+                    }}
+                  >
+                    🤝 Casos de convivencia
+                  </Link>
+                  <Link
+                    to={`/students/${s.id}/ficha`}
+                    style={{
+                      display: 'block', textAlign: 'center', padding: '8px 0', marginTop: 8,
+                      background: '#fff', color: primary, border: `1px solid ${primary}55`,
+                      borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none',
+                    }}
+                  >
+                    🗂️ Ver ficha
                   </Link>
                 </div>
               </div>

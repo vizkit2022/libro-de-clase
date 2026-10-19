@@ -38,6 +38,7 @@ npm start
 | Admin      | admin@sanpatricio.cl           | admin123    |
 | Directivo  | directivo@sanpatricio.cl       | dir123      |
 | Profesor   | mvaldes@sanpatricio.cl         | prof123     |
+| Apoderado  | apoderado@sanpatricio.cl       | apod123     |
 | Alumno     | pedro.alvarado@gmail.com       | alumno123   |
 
 ---
@@ -84,6 +85,18 @@ npm start
 - Informe de notas por curso y período
 - Estadísticas del colegio
 - Impresión directa
+
+### 9. 🤝 Convivencia Escolar
+- Casos con 5 etapas (Anexos 1-5) e impresión de cada anexo
+- Afectados/involucrados se pueden **vincular a un alumno del colegio**
+- El caso se puede **vincular a un apoderado** (Anexo 2)
+
+### 10. 👨‍👧 Portal del apoderado (solo lectura)
+- El apoderado ve **únicamente a los alumnos vinculados** (Usuarios → Apoderado → alumnos)
+- Calificaciones: solo las **publicadas** por el profesor (botón *Publicar* en Calificaciones o en la Hoja de vida)
+- Anotaciones de sus alumnos
+- Seguimiento de casos de convivencia vinculados a sus alumnos o a él/ella como apoderado
+- No puede crear ni editar nada; la API rechaza cualquier escritura (403)
 
 ---
 
@@ -143,7 +156,7 @@ npm start
 ---
 
 ## 🔮 Próximas mejoras sugeridas
-- [ ] Módulo de apoderados (ver notas de sus hijos)
+- [x] Módulo de apoderados (ver notas de sus hijos)
 - [ ] Notificaciones por email
 - [ ] Exportar reportes a PDF/Excel
 - [ ] App móvil

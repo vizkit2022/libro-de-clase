@@ -17,6 +17,10 @@ import ApoderadoPage from './pages/Apoderado/ApoderadoPage';
 import OcrAnnotationPage from './pages/Management/OcrAnnotationPage';
 import SubjectCurriculumPage from './pages/Courses/SubjectCurriculumPage';
 import ProfesorPage from './pages/Profesor/ProfesorPage';
+import ConvivenciaPage from './pages/Convivencia/ConvivenciaPage';
+import ApoderadoConvivenciaPage from './pages/Apoderado/ApoderadoConvivenciaPage';
+import StudentFichaPage from './pages/Students/StudentFichaPage';
+import StudentImportPage from './pages/Students/StudentImportPage';
 
 // Super Admin
 import SuperAdminLayout from './pages/SuperAdmin/SuperAdminLayout';
@@ -84,12 +88,16 @@ export default function App() {
             <Route path="users" element={<PrivateRoute roles={['admin','directivo']}><UsersPage /></PrivateRoute>} />
             <Route path="parameters" element={<PrivateRoute roles={['admin','directivo']}><ParametersPage /></PrivateRoute>} />
             <Route path="periods" element={<PrivateRoute roles={['admin','directivo']}><PeriodsPage /></PrivateRoute>} />
-            <Route path="courses" element={<CoursesPage />} />
-            <Route path="courses/:id" element={<CourseDetailPage />} />
-            <Route path="courses/:courseId/subject/:courseSubjectId" element={<SubjectCurriculumPage />} />
+            <Route path="courses" element={<PrivateRoute roles={['admin','directivo','profesor']}><CoursesPage /></PrivateRoute>} />
+            <Route path="courses/:id" element={<PrivateRoute roles={['admin','directivo','profesor']}><CourseDetailPage /></PrivateRoute>} />
+            <Route path="courses/:courseId/subject/:courseSubjectId" element={<PrivateRoute roles={['admin','directivo','profesor']}><SubjectCurriculumPage /></PrivateRoute>} />
             <Route path="subjects" element={<PrivateRoute roles={['admin','directivo','profesor']}><SubjectsPage /></PrivateRoute>} />
             <Route path="grades" element={<PrivateRoute roles={['admin','directivo','profesor']}><GradesPage /></PrivateRoute>} />
-            <Route path="students/:id/life" element={<StudentLifePage />} />
+            <Route path="students/import" element={<PrivateRoute roles={['admin','directivo']}><StudentImportPage /></PrivateRoute>} />
+            <Route path="students/:id/ficha" element={<PrivateRoute roles={['admin','directivo','profesor','apoderado','alumno']}><StudentFichaPage /></PrivateRoute>} />
+            <Route path="students/:id/life" element={<PrivateRoute roles={['admin','directivo','profesor','apoderado','alumno']}><StudentLifePage /></PrivateRoute>} />
+            <Route path="convivencia" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaPage /></PrivateRoute>} />
+            <Route path="apoderado/convivencia" element={<PrivateRoute roles={['apoderado']}><ApoderadoConvivenciaPage /></PrivateRoute>} />
             <Route path="reports" element={<PrivateRoute roles={['admin','directivo','profesor']}><ReportsPage /></PrivateRoute>} />
             <Route path="apoderado" element={<PrivateRoute roles={['apoderado']}><ApoderadoPage /></PrivateRoute>} />
             <Route path="mis-cursos" element={<PrivateRoute roles={['profesor']}><ProfesorPage /></PrivateRoute>} />

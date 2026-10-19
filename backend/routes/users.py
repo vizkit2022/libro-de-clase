@@ -4,6 +4,7 @@ from models import db, User, School, StudentGuardian, Course, CourseSubject, Enr
 from sqlalchemy import or_
 from functools import wraps
 import base64
+from routes.access import current_claims, allowed_student_ids, can_view_student, forbidden
 
 users_bp = Blueprint('users', __name__)
 
@@ -23,6 +24,9 @@ def require_roles(*roles):
 def get_users():
     claims = get_jwt()
     school_id = claims.get('school_id')
+    # Apoderados y alumnos no pueden listar usuarios del colegio
+    if claims.get('role') in ('apoderado', 'alumno'):
+        return forbidden()
     role_filter = request.args.get('role')
     query = User.query.filter_by(school_id=school_id)
     if role_filter:
@@ -34,7 +38,12 @@ def get_users():
 @jwt_required()
 def get_user(user_id):
     claims = get_jwt()
+    me = current_claims()
     school_id = claims.get('school_id')
+    # Apoderado: solo él mismo o sus alumnos. Alumno: solo él mismo.
+    allowed = allowed_student_ids(me)
+    if allowed is not None and user_id != me['user_id'] and user_id not in allowed:
+        return forbidden()
     user = User.query.filter_by(id=user_id, school_id=school_id).first_or_404()
     return jsonify(user.to_dict()), 200
 
@@ -76,13 +85,21 @@ def update_user(user_id):
     school_id = claims.get('school_id')
     current_user_id = int(get_jwt()['sub'] if 'sub' in get_jwt() else 0)
 
+    # Solo admin/directivo editan a otros. Apoderado/alumno: solo su propia contraseña/teléfono.
+    if current_user_id != user_id and claims.get('role') not in ('admin', 'directivo'):
+        return forbidden()
+
     user = User.query.filter_by(id=user_id, school_id=school_id).first_or_404()
     data = request.get_json()
 
-    for field in ['first_name', 'last_name', 'rut', 'phone', 'address', 'gender', 'avatar_url']:
+    if claims.get('role') in ('apoderado', 'alumno'):
+        editable = ['phone', 'avatar_url']
+    else:
+        editable = ['first_name', 'last_name', 'rut', 'phone', 'address', 'gender', 'avatar_url']
+    for field in editable:
         if field in data:
             setattr(user, field, data[field])
-    if 'birth_date' in data and data['birth_date']:
+    if 'birth_date' in data and data['birth_date'] and claims.get('role') in ('admin', 'directivo', 'profesor'):
         from datetime import date
         user.birth_date = date.fromisoformat(data['birth_date'])
     if 'role' in data and claims.get('role') in ['admin', 'directivo']:
@@ -120,6 +137,8 @@ def get_teacher_courses(user_id):
     # El profesor solo puede ver sus propios cursos; admin/directivo pueden ver de cualquiera
     if current_role == 'profesor' and current_user_id != user_id:
         return jsonify({'error': 'Sin permisos'}), 403
+    if current_role in ('apoderado', 'alumno'):
+        return forbidden()
 
     # Cursos donde es profesor jefe O imparte asignaturas
     subject_course_ids = db.session.query(CourseSubject.course_id).filter_by(teacher_id=user_id).subquery()
@@ -176,8 +195,10 @@ def get_guardian_students(user_id):
     current_user_id = int(claims.get('sub', 0))
     current_role = claims.get('role')
 
-    # El apoderado solo puede ver sus propios alumnos
+    # El apoderado solo puede ver sus propios alumnos; el alumno no usa este endpoint
     if current_role == 'apoderado' and current_user_id != user_id:
+        return jsonify({'error': 'Sin permisos'}), 403
+    if current_role == 'alumno':
         return jsonify({'error': 'Sin permisos'}), 403
 
     relations = StudentGuardian.query.filter_by(guardian_id=user_id).all()
@@ -187,6 +208,9 @@ def get_guardian_students(user_id):
         if s:
             d = s.to_dict()
             d['relationship'] = r.relationship
+            enr = Enrollment.query.filter_by(student_id=s.id, is_active=True).order_by(Enrollment.year.desc()).first()
+            d['course_id'] = enr.course_id if enr else None
+            d['course_name'] = enr.course.name if enr and enr.course else None
             students.append(d)
     return jsonify(students), 200
 
@@ -224,10 +248,22 @@ def set_guardian_students(user_id):
 # ── Foto de perfil ────────────────────────────────────────────────────────
 
 @users_bp.route('/<int:user_id>/photo', methods=['GET'])
+@jwt_required(locations=['headers', 'query_string'])
 def get_user_photo(user_id):
-    """Sirve la foto de perfil como imagen binaria (sin autenticación, para usar como <img src>)."""
+    """Sirve la foto de perfil como imagen binaria.
+
+    Requiere JWT (header Authorization o ?token=<jwt> para usar en <img src>).
+    Solo usuarios del mismo colegio; apoderado/alumno solo su propia foto o la
+    de sus alumnos vinculados.
+    """
+    claims = current_claims()
     user = User.query.filter_by(id=user_id).first()
-    if not user or not user.photo:
+    if not user or (claims['role'] != 'super_admin' and user.school_id != claims['school_id']):
+        return jsonify({'error': 'Sin foto'}), 404
+    if claims['role'] in ('apoderado', 'alumno') and user_id != claims['user_id'] \
+            and not can_view_student(claims, user_id):
+        return forbidden()
+    if not user.photo:
         return jsonify({'error': 'Sin foto'}), 404
 
     try:
@@ -245,7 +281,7 @@ def get_user_photo(user_id):
             img_bytes,
             mimetype=mime,
             headers={
-                'Cache-Control': 'public, max-age=86400',  # cache 1 día
+                'Cache-Control': 'private, max-age=3600',  # nunca en caches compartidos
                 'Content-Length': str(len(img_bytes))
             }
         )

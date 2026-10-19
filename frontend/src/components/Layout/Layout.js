@@ -19,11 +19,14 @@ const navItems = [
   { to: '/parameters', icon: '🏫', label: 'Colegio', roles: ['admin','directivo'] },
   { to: '/periods', icon: '📅', label: 'Períodos', roles: ['admin','directivo'] },
   { to: '/courses', icon: '📚', label: 'Cursos', roles: ['admin','directivo','profesor'] },
+  { to: '/students/import', icon: '📥', label: 'Importar matrícula', roles: ['admin','directivo'] },
   { to: '/subjects', icon: '📖', label: 'Asignaturas', roles: ['admin','directivo','profesor'] },
   { to: '/grades', icon: '✏️', label: 'Calificaciones', roles: ['admin','directivo','profesor'] },
   { to: '/reports', icon: '📊', label: 'Reportes', roles: ['admin','directivo','profesor'] },
   { to: '/ocr-annotations', icon: '📷', label: 'Escanea anotaciones', roles: ['admin','directivo','profesor'] },
+  { to: '/convivencia', icon: '🤝', label: 'Convivencia', roles: ['admin','directivo','profesor'] },
   { to: '/apoderado', icon: '👨‍👧', label: 'Mis alumnos', roles: ['apoderado'] },
+  { to: '/apoderado/convivencia', icon: '🤝', label: 'Convivencia', roles: ['apoderado'] },
 ];
 
 export default function Layout() {
@@ -54,7 +57,10 @@ export default function Layout() {
           {sidebarOpen && (
             <div className="school-info">
               <h2>{school?.name || 'Colegio'}</h2>
-              <span className="role-badge">{ROLE_LABELS[user?.role] || user?.role}</span>
+              <span className="role-badge">
+                {ROLE_LABELS[user?.role] || user?.role}
+                {(user?.role === 'apoderado' || user?.role === 'alumno') && ' · solo lectura'}
+              </span>
             </div>
           )}
           <button className="toggle-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>

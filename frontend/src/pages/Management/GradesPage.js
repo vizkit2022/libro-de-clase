@@ -23,7 +23,7 @@ const calcAvg = (vals) => {
 };
 
 // ── Celda individual ────────────────────────────────────────────────
-const GradeCell = React.memo(({ value, onChange, onKeyDown, inputRef, isExisting, gradeId, onDelete }) => {
+const GradeCell = React.memo(({ value, onChange, onKeyDown, inputRef, isExisting, isPublished }) => {
   const col = gradeColor(value);
   const empty = value === '' || value === null || value === undefined;
 
@@ -58,13 +58,21 @@ const GradeCell = React.memo(({ value, onChange, onKeyDown, inputRef, isExisting
         }}
         onWheel={e => e.target.blur()} // evita cambio accidental con scroll
       />
-      {/* Indicador de nota guardada */}
+      {/* Indicador de nota guardada: punto = publicada, anillo ámbar = pendiente de publicar */}
       {isExisting && !empty && col && (
-        <span style={{
-          position: 'absolute', top: 2, right: 3,
-          width: 5, height: 5, borderRadius: '50%',
-          background: col.dot, flexShrink: 0
-        }} title="Nota guardada" />
+        isPublished ? (
+          <span style={{
+            position: 'absolute', top: 2, right: 3,
+            width: 5, height: 5, borderRadius: '50%',
+            background: col.dot, flexShrink: 0
+          }} title="Nota publicada (visible para apoderados y alumnos)" />
+        ) : (
+          <span style={{
+            position: 'absolute', top: 1, right: 2,
+            width: 7, height: 7, borderRadius: '50%',
+            background: '#fff', border: '2px solid #f59e0b', boxSizing: 'border-box', flexShrink: 0
+          }} title="Nota guardada, pendiente de publicar (aún no visible para apoderados)" />
+        )
       )}
     </div>
   );
@@ -91,6 +99,7 @@ export default function GradesPage() {
 
   const [view, setView]                 = useState('grid'); // grid | summary
   const [saving, setSaving]             = useState(false);
+  const [publishing, setPublishing]     = useState(false);
   const [toast, setToast]               = useState(null);
 
   // refs de todos los inputs para navegación con Tab
@@ -234,15 +243,17 @@ export default function GradesPage() {
 
       // Estrategia: borrar todo y reinsertar (bulk insert)
       // Construir payload con TODAS las notas no vacías de la grilla
+      // Nota: al reinsertar, conservamos el estado de publicación de la nota que ocupaba la misma columna
       const allGrades = [];
       students.forEach(e => {
         const sid = e.student_id;
         const row = gridData[sid] || [];
-        row.forEach((val) => {
+        const prevRow = existingGrades.filter(g => g.student_id === sid).sort((a, b) => a.id - b.id);
+        row.forEach((val, colIdx) => {
           if (val !== '' && val !== null) {
             const num = parseFloat(val);
             if (!isNaN(num) && num >= 1 && num <= 7) {
-              allGrades.push({ student_id: sid, value: num });
+              allGrades.push({ student_id: sid, value: num, is_published: !!prevRow[colIdx]?.is_published });
             }
           }
         });
@@ -280,6 +291,31 @@ export default function GradesPage() {
       showToast('Error al guardar las notas', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ── Publicar / despublicar notas de la asignatura + período ───────
+  const pendingCount = existingGrades.filter(g => !g.is_published).length;
+  const publishedCount = existingGrades.filter(g => g.is_published).length;
+
+  const handlePublish = async (publish = true) => {
+    const cs = courseDetail?.subjects?.find(s => String(s.id) === selectedSubject);
+    if (!cs || !selectedPeriod) return;
+    if (dirty) { showToast('Guarda las notas antes de publicar', 'error'); return; }
+    setPublishing(true);
+    try {
+      const { data } = await axios.post(`/api/grades/${publish ? 'publish' : 'unpublish'}`, {
+        course_subject_id: cs.id, period_id: parseInt(selectedPeriod),
+      });
+      const n = publish ? data.published : data.unpublished;
+      showToast(publish
+        ? `📢 ${n} ${n === 1 ? 'nota publicada' : 'notas publicadas'} · ya visibles para apoderados y alumnos`
+        : `🔒 ${n} ${n === 1 ? 'nota retirada' : 'notas retiradas'} de la vista de apoderados`);
+      await loadGrades();
+    } catch {
+      showToast('Error al cambiar la publicación', 'error');
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -531,8 +567,34 @@ export default function GradesPage() {
                 </p>
               )}
             </div>
-            {/* Leyenda de colores */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+            {/* Estado de publicación + leyenda de colores */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {existingGrades.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 6 }}>
+                  <span style={{ padding: '3px 9px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                    background: pendingCount ? '#fef3c7' : '#dcfce7', color: pendingCount ? '#92400e' : '#166534',
+                    border: `1.5px solid ${pendingCount ? '#fcd34d' : '#86efac'}` }}
+                    title="Las notas pendientes solo las ve el equipo docente; al publicar quedan visibles para apoderados y alumnos">
+                    {pendingCount ? `⏳ ${pendingCount} sin publicar` : `✓ ${publishedCount} publicadas`}
+                  </span>
+                  {pendingCount > 0 && (
+                    <button onClick={() => handlePublish(true)} disabled={publishing || dirty}
+                      style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, border: 'none', fontFamily: 'inherit',
+                        cursor: publishing || dirty ? 'not-allowed' : 'pointer', background: dirty ? '#e2e8f0' : '#f59e0b', color: dirty ? '#94a3b8' : 'white' }}
+                      title={dirty ? 'Guarda las notas primero' : 'Publicar las notas pendientes de esta asignatura y período'}>
+                      {publishing ? '⏳' : '📢 Publicar'}
+                    </button>
+                  )}
+                  {publishedCount > 0 && (
+                    <button onClick={() => handlePublish(false)} disabled={publishing || dirty}
+                      style={{ padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+                        cursor: publishing || dirty ? 'not-allowed' : 'pointer', background: 'white', color: '#64748b', border: '1px solid #e2e8f0' }}
+                      title="Retirar la publicación (los apoderados dejan de ver estas notas)">
+                      🔒 Despublicar
+                    </button>
+                  )}
+                </div>
+              )}
               {[
                 { label: '≥6.0', bg: '#dcfce7', border: '#86efac', color: '#166534' },
                 { label: '5–5.9', bg: '#fef9c3', border: '#fde047', color: '#854d0e' },
@@ -583,8 +645,9 @@ export default function GradesPage() {
                   const avg = calcAvg(row);
                   const avgCol = avg ? gradeColor(avg) : null;
 
-                  // Cuántas notas tiene este alumno en la BD
-                  const existingCount = existingGrades.filter(g => g.student_id === sid).length;
+                  // Notas de este alumno en la BD (en orden de creación, igual que la grilla)
+                  const studentExisting = existingGrades.filter(g => g.student_id === sid).sort((a, b) => a.id - b.id);
+                  const existingCount = studentExisting.length;
 
                   return (
                     <tr key={e.id}
@@ -628,6 +691,7 @@ export default function GradesPage() {
                             <GradeCell
                               value={val}
                               isExisting={isExisting}
+                              isPublished={!!studentExisting[colIdx]?.is_published}
                               onChange={v => handleCellChange(sid, colIdx, v)}
                               onKeyDown={ev => handleKeyDown(ev, sid, colIdx, studentIdx)}
                               inputRef={el => { cellRefs.current[`${sid}_${colIdx}`] = el; }}
@@ -724,7 +788,8 @@ export default function GradesPage() {
             <div style={{ display: 'flex', gap: 16, fontSize: 11, color: '#94a3b8' }}>
               <span>⌨️ <strong>Tab</strong> / <strong>Enter</strong> → siguiente celda</span>
               <span>↑↓←→ navegar</span>
-              <span>🔵 punto = nota guardada</span>
+              <span>🔵 punto = nota publicada</span>
+              <span>🟠 anillo = guardada, sin publicar</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {dirty && (

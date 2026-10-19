@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import UserAvatar, { avatarColor } from '../../components/UserAvatar/UserAvatar';
+import CasosReadOnlyList from '../Convivencia/CasoReadOnly';
 
 const ANN_COLORS = {
   positiva: { bg: '#d1fae5', color: '#065f46', icon: '⭐' },
@@ -35,16 +36,23 @@ const colorNota = (v) => {
 
 export default function StudentLifePage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const { school, user } = useAuth();
   const primary = school?.primary_color || '#2563EB';
   const [report, setReport] = useState(null);
   const [courses, setCourses] = useState([]);
-  const [tab, setTab] = useState('grades');
+  const [tab, setTab] = useState(searchParams.get('tab') || 'grades');
+  const [forbidden, setForbidden] = useState(false);
+  const [publishingSubject, setPublishingSubject] = useState(null);
   const [showAnnotModal, setShowAnnotModal] = useState(false);
   const [annForm, setAnnForm] = useState(EMPTY_ANN);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const canAnnotate = ['admin','directivo','profesor'].includes(user?.role);
+  // Apoderado y alumno entran en modo solo lectura: nada se puede crear ni editar
+  const readOnly = !canAnnotate;
+  const isApoderado = user?.role === 'apoderado';
+  const backTo = isApoderado ? '/apoderado' : user?.role === 'alumno' ? '/dashboard' : '/courses';
 
   // Grading state
   const [showGradePanel, setShowGradePanel] = useState(false);
@@ -62,6 +70,16 @@ export default function StudentLifePage() {
   const showToast = (msg, type='success') => { setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
 
   const fetchData = async () => {
+    if (readOnly) {
+      // Apoderado/alumno: solo la hoja de vida (el backend filtra a notas publicadas y valida el vínculo)
+      try {
+        const { data } = await axios.get(`/api/reports/student/${id}/life`);
+        setReport(data);
+      } catch (err) {
+        if (err?.response?.status === 403 || err?.response?.status === 404) setForbidden(true);
+      }
+      return;
+    }
     const [repRes, courseRes, periodsRes] = await Promise.all([
       axios.get(`/api/reports/student/${id}/life`),
       axios.get('/api/courses/'),
@@ -140,6 +158,30 @@ export default function StudentLifePage() {
     finally { setSavingGrade(false); }
   };
 
+  const handlePublishSubject = async (subject, gradeIds, publish = true) => {
+    setPublishingSubject(subject);
+    try {
+      const { data } = await axios.post(`/api/grades/${publish ? 'publish' : 'unpublish'}`, { grade_ids: gradeIds });
+      const n = publish ? data.published : data.unpublished;
+      showToast(publish ? `📢 ${n} nota(s) de ${subject} publicada(s)` : `🔒 ${n} nota(s) de ${subject} retirada(s)`);
+      fetchData();
+    } catch { showToast('Error al cambiar la publicación', 'error'); }
+    finally { setPublishingSubject(null); }
+  };
+
+  if (forbidden) return (
+    <div>
+      <Link to={backTo} style={{ color: primary, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>← Volver</Link>
+      <div className="card" style={{ marginTop: 16 }}>
+        <div className="illustration-area">
+          <div className="illustration">🔒</div>
+          <h3>Sin acceso a este alumno</h3>
+          <p>Solo puedes ver la información de los alumnos vinculados a tu cuenta de apoderado.</p>
+        </div>
+      </div>
+    </div>
+  );
+
   if (!report) return <div className="loading-container"><div className="spinner" /></div>;
 
   const { student, annotations, annotations_summary } = report;
@@ -157,7 +199,14 @@ export default function StudentLifePage() {
 
   return (
     <div>
-      <Link to="/courses" style={{ color: primary, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>← Volver</Link>
+      <Link to={backTo} style={{ color: primary, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>← Volver</Link>
+
+      {readOnly && (
+        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, background: '#fffbeb', border: '1px solid #fcd34d',
+          color: '#92400e', borderRadius: 10, padding: '10px 14px', fontSize: 13 }}>
+          👁️ <span><strong>{isApoderado ? 'Modo apoderado' : 'Modo alumno'} · solo lectura.</strong> Se muestran únicamente las calificaciones que el profesor ya publicó. Nada de lo que ves aquí se puede editar.</span>
+        </div>
+      )}
 
       {/* Header alumno */}
       <div className="card" style={{ marginTop: 16, marginBottom: 24, background: `linear-gradient(135deg, ${primary}15, ${primary}05)`, border: `1px solid ${primary}30` }}>
@@ -178,6 +227,9 @@ export default function StudentLifePage() {
               {student.email}
               {student.birth_date && ` · Nac: ${new Date(student.birth_date + 'T12:00').toLocaleDateString('es-CL')}`}
             </p>
+            <Link to={`/students/${id}/ficha`} className="btn btn-secondary btn-sm" style={{ marginTop: 10, color: primary, textDecoration: 'none' }}>
+              🗂️ Ficha completa
+            </Link>
           </div>
           {/* Resumen anotaciones */}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -202,6 +254,9 @@ export default function StudentLifePage() {
         <button className={`tab ${tab === 'annotations' ? 'active' : ''}`} onClick={() => setTab('annotations')}>
           📝 Anotaciones ({annotations.length})
         </button>
+        {user?.role !== 'alumno' && (
+          <button className={`tab ${tab === 'convivencia' ? 'active' : ''}`} onClick={() => setTab('convivencia')}>🤝 Convivencia</button>
+        )}
         <button className={`tab ${tab === 'info' ? 'active' : ''}`} onClick={() => setTab('info')}>👤 Datos personales</button>
       </div>
 
@@ -389,22 +444,45 @@ export default function StudentLifePage() {
 
           {/* Notas existentes por asignatura */}
           {Object.keys(gradesBySubject).length === 0 ? (
-            <div className="card"><div className="illustration-area"><div className="illustration">📊</div><h3>Sin calificaciones</h3><p>Usa el botón "Calificar" para ingresar la primera nota</p></div></div>
+            <div className="card"><div className="illustration-area"><div className="illustration">📊</div>
+              <h3>{readOnly ? 'Sin calificaciones publicadas' : 'Sin calificaciones'}</h3>
+              <p>{readOnly ? 'Cuando el profesor publique las notas, aparecerán aquí.' : 'Usa el botón "Calificar" para ingresar la primera nota'}</p>
+            </div></div>
           ) : Object.entries(gradesBySubject).map(([subject, gs]) => {
             const avg = gs.reduce((a,b) => a + b.value, 0) / gs.length;
+            const pending = gs.filter(g => !g.is_published);
+            const published = gs.filter(g => g.is_published);
             return (
               <div key={subject} className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                   <h3 style={{ fontWeight: 700, fontSize: 15 }}>{subject}</h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {!readOnly && pending.length > 0 && (
+                      <>
+                        <span style={{ fontSize: 11, fontWeight: 700, background: '#fef3c7', color: '#92400e', borderRadius: 6, padding: '3px 8px' }}
+                          title="Estas notas aún no las ven apoderados ni alumnos">⏳ {pending.length} sin publicar</span>
+                        <button onClick={() => handlePublishSubject(subject, pending.map(g => g.id), true)} disabled={publishingSubject === subject}
+                          style={{ fontSize: 11, fontWeight: 700, background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          📢 Publicar
+                        </button>
+                      </>
+                    )}
+                    {!readOnly && pending.length === 0 && published.length > 0 && (
+                      <button onClick={() => handlePublishSubject(subject, published.map(g => g.id), false)} disabled={publishingSubject === subject}
+                        style={{ fontSize: 11, fontWeight: 600, background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                        title="Retirar la publicación de estas notas">
+                        ✓ Publicadas · 🔒 retirar
+                      </button>
+                    )}
                     <span style={{ fontSize: 12, color: '#64748b' }}>Promedio:</span>
                     <span className={`nota-chip ${gradeClass(avg)}`} style={{ fontWeight: 800 }}>{avg.toFixed(1)}</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {gs.map(g => (
-                    <div key={g.id} style={{ textAlign: 'center' }}>
-                      <span className={`nota-chip ${gradeClass(g.value)}`}>{g.value}</span>
+                    <div key={g.id} style={{ textAlign: 'center' }} title={!readOnly && !g.is_published ? 'Pendiente de publicar (no visible para apoderados)' : undefined}>
+                      <span className={`nota-chip ${gradeClass(g.value)}`}
+                        style={!readOnly && !g.is_published ? { outline: '2px dashed #f59e0b', outlineOffset: 1, opacity: 0.8 } : undefined}>{g.value}</span>
                       <p style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
                         {g.period_name?.split(' ')[0]}
                       </p>
@@ -457,9 +535,28 @@ export default function StudentLifePage() {
         </div>
       )}
 
+      {/* Convivencia (solo lectura; el backend filtra los casos visibles) */}
+      {tab === 'convivencia' && (
+        <div>
+          {!readOnly && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+              <Link to="/convivencia" className="btn btn-secondary" style={{ textDecoration: 'none' }}>Ir al módulo de Convivencia →</Link>
+            </div>
+          )}
+          <CasosReadOnlyList studentId={parseInt(id)} compact
+            emptyText={`No hay casos de convivencia vinculados a ${student.first_name}.`} />
+        </div>
+      )}
+
       {/* Datos personales */}
       {tab === 'info' && (
         <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Resumen de datos básicos. La ficha completa incluye familia, antecedentes médicos, permisos y documentos.</p>
+            <Link to={`/students/${id}/ficha`} className="btn btn-primary btn-sm" style={{ background: primary, textDecoration: 'none' }}>
+              🗂️ Ficha completa
+            </Link>
+          </div>
           <div className="form-grid">
             {[
               ['Nombre completo', `${student.first_name} ${student.last_name}`],

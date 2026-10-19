@@ -2,7 +2,7 @@ import os
 from flask import Flask, send_from_directory
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from models import db, School, User, Period, Subject, Course, Enrollment, CourseSubject, Grade, Annotation, Subscription
+from models import db, School, User, Period, Subject, Course, Enrollment, CourseSubject, Grade, Annotation, Subscription, StudentGuardian
 from datetime import datetime, date
 
 # Path to the built React frontend (relative to this file)
@@ -28,10 +28,17 @@ def create_app():
         app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(db_dir, "colegio.db")}'
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # Subidas (documentos de la ficha del alumno, importación de matrícula): máx 25 MB por request
+    app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024
 
     # ── Security ──────────────────────────────────────────────────────────────
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'colegio-secret-key-2024-change-in-production')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False
+    # Por defecto el JWT viaja en el header Authorization. Solo algunas rutas
+    # (p.ej. GET /api/users/<id>/photo, usada en <img src>) aceptan además
+    # ?token=<jwt> vía jwt_required(locations=[...]).
+    app.config['JWT_TOKEN_LOCATION'] = ['headers']
+    app.config['JWT_QUERY_STRING_NAME'] = 'token'
 
     # ── CORS ──────────────────────────────────────────────────────────────────
     allowed_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000').split(',')
@@ -48,10 +55,12 @@ def create_app():
     from routes.subjects import subjects_bp
     from routes.grades import grades_bp
     from routes.annotations import annotations_bp
+    from routes.convivencia import convivencia_bp
     from routes.reports import reports_bp
     from routes.ocr import ocr_bp
     from routes.super_admin import super_admin_bp
     from routes.payments import payments_bp
+    from routes.students import students_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -61,10 +70,12 @@ def create_app():
     app.register_blueprint(subjects_bp, url_prefix='/api/subjects')
     app.register_blueprint(grades_bp, url_prefix='/api/grades')
     app.register_blueprint(annotations_bp, url_prefix='/api/annotations')
+    app.register_blueprint(convivencia_bp, url_prefix='/api/convivencia')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
     app.register_blueprint(ocr_bp, url_prefix='/api/ocr')
     app.register_blueprint(super_admin_bp, url_prefix='/api/super-admin')
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
+    app.register_blueprint(students_bp, url_prefix='/api/students')
 
     # ── Serve React (SPA catch-all) ───────────────────────────────────────────
     @app.route('/', defaults={'path': ''})
@@ -86,9 +97,10 @@ def create_app():
         return {'error': 'Frontend no compilado. Ejecuta: cd frontend && npm run build'}, 503
 
     with app.app_context():
-        db.create_all()
+        db.create_all()  # crea tablas nuevas (no altera columnas existentes)
         run_migrations()
         seed_data()
+        seed_authorization_templates()
 
     return app
 
@@ -130,20 +142,51 @@ def run_migrations():
                 except Exception:
                     conn.rollback()   # ya existía → ignorar
 
+            # 3. Publicación de notas + apoderado vinculado a casos de convivencia
+            for table, col, definition in [
+                ('grades',            'is_published',      'BOOLEAN NOT NULL DEFAULT FALSE'),
+                ('grades',            'published_at',      'TIMESTAMP'),
+                ('convivencia_cases', 'apoderado_user_id', 'INTEGER REFERENCES users(id)'),
+            ]:
+                try:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {definition}"))
+                    conn.commit()
+                    print(f"✅ Migración: columna {table}.{col} agregada")
+                except Exception:
+                    conn.rollback()   # ya existía → ignorar
+
         elif is_sqlite:
             # SQLite tiene ALTER TABLE limitado; solo agregar columnas
-            for col, definition in [
-                ('plan',                    "VARCHAR(20) DEFAULT 'free'"),
-                ('plan_status',             "VARCHAR(20) DEFAULT 'active'"),
-                ('subscription_expires_at', 'DATETIME'),
+            for table, col, definition in [
+                ('schools',           'plan',                    "VARCHAR(20) DEFAULT 'free'"),
+                ('schools',           'plan_status',             "VARCHAR(20) DEFAULT 'active'"),
+                ('schools',           'subscription_expires_at', 'DATETIME'),
+                ('grades',            'is_published',            'BOOLEAN NOT NULL DEFAULT 0'),
+                ('grades',            'published_at',            'DATETIME'),
+                ('convivencia_cases', 'apoderado_user_id',       'INTEGER REFERENCES users(id)'),
             ]:
                 try:
                     conn.execute(text(
-                        f"ALTER TABLE schools ADD COLUMN {col} {definition}"
+                        f"ALTER TABLE {table} ADD COLUMN {col} {definition}"
                     ))
                     conn.commit()
                 except Exception:
                     conn.rollback()   # ya existía
+
+
+def seed_authorization_templates():
+    """Plantillas de autorización por defecto para cada colegio (idempotente)."""
+    from models import ensure_authorization_templates
+    try:
+        created = 0
+        for school in School.query.all():
+            created += ensure_authorization_templates(school.id)
+        db.session.commit()
+        if created:
+            print(f"✅ Plantillas de autorización creadas: {created}")
+    except Exception as e:
+        db.session.rollback()
+        print(f"⚠️  No se pudieron crear las plantillas de autorización: {e}")
 
 
 def seed_data():
@@ -232,6 +275,16 @@ def seed_data():
 
     db.session.flush()
 
+    # Apoderado de ejemplo (vinculado a Pedro y Valentina)
+    apoderado = User(school_id=school.id, email='apoderado@sanpatricio.cl',
+                     first_name='Rosa', last_name='Soto Vera', rut='12.121.212-1',
+                     role='apoderado', phone='+56 9 5555 5555')
+    apoderado.set_password('apod123')
+    db.session.add(apoderado)
+    db.session.flush()
+    db.session.add(StudentGuardian(student_id=alumnos[0].id, guardian_id=apoderado.id, relationship='madre'))
+    db.session.add(StudentGuardian(student_id=alumnos[1].id, guardian_id=apoderado.id, relationship='tía'))
+
     # Asignaturas
     subjects_data = [
         ('Lenguaje y Comunicación', 'LEN', 'LEN', '#EF4444'),
@@ -283,10 +336,12 @@ def seed_data():
     course_subjects = CourseSubject.query.filter_by(course_id=curso.id).all()
     for alumno in alumnos:
         for cs in course_subjects:
-            for _ in range(3):
+            for i in range(3):
                 nota = round(random.uniform(4.5, 7.0), 1)
+                # Las 2 primeras notas quedan publicadas; la 3ra queda pendiente de publicar
                 g = Grade(student_id=alumno.id, course_subject_id=cs.id,
-                          period_id=p1.id, value=nota, grade_type='nota', created_by=prof1.id)
+                          period_id=p1.id, value=nota, grade_type='nota', created_by=prof1.id,
+                          is_published=(i < 2), published_at=datetime.utcnow() if i < 2 else None)
                 db.session.add(g)
 
     # Anotaciones de ejemplo
@@ -309,6 +364,7 @@ def seed_data():
     print("  Admin:       admin@sanpatricio.cl / admin123")
     print("  Directivo:   directivo@sanpatricio.cl / dir123")
     print("  Profesor:    mvaldes@sanpatricio.cl / prof123")
+    print("  Apoderado:   apoderado@sanpatricio.cl / apod123")
     print("  Alumno:      pedro.alvarado@gmail.com / alumno123")
 
 

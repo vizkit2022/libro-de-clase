@@ -98,7 +98,6 @@ export default function LoginPage() {
               {loading ? <span className="spinner-sm" /> : '🔐 Ingresar'}
             </button>
           </form>
-</div>
         </div>
       </div>
     </div>

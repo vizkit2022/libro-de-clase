@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from models import db, Course, Enrollment, CourseSubject, User, StudentGuardian
 from sqlalchemy import or_
 from datetime import date
+from routes.access import forbidden
 
 courses_bp = Blueprint('courses', __name__)
 
@@ -51,6 +52,9 @@ def get_courses():
 @jwt_required()
 def get_course(course_id):
     claims = get_jwt()
+    # El detalle del curso (lista de alumnos) es solo para el equipo docente
+    if claims.get('role') in ('apoderado', 'alumno'):
+        return forbidden()
     course = Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404()
     data = course.to_dict()
     data['students'] = [e.to_dict() for e in course.enrollments if e.is_active]
@@ -136,6 +140,9 @@ def add_subject(course_id):
 @jwt_required()
 def get_guardians(course_id):
     claims = get_jwt()
+    if claims.get('role') in ('apoderado', 'alumno'):
+        return forbidden()
+    Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404()
     enrollments = Enrollment.query.filter_by(course_id=course_id, is_active=True).all()
     guardians = []
     for e in enrollments:

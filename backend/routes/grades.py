@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from models import db, Grade, CourseSubject, Enrollment, User
 from sqlalchemy import func
+from datetime import datetime
+from routes.access import current_claims, allowed_student_ids, can_view_student, only_published, forbidden
 
 grades_bp = Blueprint('grades', __name__)
 
@@ -9,12 +11,23 @@ grades_bp = Blueprint('grades', __name__)
 @jwt_required()
 def get_grades():
     claims = get_jwt()
+    me = current_claims()
     school_id = claims.get('school_id')
     student_id = request.args.get('student_id', type=int)
     course_subject_id = request.args.get('course_subject_id', type=int)
     period_id = request.args.get('period_id', type=int)
 
     query = Grade.query.join(User, Grade.student_id == User.id).filter(User.school_id == school_id)
+
+    # Apoderado / alumno: solo sus alumnos y solo notas publicadas
+    allowed = allowed_student_ids(me)
+    if allowed is not None:
+        if not allowed:
+            return jsonify([]), 200
+        query = query.filter(Grade.student_id.in_(allowed))
+    if only_published(me):
+        query = query.filter(Grade.is_published == True)
+
     if student_id:
         query = query.filter(Grade.student_id == student_id)
     if course_subject_id:
@@ -60,6 +73,7 @@ def create_bulk_grades():
     created = []
     for g in grades_list:
         if g.get('value') is not None:
+            published = bool(g.get('is_published', False))
             grade = Grade(
                 student_id=g['student_id'],
                 course_subject_id=data['course_subject_id'],
@@ -67,7 +81,9 @@ def create_bulk_grades():
                 value=float(g['value']),
                 description=g.get('description'),
                 grade_type=data.get('grade_type', 'nota'),
-                created_by=creator_id
+                created_by=creator_id,
+                is_published=published,
+                published_at=datetime.utcnow() if published else None,
             )
             db.session.add(grade)
             created.append(grade)
@@ -86,6 +102,9 @@ def update_grade(grade_id):
         grade.value = float(data['value'])
     if 'description' in data:
         grade.description = data['description']
+    if 'is_published' in data:
+        grade.is_published = bool(data['is_published'])
+        grade.published_at = datetime.utcnow() if grade.is_published else None
     db.session.commit()
     return jsonify(grade.to_dict()), 200
 
@@ -104,8 +123,13 @@ def delete_grade(grade_id):
 @jwt_required()
 def student_grade_summary(student_id):
     """Resumen de notas por asignatura para un alumno"""
+    me = current_claims()
+    if not can_view_student(me, student_id):
+        return forbidden()
     period_id = request.args.get('period_id', type=int)
     query = Grade.query.filter_by(student_id=student_id)
+    if only_published(me):
+        query = query.filter(Grade.is_published == True)
     if period_id:
         query = query.filter_by(period_id=period_id)
     grades = query.all()
@@ -125,3 +149,64 @@ def student_grade_summary(student_id):
         data['count'] = len(values)
 
     return jsonify(list(by_subject.values())), 200
+
+
+# ── Publicación de notas ─────────────────────────────────────────────
+# Las notas recién ingresadas quedan como "no publicadas": solo las ve el equipo
+# docente. Cuando el profesor publica, pasan a ser visibles para apoderados y alumnos.
+
+def _publish_query(data, school_id):
+    """Construye la consulta de notas a (des)publicar según los filtros recibidos."""
+    q = Grade.query.join(User, Grade.student_id == User.id).filter(User.school_id == school_id)
+    grade_ids = data.get('grade_ids')
+    if grade_ids:
+        return q.filter(Grade.id.in_([int(g) for g in grade_ids]))
+    has_filter = False
+    for key, col in (('course_subject_id', Grade.course_subject_id),
+                     ('period_id', Grade.period_id),
+                     ('student_id', Grade.student_id)):
+        if data.get(key):
+            q = q.filter(col == int(data[key]))
+            has_filter = True
+    return q if has_filter else None
+
+
+@grades_bp.route('/publish', methods=['POST'])
+@jwt_required()
+def publish_grades():
+    """Publica notas. Body: { grade_ids: [...] } o { course_subject_id, period_id, student_id } (cualquier combinación)."""
+    claims = get_jwt()
+    if claims.get('role') not in ['admin', 'directivo', 'profesor']:
+        return forbidden()
+    data = request.get_json() or {}
+    q = _publish_query(data, claims.get('school_id'))
+    if q is None:
+        return jsonify({'error': 'Indica grade_ids o algún filtro (course_subject_id, period_id, student_id)'}), 400
+    now = datetime.utcnow()
+    count = 0
+    for g in q.filter(Grade.is_published == False).all():
+        g.is_published = True
+        g.published_at = now
+        count += 1
+    db.session.commit()
+    return jsonify({'published': count}), 200
+
+
+@grades_bp.route('/unpublish', methods=['POST'])
+@jwt_required()
+def unpublish_grades():
+    """Retira la publicación de notas (mismos filtros que /publish)."""
+    claims = get_jwt()
+    if claims.get('role') not in ['admin', 'directivo', 'profesor']:
+        return forbidden()
+    data = request.get_json() or {}
+    q = _publish_query(data, claims.get('school_id'))
+    if q is None:
+        return jsonify({'error': 'Indica grade_ids o algún filtro (course_subject_id, period_id, student_id)'}), 400
+    count = 0
+    for g in q.filter(Grade.is_published == True).all():
+        g.is_published = False
+        g.published_at = None
+        count += 1
+    db.session.commit()
+    return jsonify({'unpublished': count}), 200
