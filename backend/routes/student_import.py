@@ -20,7 +20,8 @@ from sqlalchemy import func
 
 from models import (db, User, Course, Enrollment, StudentProfile, StudentMedical,
                     StudentFamilyMember, AuthorizationTemplate, StudentAuthorization,
-                    ensure_authorization_templates)
+                    ensure_authorization_templates, log_student_event)
+from routes.access import year_is_closed, closed_year_message
 from routes.students import (FichaError, coerce, parse_bool, parse_date, normalize_rut,
                              rut_is_valid, set_guardian_role, grant_guardian_access,
                              get_or_create_profile, get_or_create_medical)
@@ -469,8 +470,9 @@ def _student_email(parsed, school_id, exclude_id=None):
 
 
 class CourseResolver:
-    def __init__(self, school_id, course_id=None):
+    def __init__(self, school_id, course_id=None, year=None):
         self.school_id = school_id
+        self.year = year or date.today().year
         self.fixed = None
         self.cache = {}
         self.created = set()
@@ -482,8 +484,17 @@ class CourseResolver:
             self.fixed = Course.query.filter_by(id=cid, school_id=school_id).first()
             if not self.fixed:
                 raise FichaError('Curso no encontrado', 400)
+            check_course_open(self.fixed)
         else:
-            for c in Course.query.filter_by(school_id=school_id).order_by(Course.id).all():
+            # Primero los cursos del año que se importa; luego los de otros años abiertos
+            cursos = Course.query.filter_by(school_id=school_id).order_by(Course.id).all()
+            cerrados = {}
+            for c in sorted(cursos, key=lambda c: (c.year != self.year, c.id)):
+                if c.year != self.year:
+                    if c.year not in cerrados:
+                        cerrados[c.year] = year_is_closed(school_id, c.year)
+                    if cerrados[c.year]:
+                        continue
                 self.cache.setdefault(normalize_course_name(c.name), c)
 
     def get(self, name):
@@ -498,12 +509,19 @@ class CourseResolver:
             course = Course(school_id=self.school_id, name=name.strip()[:100],
                             level=(m.group(1).strip() if m else name.strip())[:50],
                             letter=(m.group(2).upper() if m else None),
-                            year=date.today().year, is_active=True)
+                            year=self.year, is_active=True)
+            check_course_open(course)
             db.session.add(course)
             db.session.flush()
             self.cache[key] = course
             self.created.add(course.id)
         return course
+
+
+def check_course_open(course):
+    """FichaError 409 si el curso es de un año académico cerrado."""
+    if course is not None and year_is_closed(course.school_id, course.year):
+        raise FichaError(closed_year_message(course.year), 409)
 
 
 def apply_row(parsed, ctx):
@@ -623,14 +641,31 @@ def apply_row(parsed, ctx):
         profile.status = 'retirado'
     course = ctx['courses'].get(parsed['course_name'])
     if course:
+        check_course_open(course)
         ctx['used_courses'].setdefault(course.id, course)
         active = not (withdrawn or moved_out)
+        status = 'activo' if active else ('retirado' if withdrawn else 'trasladado')
         enr = Enrollment.query.filter_by(student_id=sid, course_id=course.id).first()
         if not enr:
-            db.session.add(Enrollment(student_id=sid, course_id=course.id,
-                                      year=course.year or date.today().year, is_active=active))
+            enr = Enrollment(student_id=sid, course_id=course.id,
+                             year=course.year or date.today().year)
+            db.session.add(enr)
+        enr.status = status
+        enr.is_active = active
+        enr.enrollment_date = profile.enrollment_date or enr.enrollment_date or date.today()
+        if active:
+            enr.withdrawal_date = None
+            enr.withdrawal_reason = None
         else:
-            enr.is_active = active
+            enr.withdrawal_date = profile.withdrawal_date or enr.withdrawal_date
+            enr.withdrawal_reason = profile.withdrawal_reason if withdrawn else (
+                profile.course_change or enr.withdrawal_reason)
+        estado_txt = {'activo': '', 'retirado': ', retirado', 'trasladado': ', trasladado'}[status]
+        log_student_event(sid, 'importacion',
+                          f'Importado desde Libro de Matrícula (curso {course.name}{estado_txt})',
+                          school_id, year=enr.year, course_id=course.id,
+                          user_id=ctx['user_id'] or None,
+                          details={'accion': action, 'estado': status})
     else:
         warnings.append('No se pudo determinar el curso del alumno')
 
@@ -690,7 +725,7 @@ def _read_sheet(content):
     return header, data, extra_keys
 
 
-def run_import(content, me, course_id=None, dry_run=True, create_guardian_access=False):
+def run_import(content, me, course_id=None, dry_run=True, create_guardian_access=False, year=None):
     school_id = me['school_id']
     header, data, extra_keys = _read_sheet(content)
 
@@ -703,7 +738,7 @@ def run_import(content, me, course_id=None, dry_run=True, create_guardian_access
                 .order_by(AuthorizationTemplate.id).all():
             if t.key and t.key not in templates:
                 templates[t.key] = t
-        resolver = CourseResolver(school_id, course_id)
+        resolver = CourseResolver(school_id, course_id, year=year)
         students = {}
         for u in User.query.filter_by(school_id=school_id, role='alumno').all():
             n = normalize_rut(u.rut)

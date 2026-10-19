@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import UserAvatar, { avatarColor } from '../UserAvatar/UserAvatar';
@@ -24,6 +24,7 @@ const SECCIONES = [
       { to: '/apoderado', icono: 'familia', label: 'Mis alumnos', roles: ['apoderado'] },
       { to: '/users', icono: 'personas', label: 'Usuarios', roles: ['admin', 'directivo'] },
       { to: '/parameters', icono: 'colegio', label: 'Colegio', roles: ['admin', 'directivo'] },
+      { to: '/anios', icono: 'calendario', label: 'Años académicos', roles: ['admin', 'directivo'] },
     ],
   },
   {
@@ -61,6 +62,7 @@ const TITULOS = {
   '/apoderado': ['General', 'Mis alumnos'],
   '/users': ['General', 'Usuarios'],
   '/parameters': ['General', 'Colegio'],
+  '/anios': ['General', 'Años académicos'],
   '/courses': ['Gestión pedagógica', 'Cursos'],
   '/matricula': ['Gestión pedagógica', 'Matrícula'],
   '/students/import': ['Gestión pedagógica', 'Importar Libro de Matrícula'],
@@ -84,8 +86,69 @@ function tituloDe(ruta) {
   return base ? TITULOS[base] : ['', 'Kolevia'];
 }
 
+const ROLES_CON_ANIO = ['admin', 'directivo', 'profesor'];
+
+// Selector del año académico con el que se trabaja en toda la plataforma.
+function SelectorAnio({ anio, anios, setAnio, puedeGestionar, onGestionar }) {
+  const [abierto, setAbierto] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!abierto) return undefined;
+    const fuera = (e) => { if (ref.current && !ref.current.contains(e.target)) setAbierto(false); };
+    const esc = (e) => { if (e.key === 'Escape') setAbierto(false); };
+    document.addEventListener('mousedown', fuera);
+    document.addEventListener('touchstart', fuera);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('mousedown', fuera);
+      document.removeEventListener('touchstart', fuera);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [abierto]);
+
+  // Sin respuesta del servidor igual se muestra el año en uso
+  const lista = anios.length ? anios : [{ year: anio, estado: 'abierto' }];
+  const actual = lista.find(a => a.year === anio);
+  const cerrado = actual?.estado === 'cerrado';
+
+  return (
+    <div className="kv-anio" ref={ref}>
+      <button type="button" className="kv-anio-btn" aria-haspopup="listbox" aria-expanded={abierto}
+        title={cerrado ? `El año ${anio} está cerrado: solo lectura` : `Año académico ${anio}`}
+        onClick={() => setAbierto(v => !v)}>
+        <span className="kv-anio-et">Año acad.</span>
+        <b>{anio}</b>
+        {cerrado && <span className="kv-anio-candado" aria-label="Cerrado"><Icono nombre="candado" tam={13} /></span>}
+        <span className="kv-anio-flecha"><Icono nombre="abajo" tam={15} /></span>
+      </button>
+      {abierto && (
+        <div className="kv-anio-menu" role="listbox" aria-label="Año académico">
+          {lista.map(a => (
+            <button key={a.year} type="button" role="option" aria-selected={a.year === anio}
+              className={a.year === anio ? 'on' : ''}
+              onClick={() => { setAnio(a.year); setAbierto(false); }}>
+              <span className="kv-anio-op">{a.year}</span>
+              {a.estado === 'cerrado' && (
+                <span className="kv-anio-chip"><Icono nombre="candado" tam={11} /> Cerrado</span>
+              )}
+              {a.year === anio && <span className="kv-anio-ok"><Icono nombre="check" tam={15} /></span>}
+            </button>
+          ))}
+          {puedeGestionar && (
+            <button type="button" className="kv-anio-gestionar"
+              onClick={() => { setAbierto(false); onGestionar(); }}>
+              <Icono nombre="ajustes" tam={14} /> Gestionar años…
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Layout() {
-  const { user, school, logout } = useAuth();
+  const { user, school, logout, anio, setAnio, anios } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [abierto, setAbierto] = useState(false);     // menú en móvil
@@ -131,6 +194,16 @@ export default function Layout() {
             <b>{school?.name || 'Colegio'}</b>
           </span>
         </div>
+
+        {ROLES_CON_ANIO.includes(user?.role) && (
+          <SelectorAnio
+            anio={anio || new Date().getFullYear()}
+            anios={Array.isArray(anios) ? anios : []}
+            setAnio={setAnio || (() => {})}
+            puedeGestionar={['admin', 'directivo'].includes(user?.role)}
+            onGestionar={() => navigate('/anios')}
+          />
+        )}
 
         <nav className="kv-lat-nav">
           {secciones.map(s => (

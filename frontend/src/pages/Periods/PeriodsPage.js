@@ -6,10 +6,12 @@ const TYPES = { anual:'Anual', semestral:'Semestral', trimestral:'Trimestral', m
 const EMPTY = { name:'', period_type:'semestral', year: new Date().getFullYear(), number:1, start_date:'', end_date:'', is_active:true };
 
 export default function PeriodsPage() {
-  const { school } = useAuth();
+  const { school, anio, anios } = useAuth();
   const primary = school?.primary_color || '#2563EB';
   const [periods, setPeriods] = useState([]);
-  const [year, setYear] = useState(new Date().getFullYear());
+  const [year, setYear] = useState(anio || new Date().getFullYear());
+  // Sigue al año elegido en la barra lateral, sin quitar el selector propio
+  useEffect(() => { if (anio) setYear(anio); }, [anio]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
@@ -45,7 +47,8 @@ export default function PeriodsPage() {
     fetchPeriods();
   };
 
-  const years = [new Date().getFullYear()-1, new Date().getFullYear(), new Date().getFullYear()+1];
+  const hoy = new Date().getFullYear();
+  const years = [...new Set([hoy - 1, hoy, hoy + 1, year, ...(anios || []).map(a => a.year)])].sort((a, b) => a - b);
 
   return (
     <div>

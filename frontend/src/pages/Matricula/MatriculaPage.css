@@ -1,0 +1,85 @@
+.mt { max-width: 1180px; margin: 0 auto; }
+.mt-cab { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.mt-h1 { margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -.015em; }
+.mt-sub { font-size: 13px; color: #64748b; margin: 3px 0 0; }
+.mt-texto { font-size: 13.5px; color: #1f2937; line-height: 1.55; margin: 0 0 12px; }
+.mt-lista { margin: 0 0 14px; padding-left: 20px; font-size: 13px; color: #374151; line-height: 1.6; }
+
+.mt-grid { display: grid; grid-template-columns: 228px minmax(0, 1fr); gap: 16px; align-items: start; }
+
+/* Lista de cursos */
+.mt-cursos { padding: 0 !important; overflow: hidden; }
+.mt-cursos-tit {
+  font-size: 11px; font-weight: 800; color: #94a3b8; margin: 0; padding: 11px 15px;
+  text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid #f1f5f9;
+}
+.mt-curso {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 15px 10px 12px;
+  border: none; border-top: 1px solid #f8fafc; border-left: 3px solid transparent;
+  background: transparent; cursor: pointer; font-family: inherit; text-align: left;
+}
+.mt-curso:hover { background: #f8fafc; }
+.mt-curso-txt { flex: 1; min-width: 0; }
+.mt-curso-txt b { display: block; font-size: 13.5px; font-weight: 600; color: #0f172a; }
+.mt-curso.on .mt-curso-txt b { font-weight: 750; }
+.mt-curso-txt i {
+  display: block; font-style: normal; font-size: 11px; color: #94a3b8; margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mt-curso-n { font-size: 12px; font-weight: 800; min-width: 18px; text-align: right; }
+.mt-curso-pc {
+  font-size: 10.5px; font-weight: 800; color: #b45309; background: #fef3c7;
+  padding: 1px 7px; border-radius: 999px;
+}
+
+/* Panel del curso */
+.mt-panel { padding: 0 !important; overflow: hidden; min-width: 0; }
+.mt-panel-cab {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 13px 18px; border-bottom: 1px solid #f1f5f9;
+}
+.mt-panel-cab h3 { font-size: 15px; font-weight: 750; margin: 0; color: #0f172a; }
+.mt-panel-cab p { font-size: 12px; color: #64748b; margin: 2px 0 0; }
+.mt-filtro {
+  padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px;
+  font-family: inherit; color: #374151; background: #fff;
+}
+.mt-banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 18px; background: #fffbeb; border-bottom: 1px solid #fde68a;
+  color: #92400e; font-size: 13px; line-height: 1.45;
+}
+
+.mt-tabla { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.mt-tabla th {
+  padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b;
+  font-weight: 700; background: #f8fafc; letter-spacing: .02em; white-space: nowrap;
+}
+.mt-tabla td { padding: 9px 12px; border-top: 1px solid #f1f5f9; vertical-align: middle; }
+.mt-tabla tr.inactivo td { background: #fcfcfd; }
+.mt-tabla tr.inactivo .mt-nombre a { color: #64748b; }
+.mt-n { color: #cbd5e1; width: 30px; }
+.mt-nombre { font-weight: 600; color: #0f172a; min-width: 170px; }
+.mt-nombre a { color: #0f172a; text-decoration: none; }
+.mt-nombre a:hover { text-decoration: underline; }
+.mt-nombre small { display: block; font-weight: 500; font-size: 11px; color: #94a3b8; margin-top: 1px; }
+.mt-gris { color: #64748b; }
+.mt-motivo {
+  display: block; font-size: 11px; color: #94a3b8; max-width: 160px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mt-acc { text-align: right; white-space: nowrap; }
+.mt-acc > .ui-btn { margin-left: 4px; }
+
+/* Con pantallas medianas la lista de cursos pasa arriba como fila de pastillas */
+@media (max-width: 1200px) {
+  .mt-grid { grid-template-columns: minmax(0, 1fr); }
+  .mt-cursos-tit { display: none; }
+  .mt-cursos-lista { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; }
+  .mt-curso {
+    width: auto; border: 1px solid #e2e8f0; border-radius: 999px; padding: 5px 12px;
+  }
+  .mt-curso.on { border-color: var(--color-primary, #3b4fd8) !important; }
+  .mt-curso-txt i { display: none; }
+  .mt-curso-txt b { font-size: 13px; white-space: nowrap; }
+}

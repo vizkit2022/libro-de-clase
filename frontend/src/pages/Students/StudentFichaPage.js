@@ -10,6 +10,8 @@ import MedicalSection from './sections/MedicalSection';
 import PermissionsSection from './sections/PermissionsSection';
 import DocumentsSection from './sections/DocumentsSection';
 import FichaPrintView from './FichaPrintView';
+import HistorialTimeline from '../../components/UI/HistorialTimeline';
+import descargarArchivo from '../CargaAcademica/descargar';
 import { useUserPhoto } from '../../components/UserAvatar/UserAvatar';
 import './StudentFichaPage.css';
 
@@ -128,7 +130,11 @@ function FichaHeader({ ficha, photoUrl }) {
   );
 }
 
-function DownloadMenu({ sectionLabel, onPrint }) {
+// Historial y ficha oficial en PDF: solo para el personal del colegio
+const ROLES_STAFF = ['admin', 'directivo', 'profesor'];
+const HISTORIAL_SECTION = { key: 'historial', icon: '🕘', label: 'Historial' };
+
+function DownloadMenu({ sectionLabel, onPrint, onPdf, pdfYear }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -156,10 +162,18 @@ function DownloadMenu({ sectionLabel, onPrint }) {
             <strong>📄 Ficha completa</strong>
             <small>PDF / imprimir · las 5 secciones</small>
           </button>
-          <button type="button" role="menuitem" onClick={() => pick('section')}>
-            <strong>📑 Sección actual</strong>
-            <small>{sectionLabel}</small>
-          </button>
+          {sectionLabel && (
+            <button type="button" role="menuitem" onClick={() => pick('section')}>
+              <strong>📑 Sección actual</strong>
+              <small>{sectionLabel}</small>
+            </button>
+          )}
+          {onPdf && (
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); onPdf(); }}>
+              <strong>🏫 Ficha de matrícula oficial (PDF)</strong>
+              <small>Formato del colegio · año {pdfYear}</small>
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -186,7 +200,10 @@ export default function StudentFichaPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { school, user } = useAuth();
+  const { school, user, anio } = useAuth();
+  const esStaff = ROLES_STAFF.includes(user?.role);
+  const pdfYear = anio || new Date().getFullYear();
+  const sections = esStaff ? [...FICHA_SECTIONS, HISTORIAL_SECTION] : FICHA_SECTIONS;
   const primary = school?.primary_color || '#2563EB';
 
   const [ficha, setFicha] = useState(null);
@@ -194,8 +211,10 @@ export default function StudentFichaPage() {
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
 
-  const section = FICHA_SECTIONS.some(s => s.key === searchParams.get('s')) ? searchParams.get('s') : 'personal';
-  const sectionLabel = (FICHA_SECTIONS.find(s => s.key === section) || {}).label || '';
+  const section = sections.some(s => s.key === searchParams.get('s')) ? searchParams.get('s') : 'personal';
+  // El historial no tiene vista imprimible: ahí no se ofrece "Sección actual"
+  const sectionLabel = section === 'historial' ? ''
+    : (FICHA_SECTIONS.find(s => s.key === section) || {}).label || '';
   // Alcance de la vista imprimible: 'all' por defecto (Ctrl+P imprime la ficha completa)
   const [printScope, setPrintScope] = useState('all');
   const [printRequest, setPrintRequest] = useState(0);
@@ -257,6 +276,19 @@ export default function StudentFichaPage() {
   const requestPrint = (scope) => {
     setPrintScope(scope === 'section' ? section : 'all');
     setPrintRequest(n => n + 1);
+  };
+
+  const downloadPdf = async () => {
+    const apellido = String(ficha?.student?.last_name || 'alumno').split(' ')[0];
+    const curso = String(ficha?.summary?.course_name || '').replace(/[^\w]+/g, '');
+    showToast('Generando la ficha de matrícula…', 'info');
+    try {
+      await descargarArchivo(`/api/matricula/alumnos/${id}/ficha.pdf?year=${pdfYear}`,
+        `ficha_matricula_${curso}_${apellido}.pdf`);
+      setToast(null);
+    } catch (e) {
+      showToast(e.message || 'No se pudo descargar la ficha de matrícula', 'error');
+    }
   };
 
   const applyFicha = useCallback((data) => setFicha(f => ({ ...f, ...data })), []);
@@ -323,7 +355,8 @@ export default function StudentFichaPage() {
         <button type="button" className="ficha-back" onClick={goBack}>← Volver</button>
         <div className="ficha-topbar-actions">
           <Link to={`/students/${id}/life`} className="btn btn-secondary btn-sm">📋 Hoja de vida</Link>
-          <DownloadMenu sectionLabel={sectionLabel} onPrint={requestPrint} />
+          <DownloadMenu sectionLabel={sectionLabel} onPrint={requestPrint}
+            onPdf={esStaff ? downloadPdf : null} pdfYear={pdfYear} />
         </div>
       </div>
 
@@ -331,7 +364,7 @@ export default function StudentFichaPage() {
         <aside className="fs">
           <StudentPhoto student={ficha.student} photoUrl={photoUrl} className="fs-photo" />
           <nav className="fs-nav" aria-label="Secciones de la ficha">
-            {FICHA_SECTIONS.map(s => (
+            {sections.map(s => (
               <button key={s.key} type="button" className={`fs-item${section === s.key ? ' active' : ''}`}
                 aria-current={section === s.key ? 'page' : undefined} onClick={() => goSection(s.key)}>
                 <span className="fs-icon" aria-hidden="true">{s.icon}</span>
@@ -354,6 +387,15 @@ export default function StudentFichaPage() {
             {section === 'medico' && <MedicalSection {...sectionProps} />}
             {section === 'permisos' && <PermissionsSection {...sectionProps} />}
             {section === 'archivos' && <DocumentsSection {...sectionProps} />}
+            {section === 'historial' && esStaff && (
+              <section className="fc">
+                <div className="fc-head">
+                  <h3 className="fc-title"><span className="fc-icon" aria-hidden="true">🕘</span> Historial</h3>
+                  <span className="fc-count">Matrículas, retiros, cambios de curso y ediciones de la ficha</span>
+                </div>
+                <HistorialTimeline studentId={id} />
+              </section>
+            )}
           </div>
         </div>
       </div>

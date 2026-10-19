@@ -9,25 +9,123 @@ siempre pasa por una vista previa antes de tocar la base.
 import io
 import re
 import unicodedata
+from datetime import date, datetime
 from functools import wraps
 
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file, Response
 from flask_jwt_extended import jwt_required, get_jwt
 
-from models import db, User, Course, Enrollment
+from models import (db, User, Course, Enrollment, StudentProfile, StudentHistory,
+                    log_student_event)
+from routes.access import ensure_year_open, year_is_closed
 
 matricula_bp = Blueprint('matricula', __name__)
 
 COLUMNAS = ['TIPO', 'nombre', 'apellido', 'rut', 'email', 'nivel', 'letra', 'año']
 
 
+READ_ROLES = ('admin', 'directivo', 'profesor')
+WRITE_ROLES = ('admin', 'directivo')
+
+ESTADOS = {
+    'activo': 'Activo', 'por_confirmar': 'Por confirmar', 'retirado': 'Retirado',
+    'trasladado': 'Trasladado', 'no_continua': 'No continúa', 'egresado': 'Egresado',
+}
+
+
 def school_required(f):
+    """Exige colegio. Lectura (GET): admin/directivo/profesor; escritura: admin/directivo."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not get_jwt().get('school_id'):
+        claims = get_jwt()
+        if not claims.get('school_id'):
             return jsonify({'error': 'Sin colegio asignado'}), 403
+        roles = READ_ROLES if request.method == 'GET' else WRITE_ROLES
+        if claims.get('role') not in roles:
+            return jsonify({'error': 'Sin permisos'}), 403
         return f(*args, **kwargs)
     return decorated
+
+
+def _uid():
+    try:
+        return int(get_jwt().get('sub') or 0) or None
+    except (TypeError, ValueError):
+        return None
+
+
+def _body():
+    d = request.get_json(silent=True)
+    return d if isinstance(d, dict) else {}
+
+
+class _FechaInvalida(Exception):
+    pass
+
+
+@matricula_bp.errorhandler(_FechaInvalida)
+def _fecha_invalida(err):
+    db.session.rollback()
+    return jsonify({'error': str(err)}), 400
+
+
+def _fecha(valor, campo='fecha'):
+    """'2026-10-19' / '19-10-2026' / '19/10/2026' → date; vacío → hoy."""
+    if valor in (None, ''):
+        return date.today()
+    s = str(valor).strip()[:10]
+    try:
+        return date.fromisoformat(s)
+    except ValueError:
+        for fmt in ('%d-%m-%Y', '%d/%m/%Y'):
+            try:
+                return datetime.strptime(s, fmt).date()
+            except ValueError:
+                pass
+    raise _FechaInvalida(f'Fecha inválida en {campo}: {valor}')
+
+
+def _motivo(d):
+    m = d.get('motivo')
+    return str(m).strip() or None if m is not None else None
+
+
+def _estado(e):
+    return e.status or ('activo' if e.is_active else 'retirado')
+
+
+def _enrollment_del_colegio(eid, sid):
+    e = Enrollment.query.get_or_404(eid)
+    curso = Course.query.filter_by(id=e.course_id, school_id=sid).first_or_404()
+    return e, curso
+
+
+def _otra_activa(e):
+    """Otra matrícula activa del mismo alumno en el mismo año (o None)."""
+    return Enrollment.query.filter(
+        Enrollment.student_id == e.student_id, Enrollment.year == e.year,
+        Enrollment.status == 'activo', Enrollment.id != e.id).first()
+
+
+def _profile(student_id, crear=False):
+    p = StudentProfile.query.filter_by(student_id=student_id).first()
+    if not p and crear:
+        p = StudentProfile(student_id=student_id, status='matriculado', id_type='RUN')
+        db.session.add(p)
+    return p
+
+
+def _perfil_reincorporado(student_id):
+    """Al volver a matricular a un retirado su ficha vuelve a 'matriculado'."""
+    p = _profile(student_id)
+    if p and p.status == 'retirado':
+        p.status = 'matriculado'
+        p.withdrawal_date = None
+        p.withdrawal_reason = None
+
+
+def _fmt(d):
+    return d.strftime('%d-%m-%Y') if d else ''
 
 
 def _sid():
@@ -67,14 +165,23 @@ def listar_cursos():
     cursos = Course.query.filter_by(school_id=sid, year=year, is_active=True)\
         .order_by(Course.level, Course.letter).all()
 
-    conteo = dict(
-        db.session.query(Enrollment.course_id, db.func.count(Enrollment.id))
-        .filter(Enrollment.year == year, Enrollment.is_active.is_(True))
-        .group_by(Enrollment.course_id).all())
+    conteo = {}
+    for cid, st, n in (db.session.query(Enrollment.course_id, Enrollment.status,
+                                        db.func.count(Enrollment.id))
+                       .filter(Enrollment.year == year)
+                       .group_by(Enrollment.course_id, Enrollment.status).all()):
+        conteo[(cid, st)] = n
 
+    def contar(cid, *estados):
+        return sum(conteo.get((cid, e), 0) for e in estados)
+
+    cerrado = year_is_closed(sid, year)
     return jsonify([{
         'id': c.id, 'nombre': c.name, 'nivel': c.level, 'letra': c.letter,
-        'year': c.year, 'alumnos': conteo.get(c.id, 0),
+        'year': c.year, 'alumnos': contar(c.id, 'activo'),
+        'por_confirmar': contar(c.id, 'por_confirmar'),
+        'retirados': contar(c.id, 'retirado', 'trasladado', 'no_continua'),
+        'cerrado': cerrado,
         'profesor_jefe': (f'{c.head_teacher.first_name} {c.head_teacher.last_name}'
                           if c.head_teacher else None),
     } for c in cursos]), 200
@@ -84,22 +191,38 @@ def listar_cursos():
 @jwt_required()
 @school_required
 def alumnos_del_curso(curso_id):
+    """Todos los alumnos del curso, con su estado (activos y por confirmar primero)."""
     sid = _sid()
     curso = Course.query.filter_by(id=curso_id, school_id=sid).first_or_404()
-    filas = Enrollment.query.filter_by(course_id=curso_id, is_active=True).all()
+    filas = Enrollment.query.filter_by(course_id=curso_id).all()
+    origenes = {}
+    ids_origen = [e.promoted_from_id for e in filas if e.promoted_from_id]
+    if ids_origen:
+        for o in Enrollment.query.filter(Enrollment.id.in_(ids_origen)).all():
+            oc = Course.query.get(o.course_id)
+            origenes[o.id] = oc.name if oc else None
     alumnos = []
     for e in filas:
         if not e.student:
             continue
+        estado = _estado(e)
         alumnos.append({
             'enrollment_id': e.id, 'id': e.student.id,
             'nombre': e.student.first_name, 'apellido': e.student.last_name,
             'rut': e.student.rut, 'email': e.student.email,
             'activo': e.student.is_active,
+            'estado': estado,
+            'fecha_matricula': e.enrollment_date.isoformat() if e.enrollment_date else None,
+            'fecha_retiro': e.withdrawal_date.isoformat() if e.withdrawal_date else None,
+            'motivo_retiro': e.withdrawal_reason,
+            'confirmado_at': e.confirmed_at.isoformat() if e.confirmed_at else None,
+            'promovido_desde': origenes.get(e.promoted_from_id),
         })
-    alumnos.sort(key=lambda a: clave_nombre(a['apellido'], a['nombre']))
+    alumnos.sort(key=lambda a: (0 if a['estado'] in ('activo', 'por_confirmar') else 1,
+                                clave_nombre(a['apellido'], a['nombre'])))
     return jsonify({
-        'curso': {'id': curso.id, 'nombre': curso.name, 'year': curso.year},
+        'curso': {'id': curso.id, 'nombre': curso.name, 'year': curso.year,
+                  'cerrado': year_is_closed(sid, curso.year)},
         'alumnos': alumnos,
     }), 200
 
@@ -124,14 +247,19 @@ def _correo_interno(nombre, apellido, sid):
 @jwt_required()
 @school_required
 def matricular(curso_id):
-    """Matricula un alumno: lo reutiliza si ya existe, o lo crea."""
+    """Matricula un alumno: lo reutiliza si ya existe, o lo crea.
+
+    Body: nombre, apellido, rut?, email?, fecha? (fecha de matrícula, por defecto hoy).
+    """
     sid = _sid()
     curso = Course.query.filter_by(id=curso_id, school_id=sid).first_or_404()
-    d = request.get_json() or {}
+    ensure_year_open(sid, curso.year)
+    d = _body()
     nombre = (d.get('nombre') or '').strip()
     apellido = (d.get('apellido') or '').strip()
     if not nombre or not apellido:
         return jsonify({'error': 'El nombre y el apellido son obligatorios'}), 400
+    fecha = _fecha(d.get('fecha'))
 
     alumno = _buscar_alumno(sid, nombre, apellido)
     creado = False
@@ -148,23 +276,50 @@ def matricular(curso_id):
 
     ya = Enrollment.query.filter_by(
         student_id=alumno.id, course_id=curso.id,
-        year=curso.year, is_active=True).first()
+        year=curso.year, status='activo').first()
     if ya:
         return jsonify({'error': f'{nombre} {apellido} ya está en {curso.name}'}), 409
 
     # Un alumno no puede estar en dos cursos el mismo año
-    previas = Enrollment.query.filter_by(
-        student_id=alumno.id, year=curso.year, is_active=True).all()
+    previas = Enrollment.query.filter(
+        Enrollment.student_id == alumno.id, Enrollment.year == curso.year,
+        Enrollment.course_id != curso.id,
+        Enrollment.status.in_(('activo', 'por_confirmar'))).all()
     movido_de = None
     for p in previas:
         otro = Course.query.get(p.course_id)
         movido_de = otro.name if otro else None
+        p.status = 'trasladado'
         p.is_active = False
+        p.withdrawal_date = fecha
+        log_student_event(alumno.id, 'cambio_curso',
+                          f'Cambio de curso: de {movido_de or "—"} a {curso.name}',
+                          sid, year=curso.year, course_id=curso.id,
+                          from_course_id=p.course_id, user_id=_uid())
 
-    db.session.add(Enrollment(student_id=alumno.id, course_id=curso.id,
-                              year=curso.year, is_active=True))
+    # Si ya tuvo una matrícula en este curso (retirado, por confirmar…), se reutiliza
+    e = Enrollment.query.filter_by(student_id=alumno.id, course_id=curso.id,
+                                   year=curso.year).order_by(Enrollment.id.desc()).first()
+    if e:
+        e.status = 'activo'
+        e.is_active = True
+        e.enrollment_date = fecha
+        e.withdrawal_date = None
+        e.withdrawal_reason = None
+        if e.confirmed_at is None and e.promoted_from_id:
+            e.confirmed_at = datetime.utcnow()
+    else:
+        e = Enrollment(student_id=alumno.id, course_id=curso.id, year=curso.year,
+                       is_active=True, status='activo', enrollment_date=fecha)
+        db.session.add(e)
+    _perfil_reincorporado(alumno.id)
+    db.session.flush()
+    log_student_event(alumno.id, 'matricula',
+                      f'Matriculado en {curso.name} ({curso.year}) el {_fmt(fecha)}',
+                      sid, year=curso.year, course_id=curso.id, user_id=_uid())
     db.session.commit()
     return jsonify({'ok': True, 'creado': creado, 'movido_de': movido_de,
+                    'enrollment_id': e.id,
                     'alumno': {'id': alumno.id, 'nombre': nombre, 'apellido': apellido}}), 201
 
 
@@ -172,13 +327,302 @@ def matricular(curso_id):
 @jwt_required()
 @school_required
 def retirar(eid):
-    """Retira del curso sin borrar al alumno ni su historial."""
+    """Retira del curso sin borrar al alumno ni su historial.
+
+    Body opcional: {"fecha": "2026-10-19", "motivo": "Cambio de colegio"}.
+    """
     sid = _sid()
-    e = Enrollment.query.get_or_404(eid)
-    curso = Course.query.filter_by(id=e.course_id, school_id=sid).first_or_404()
+    e, curso = _enrollment_del_colegio(eid, sid)
+    ensure_year_open(sid, e.year if e.year is not None else curso.year)
+    d = _body()
+    fecha = _fecha(d.get('fecha'))
+    motivo = _motivo(d)
+    antes = _estado(e)
+    e.status = 'retirado'
     e.is_active = False
+    e.withdrawal_date = fecha
+    if motivo is not None or antes != 'retirado':
+        e.withdrawal_reason = motivo
+
+    # La ficha queda 'retirado' si no le queda otra matrícula activa ese año
+    if not _otra_activa(e):
+        p = _profile(e.student_id, crear=True)
+        p.status = 'retirado'
+        p.withdrawal_date = fecha
+        if motivo is not None:
+            p.withdrawal_reason = motivo
+    if antes != 'retirado':
+        log_student_event(
+            e.student_id, 'retiro',
+            f'Retirado de {curso.name} el {_fmt(fecha)}' + (f'. Motivo: {motivo}' if motivo else ''),
+            sid, year=e.year, course_id=curso.id, user_id=_uid(),
+            details={'motivo': motivo, 'fecha': fecha.isoformat()})
     db.session.commit()
-    return jsonify({'ok': True, 'curso': curso.name}), 200
+    return jsonify({'ok': True, 'curso': curso.name, 'estado': e.status,
+                    'fecha_retiro': fecha.isoformat(), 'motivo_retiro': e.withdrawal_reason}), 200
+
+
+@matricula_bp.route('/enrollments/<int:eid>/cambiar-curso', methods=['POST'])
+@jwt_required()
+@school_required
+def cambiar_curso(eid):
+    """Traslada al alumno a otro curso del mismo año.
+
+    Body: {"course_id": 7, "fecha": "2026-10-19", "motivo": opcional}.
+    """
+    sid = _sid()
+    e, origen = _enrollment_del_colegio(eid, sid)
+    d = _body()
+    try:
+        destino_id = int(d.get('course_id'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Indica el curso de destino (course_id)'}), 400
+    destino = Course.query.filter_by(id=destino_id, school_id=sid).first()
+    if not destino:
+        return jsonify({'error': 'Curso de destino no encontrado'}), 404
+    year = e.year if e.year is not None else origen.year
+    ensure_year_open(sid, year)
+    if destino.id == origen.id:
+        return jsonify({'error': 'El alumno ya está en ese curso'}), 400
+    if destino.year != year:
+        return jsonify({'error': f'El curso de destino debe ser del año {year}'}), 400
+    estado = _estado(e)
+    if estado not in ('activo', 'por_confirmar'):
+        return jsonify({'error': 'Solo se puede cambiar de curso una matrícula activa o por confirmar'}), 400
+    fecha = _fecha(d.get('fecha'))
+    motivo = _motivo(d)
+
+    if estado == 'por_confirmar':
+        # Aún no empieza el año: se cambia el curso de la misma matrícula
+        e.course_id = destino.id
+        nueva = e
+    else:
+        e.status = 'trasladado'
+        e.is_active = False
+        e.withdrawal_date = fecha
+        e.withdrawal_reason = motivo
+        nueva = Enrollment.query.filter_by(student_id=e.student_id, course_id=destino.id,
+                                           year=year).order_by(Enrollment.id.desc()).first()
+        if nueva:
+            nueva.status = 'activo'
+            nueva.is_active = True
+            nueva.enrollment_date = fecha
+            nueva.withdrawal_date = None
+            nueva.withdrawal_reason = None
+        else:
+            nueva = Enrollment(student_id=e.student_id, course_id=destino.id, year=year,
+                               status='activo', is_active=True, enrollment_date=fecha)
+            db.session.add(nueva)
+    db.session.flush()
+    log_student_event(
+        e.student_id, 'cambio_curso',
+        f'Cambio de curso: de {origen.name} a {destino.name} el {_fmt(fecha)}'
+        + (f'. Motivo: {motivo}' if motivo else ''),
+        sid, year=year, course_id=destino.id, from_course_id=origen.id, user_id=_uid(),
+        details={'motivo': motivo, 'fecha': fecha.isoformat()})
+    db.session.commit()
+    return jsonify({'ok': True, 'desde': origen.name, 'hacia': destino.name,
+                    'enrollment_id': nueva.id, 'estado': nueva.status}), 200
+
+
+@matricula_bp.route('/enrollments/<int:eid>/reincorporar', methods=['POST'])
+@jwt_required()
+@school_required
+def reincorporar(eid):
+    """Vuelve a dejar activa una matrícula retirada (o 'no continúa')."""
+    sid = _sid()
+    e, curso = _enrollment_del_colegio(eid, sid)
+    ensure_year_open(sid, e.year if e.year is not None else curso.year)
+    if _estado(e) not in ('retirado', 'no_continua'):
+        return jsonify({'error': 'Solo se puede reincorporar una matrícula retirada o que no continúa'}), 400
+    otra = _otra_activa(e)
+    if otra:
+        oc = Course.query.get(otra.course_id)
+        return jsonify({'error': f'El alumno ya tiene matrícula activa en {oc.name if oc else "otro curso"}'}), 409
+    fecha = _fecha(_body().get('fecha'))
+    e.status = 'activo'
+    e.is_active = True
+    e.withdrawal_date = None
+    e.withdrawal_reason = None
+    if not e.enrollment_date:
+        e.enrollment_date = fecha
+    if e.promoted_from_id and not e.confirmed_at:
+        e.confirmed_at = datetime.utcnow()
+    _perfil_reincorporado(e.student_id)
+    log_student_event(e.student_id, 'reincorporacion',
+                      f'Reincorporado a {curso.name} el {_fmt(fecha)}',
+                      sid, year=e.year, course_id=curso.id, user_id=_uid())
+    db.session.commit()
+    return jsonify({'ok': True, 'curso': curso.name, 'estado': e.status}), 200
+
+
+def _curso_repite(e, sid):
+    """Curso del año de `e` con el mismo nivel que tenía el alumno el año anterior."""
+    from routes.anios import pick_course, course_rank
+    origen = Enrollment.query.get(e.promoted_from_id) if e.promoted_from_id else None
+    oc = Course.query.get(origen.course_id) if origen else None
+    if not oc:
+        return None, None
+    candidatos = Course.query.filter_by(school_id=sid, year=e.year, is_active=True).all()
+    mismos = [c for c in candidatos if (c.level or '') == (oc.level or '') and c.level]
+    if not mismos:
+        r = course_rank(oc)
+        mismos = [c for c in candidatos if r is not None and course_rank(c) == r]
+    return pick_course(mismos, oc.letter), oc
+
+
+def _confirmar(e, curso, sid, fecha):
+    e.status = 'activo'
+    e.is_active = True
+    e.enrollment_date = fecha
+    e.confirmed_at = datetime.utcnow()
+    log_student_event(e.student_id, 'confirmacion',
+                      f'Matrícula confirmada en {curso.name} ({e.year}) el {_fmt(fecha)}',
+                      sid, year=e.year, course_id=curso.id, user_id=_uid())
+
+
+@matricula_bp.route('/enrollments/<int:eid>/confirmar', methods=['POST'])
+@jwt_required()
+@school_required
+def confirmar(eid):
+    """Resuelve una matrícula 'por confirmar' (alumno promovido desde el año anterior).
+
+    Body: {"accion": "confirmar"|"repite"|"no_continua", "fecha": opcional, "motivo": opcional}.
+    """
+    sid = _sid()
+    e, curso = _enrollment_del_colegio(eid, sid)
+    ensure_year_open(sid, e.year if e.year is not None else curso.year)
+    if _estado(e) != 'por_confirmar':
+        return jsonify({'error': 'Esta matrícula no está por confirmar'}), 400
+    d = _body()
+    accion = (d.get('accion') or 'confirmar').strip().lower()
+    fecha = _fecha(d.get('fecha'))
+    motivo = _motivo(d)
+
+    if accion == 'confirmar':
+        _confirmar(e, curso, sid, fecha)
+    elif accion == 'repite':
+        destino, anterior = _curso_repite(e, sid)
+        if not anterior:
+            return jsonify({'error': 'No se sabe en qué curso estaba el alumno el año anterior'}), 400
+        if not destino:
+            return jsonify({'error': f'No existe un curso de {anterior.level or anterior.name} en {e.year}'}), 400
+        e.course_id = destino.id
+        e.status = 'activo'
+        e.is_active = True
+        e.enrollment_date = fecha
+        e.confirmed_at = datetime.utcnow()
+        log_student_event(e.student_id, 'repite',
+                          f'Repite {anterior.level or anterior.name}: queda en {destino.name} ({e.year})'
+                          + (f'. Motivo: {motivo}' if motivo else ''),
+                          sid, year=e.year, course_id=destino.id, from_course_id=curso.id,
+                          user_id=_uid())
+        curso = destino
+    elif accion == 'no_continua':
+        e.status = 'no_continua'
+        e.is_active = False
+        e.withdrawal_date = fecha
+        e.withdrawal_reason = motivo
+        e.confirmed_at = datetime.utcnow()
+        log_student_event(e.student_id, 'no_continua',
+                          f'No continúa en {e.year} (informado el {_fmt(fecha)})'
+                          + (f'. Motivo: {motivo}' if motivo else ''),
+                          sid, year=e.year, course_id=curso.id, user_id=_uid(),
+                          details={'motivo': motivo, 'fecha': fecha.isoformat()})
+    else:
+        return jsonify({'error': 'Acción inválida (confirmar | repite | no_continua)'}), 400
+    db.session.commit()
+    return jsonify({'ok': True, 'enrollment_id': e.id, 'estado': e.status,
+                    'curso': {'id': curso.id, 'nombre': curso.name}}), 200
+
+
+@matricula_bp.route('/cursos/<int:curso_id>/confirmar-todos', methods=['POST'])
+@jwt_required()
+@school_required
+def confirmar_todos(curso_id):
+    sid = _sid()
+    curso = Course.query.filter_by(id=curso_id, school_id=sid).first_or_404()
+    ensure_year_open(sid, curso.year)
+    fecha = _fecha(_body().get('fecha'))
+    filas = Enrollment.query.filter_by(course_id=curso.id, status='por_confirmar').all()
+    for e in filas:
+        _confirmar(e, curso, sid, fecha)
+    db.session.commit()
+    return jsonify({'ok': True, 'confirmados': len(filas)}), 200
+
+
+# ── Historial y ficha PDF del alumno ──────────────────────────────────
+
+def _alumno_del_colegio(student_id, sid):
+    return User.query.filter_by(id=student_id, school_id=sid, role='alumno').first_or_404()
+
+
+@matricula_bp.route('/alumnos/<int:student_id>/historial', methods=['GET'])
+@jwt_required()
+@school_required
+def historial(student_id):
+    sid = _sid()
+    alumno = _alumno_del_colegio(student_id, sid)
+    eventos = StudentHistory.query.filter_by(student_id=alumno.id)\
+        .filter((StudentHistory.school_id == sid) | (StudentHistory.school_id.is_(None)))\
+        .order_by(StudentHistory.created_at.desc(), StudentHistory.id.desc()).all()
+    return jsonify({
+        'alumno': {'id': alumno.id, 'nombre': f'{alumno.first_name} {alumno.last_name}'.strip(),
+                   'rut': alumno.rut},
+        'eventos': [{
+            'id': h.id,
+            'fecha': h.created_at.isoformat() if h.created_at else None,
+            'evento': h.event,
+            'descripcion': h.description,
+            'detalles': h.get_details(),
+            'year': h.year,
+            'curso': h.course.name if h.course else None,
+            'curso_origen': h.from_course.name if h.from_course else None,
+            'usuario': (f'{h.actor.first_name} {h.actor.last_name}'.strip() if h.actor else None),
+        } for h in eventos],
+    }), 200
+
+
+def _slug(texto):
+    t = unicodedata.normalize('NFKD', str(texto or '')).encode('ascii', 'ignore').decode()
+    t = re.sub(r'[^A-Za-z0-9]+', '_', t).strip('_')
+    return t or 'sin_dato'
+
+
+@matricula_bp.route('/alumnos/<int:student_id>/ficha.pdf', methods=['GET'])
+@jwt_required()
+@school_required
+def ficha_pdf(student_id):
+    """Ficha de matrícula oficial en PDF (servicios/ficha_matricula_pdf.py)."""
+    sid = _sid()
+    alumno = _alumno_del_colegio(student_id, sid)
+    year = request.args.get('year', type=int)
+    q = Enrollment.query.join(Course, Enrollment.course_id == Course.id)\
+        .filter(Enrollment.student_id == alumno.id, Course.school_id == sid)
+    if year:
+        q = q.filter(Enrollment.year == year)
+    matriculas = q.order_by(Enrollment.id.desc()).all()
+    e = next((m for m in matriculas if _estado(m) == 'activo'), None) \
+        or (matriculas[0] if matriculas else None)
+    if not year:
+        year = e.year if e and e.year else date.today().year
+    try:
+        from servicios.ficha_matricula_pdf import build_ficha_pdf
+    except ImportError:
+        return jsonify({'error': 'La ficha de matrícula en PDF aún no está disponible'}), 503
+    try:
+        pdf = build_ficha_pdf(alumno.id, year)
+    except Exception as ex:  # noqa: BLE001
+        db.session.rollback()
+        print(f'[ficha.pdf] error al generar la ficha del alumno {alumno.id}: {ex!r}')
+        return jsonify({'error': 'No se pudo generar la ficha de matrícula en PDF'}), 500
+    curso = e.course.name if e and e.course else 'sin_curso'
+    nombre = f'ficha_matricula_{_slug(curso)}_{_slug(alumno.last_name)}.pdf'
+    return Response(pdf, mimetype='application/pdf', headers={
+        'Content-Disposition': f'attachment; filename="{nombre}"',
+        'Content-Length': str(len(pdf)),
+        'Cache-Control': 'private, no-store',
+    })
 
 
 def _buscar_alumno(sid, nombre, apellido):
@@ -276,7 +720,7 @@ def previsualizar():
     for u in User.query.filter_by(school_id=sid, role='alumno').all():
         existentes[clave_nombre(u.first_name, u.last_name)] = u
     matriculados = {}
-    for e in Enrollment.query.filter_by(year=year, is_active=True).all():
+    for e in Enrollment.query.filter_by(year=year, status='activo').all():
         matriculados[e.student_id] = e.course_id
 
     items, vistos = [], {}
@@ -356,8 +800,11 @@ def aplicar():
     if not isinstance(items, list):
         return jsonify({'error': 'Falta la lista de filas a aplicar'}), 400
 
-    validos = {c.id for c in Course.query.filter_by(school_id=sid, year=year).all()}
+    ensure_year_open(sid, year)
+    cursos_validos = {c.id: c for c in Course.query.filter_by(school_id=sid, year=year).all()}
+    validos = set(cursos_validos)
     hecho = {'creados': 0, 'matriculados': 0, 'movidos': 0, 'omitidos': 0}
+    hoy = date.today()
 
     for it in items:
         curso_id = it.get('curso_id')
@@ -366,6 +813,7 @@ def aplicar():
         if curso_id not in validos or not nombre or not apellido:
             hecho['omitidos'] += 1
             continue
+        curso = cursos_validos[curso_id]
 
         alumno = _buscar_alumno(sid, nombre, apellido)
         if not alumno:
@@ -380,19 +828,28 @@ def aplicar():
             hecho['creados'] += 1
 
         ya = Enrollment.query.filter_by(student_id=alumno.id, course_id=curso_id,
-                                        year=year, is_active=True).first()
+                                        year=year, status='activo').first()
         if ya:
             hecho['omitidos'] += 1
             continue
 
         previas = Enrollment.query.filter_by(
-            student_id=alumno.id, year=year, is_active=True).all()
+            student_id=alumno.id, year=year, status='activo').all()
         for p in previas:
+            p.status = 'trasladado'
             p.is_active = False
+            p.withdrawal_date = hoy
             hecho['movidos'] += 1
+            log_student_event(alumno.id, 'cambio_curso',
+                              f'Cambio de curso por importación de planilla: a {curso.name}',
+                              sid, year=year, course_id=curso_id, from_course_id=p.course_id,
+                              user_id=_uid())
 
-        db.session.add(Enrollment(student_id=alumno.id, course_id=curso_id,
-                                  year=year, is_active=True))
+        db.session.add(Enrollment(student_id=alumno.id, course_id=curso_id, year=year,
+                                  is_active=True, status='activo', enrollment_date=hoy))
+        log_student_event(alumno.id, 'matricula',
+                          f'Matriculado en {curso.name} ({year}) por importación de planilla',
+                          sid, year=year, course_id=curso_id, user_id=_uid())
         hecho['matriculados'] += 1
 
     db.session.commit()

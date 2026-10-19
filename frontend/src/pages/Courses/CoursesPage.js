@@ -6,11 +6,14 @@ import { useAuth } from '../../context/AuthContext';
 const EMPTY = { name:'', level:'', letter:'', year: new Date().getFullYear(), head_teacher_id:'', description:'' };
 
 export default function CoursesPage() {
-  const { school, user } = useAuth();
+  const { school, user, anio, anios } = useAuth();
   const primary = school?.primary_color || '#2563EB';
   const [courses, setCourses] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const [year, setYear] = useState(new Date().getFullYear());
+  const [year, setYear] = useState(anio || new Date().getFullYear());
+  // Sigue al año elegido en la barra lateral, sin quitar el selector propio
+  useEffect(() => { if (anio) setYear(anio); }, [anio]);
+  const opcionesAnio = [...new Set([year - 1, year, year + 1, ...(anios || []).map(a => a.year)])].sort((a, b) => a - b);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [editing, setEditing] = useState(null);
@@ -60,7 +63,7 @@ export default function CoursesPage() {
         <div style={{ display: 'flex', gap: 10 }}>
           <select value={year} onChange={e => setYear(+e.target.value)}
             style={{ padding: '9px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit' }}>
-            {[year-1, year, year+1].map(y => <option key={y}>{y}</option>)}
+            {opcionesAnio.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           {canEdit && <button className="btn btn-primary" onClick={() => { setForm({...EMPTY, year}); setEditing(null); setShowModal(true); }} style={{ background: primary }}>＋ Nuevo curso</button>}
         </div>

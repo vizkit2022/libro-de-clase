@@ -209,6 +209,14 @@ class Enrollment(db.Model):
     year = db.Column(db.Integer)
     is_active = db.Column(db.Boolean, default=True)
     enrolled_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Estado de la matrícula. Invariante: is_active == (status == 'activo').
+    # activo | por_confirmar | retirado | trasladado | no_continua | egresado
+    status = db.Column(db.String(20), default='activo')
+    enrollment_date = db.Column(db.Date)          # fecha de matrícula
+    withdrawal_date = db.Column(db.Date)
+    withdrawal_reason = db.Column(db.Text)
+    confirmed_at = db.Column(db.DateTime)
+    promoted_from_id = db.Column(db.Integer)      # matrícula de origen (año anterior)
 
     student = db.relationship('User', foreign_keys=[student_id])
 
@@ -216,8 +224,109 @@ class Enrollment(db.Model):
         return {
             'id': self.id, 'student_id': self.student_id, 'course_id': self.course_id,
             'year': self.year, 'is_active': self.is_active,
+            'status': self.status or ('activo' if self.is_active else 'retirado'),
+            'enrollment_date': self.enrollment_date.isoformat() if self.enrollment_date else None,
+            'withdrawal_date': self.withdrawal_date.isoformat() if self.withdrawal_date else None,
+            'withdrawal_reason': self.withdrawal_reason,
+            'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
+            'promoted_from_id': self.promoted_from_id,
             'student': self.student.to_dict() if self.student else None
         }
+
+
+ENROLLMENT_STATUSES = ('activo', 'por_confirmar', 'retirado', 'trasladado', 'no_continua', 'egresado')
+
+
+def _sync_enrollment_flags(session, _ctx, _instances):
+    """Mantiene is_active == (status == 'activo') en toda matrícula que se guarde.
+
+    Si el código cambió `status`, manda el estado. Si solo cambió `is_active`
+    (rutas antiguas), el estado se ajusta: activar → 'activo'; desactivar una
+    matrícula activa → 'retirado'.
+    """
+    from sqlalchemy import inspect as _inspect
+    from datetime import date as _d
+    for obj in list(session.new) + list(session.dirty):
+        if not isinstance(obj, Enrollment):
+            continue
+        st = _inspect(obj)
+        status_changed = st.attrs.status.history.has_changes()
+        active_changed = st.attrs.is_active.history.has_changes()
+        if obj in session.new:
+            if obj.status is None:
+                obj.status = 'activo' if obj.is_active in (None, True) else 'retirado'
+            obj.is_active = (obj.status == 'activo')
+            if obj.enrollment_date is None and obj.status == 'activo':
+                obj.enrollment_date = _d.today()
+            continue
+        if status_changed:
+            obj.is_active = (obj.status == 'activo')
+        elif active_changed:
+            if obj.is_active:
+                obj.status = 'activo'
+            elif obj.status in (None, 'activo'):
+                obj.status = 'retirado'
+
+
+class AcademicYear(db.Model):
+    """Año académico de un colegio. Cerrado = solo lectura."""
+    __tablename__ = 'academic_years'
+    __table_args__ = (db.UniqueConstraint('school_id', 'year', name='uq_academic_year_school_year'),)
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False, index=True)
+    year = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), default='abierto', nullable=False)   # abierto | cerrado
+    created_from_year = db.Column(db.Integer)
+    closed_at = db.Column(db.DateTime)
+    closed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reopened_at = db.Column(db.DateTime)
+    reopened_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    closer = db.relationship('User', foreign_keys=[closed_by])
+    reopener = db.relationship('User', foreign_keys=[reopened_by])
+
+
+class StudentHistory(db.Model):
+    """Bitácora de la vida escolar del alumno (matrícula, retiros, promociones, ficha)."""
+    __tablename__ = 'student_history'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), index=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    year = db.Column(db.Integer)
+    # matricula | importacion | retiro | cambio_curso | promocion | confirmacion | repite |
+    # no_continua | egreso | reincorporacion | ficha_editada
+    event = db.Column(db.String(30), nullable=False)
+    description = db.Column(db.Text)
+    details = db.Column(db.Text)                  # JSON
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
+    from_course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))   # actor (None = sistema)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    course = db.relationship('Course', foreign_keys=[course_id])
+    from_course = db.relationship('Course', foreign_keys=[from_course_id])
+    actor = db.relationship('User', foreign_keys=[user_id])
+
+    def get_details(self):
+        import json
+        try:
+            return json.loads(self.details) if self.details else None
+        except Exception:
+            return None
+
+
+def log_student_event(student_id, event, description, school_id, year=None, course_id=None,
+                      from_course_id=None, details=None, user_id=None):
+    """Registra un evento en el historial del alumno. No hace commit."""
+    import json
+    if details is not None and not isinstance(details, str):
+        details = json.dumps(details, ensure_ascii=False, default=str)
+    h = StudentHistory(student_id=student_id, event=event, description=description,
+                       school_id=school_id, year=year, course_id=course_id,
+                       from_course_id=from_course_id, details=details, user_id=user_id or None)
+    db.session.add(h)
+    return h
 
 
 class CourseSubject(db.Model):
@@ -1235,3 +1344,9 @@ class SolicitudDemo(db.Model):
             'atendida': self.atendida,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+# Sincroniza is_active/status de las matrículas antes de cada flush
+from sqlalchemy import event as _sa_event
+from sqlalchemy.orm import Session as _SaSession
+_sa_event.listen(_SaSession, 'before_flush', _sync_enrollment_flags)

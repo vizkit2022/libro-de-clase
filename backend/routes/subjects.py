@@ -127,6 +127,10 @@ def asignar_a_cursos(subject_id):
 
     faltan = [c for c in cursos if c.id not in ya_tienen]
 
+    if not simular:
+        from routes.access import ensure_year_open
+        ensure_year_open(sid, year)
+
     if simular:
         return jsonify({
             'simulado': True, 'year': year, 'horas': horas,

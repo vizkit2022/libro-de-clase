@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from models import db, Course, Enrollment, CourseSubject, User, StudentGuardian
 from sqlalchemy import or_
 from datetime import date
-from routes.access import forbidden
+from routes.access import forbidden, ensure_course_open
 
 courses_bp = Blueprint('courses', __name__)
 
@@ -102,17 +102,22 @@ def enroll_student(course_id):
     if claims.get('role') not in ['admin', 'directivo']:
         return jsonify({'error': 'Sin permisos'}), 403
     data = request.get_json()
+    course = Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404()
+    ensure_course_open(course)
+    year = data.get('year', course.year or date.today().year)
     existing = Enrollment.query.filter_by(
-        student_id=data['student_id'], course_id=course_id,
-        year=data.get('year', date.today().year)
+        student_id=data['student_id'], course_id=course_id, year=year
     ).first()
     if existing:
         existing.is_active = True
+        existing.status = 'activo'
+        if not existing.enrollment_date:
+            existing.enrollment_date = date.today()
         db.session.commit()
         return jsonify(existing.to_dict()), 200
     enrollment = Enrollment(
-        student_id=data['student_id'], course_id=course_id,
-        year=data.get('year', date.today().year)
+        student_id=data['student_id'], course_id=course_id, year=year,
+        is_active=True, status='activo', enrollment_date=date.today()
     )
     db.session.add(enrollment)
     db.session.commit()
@@ -126,6 +131,7 @@ def add_subject(course_id):
     if claims.get('role') not in ['admin', 'directivo']:
         return jsonify({'error': 'Sin permisos'}), 403
     data = request.get_json()
+    ensure_course_open(Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404())
     ya = CourseSubject.query.filter_by(
         course_id=course_id, subject_id=data['subject_id']).first()
     if ya:
@@ -146,7 +152,7 @@ def update_course_subject(course_id, cs_id):
     claims = get_jwt()
     if claims.get('role') not in ['admin', 'directivo']:
         return jsonify({'error': 'Sin permisos'}), 403
-    Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404()
+    ensure_course_open(Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404())
     cs = CourseSubject.query.filter_by(id=cs_id, course_id=course_id).first_or_404()
     data = request.get_json() or {}
     if 'teacher_id' in data:
@@ -167,7 +173,7 @@ def remove_course_subject(course_id, cs_id):
     claims = get_jwt()
     if claims.get('role') not in ['admin', 'directivo']:
         return jsonify({'error': 'Sin permisos'}), 403
-    Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404()
+    ensure_course_open(Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404())
     cs = CourseSubject.query.filter_by(id=cs_id, course_id=course_id).first_or_404()
     db.session.delete(cs)
     db.session.commit()

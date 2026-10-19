@@ -64,3 +64,40 @@ def only_published(claims):
 
 def forbidden(msg='Sin permisos'):
     return jsonify({'error': msg}), 403
+
+
+# ── Años académicos cerrados (solo lectura) ─────────────────────────────────
+
+def closed_year_message(year):
+    return (f'El año académico {year} está cerrado. Pídele a un administrador '
+            'que lo reabra para hacer cambios.')
+
+
+def year_is_closed(school_id, year):
+    """¿El año académico del colegio está cerrado? (sin fila = abierto)."""
+    if not school_id or year is None:
+        return False
+    from models import AcademicYear
+    return AcademicYear.query.filter_by(
+        school_id=school_id, year=int(year), status='cerrado').first() is not None
+
+
+def ensure_year_open(school_id, year):
+    """Corta la request con 409 JSON si el año está cerrado."""
+    if year_is_closed(school_id, year):
+        from flask import abort, make_response
+        abort(make_response(jsonify({'error': closed_year_message(year)}), 409))
+
+
+def ensure_course_open(course):
+    """409 si el curso pertenece a un año cerrado."""
+    if course is not None:
+        ensure_year_open(course.school_id, course.year)
+
+
+def ensure_course_subject_open(course_subject_id):
+    """409 si la asignatura de curso pertenece a un año cerrado."""
+    from models import CourseSubject
+    cs = CourseSubject.query.get(course_subject_id) if course_subject_id else None
+    if cs is not None:
+        ensure_course_open(cs.course)

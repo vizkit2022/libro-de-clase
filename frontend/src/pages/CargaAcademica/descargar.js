@@ -9,7 +9,22 @@ import axios from 'axios';
  * descarga desde un blob en memoria.
  */
 export default async function descargarArchivo(url, nombreSugerido) {
-  const r = await axios.get(url, { responseType: 'blob' });
+  let r;
+  try {
+    r = await axios.get(url, { responseType: 'blob' });
+  } catch (e) {
+    // Con responseType 'blob' el JSON de error también llega como blob
+    let msg = 'No se pudo generar el archivo';
+    const d = e?.response?.data;
+    try {
+      if (d && typeof d.text === 'function') msg = JSON.parse(await d.text()).error || msg;
+      else if (d?.error) msg = d.error;
+    } catch { /* cuerpo no legible */ }
+    if (e?.response?.status === 403 && msg === 'No se pudo generar el archivo') {
+      msg = 'Tu perfil no tiene permiso para descargar este archivo.';
+    }
+    throw new Error(msg);
+  }
 
   // Si el backend devolvió un error JSON, llega como blob igual
   if (r.data.type && r.data.type.includes('application/json')) {

@@ -3,7 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt
 from models import db, Grade, CourseSubject, Enrollment, User
 from sqlalchemy import func
 from datetime import datetime
-from routes.access import current_claims, allowed_student_ids, can_view_student, only_published, forbidden
+from routes.access import (current_claims, allowed_student_ids, can_view_student, only_published, forbidden,
+                           ensure_course_subject_open, ensure_course_open)
 
 grades_bp = Blueprint('grades', __name__)
 
@@ -46,6 +47,7 @@ def create_grade():
         return jsonify({'error': 'Sin permisos'}), 403
     data = request.get_json()
     creator_id = int(claims['sub'])
+    ensure_course_subject_open(data.get('course_subject_id'))
 
     grade = Grade(
         student_id=data['student_id'],
@@ -70,6 +72,7 @@ def create_bulk_grades():
     data = request.get_json()
     creator_id = int(claims['sub'])
     grades_list = data.get('grades', [])
+    ensure_course_subject_open(data.get('course_subject_id'))
     created = []
     for g in grades_list:
         if g.get('value') is not None:
@@ -97,6 +100,7 @@ def update_grade(grade_id):
     if claims.get('role') not in ['admin', 'directivo', 'profesor']:
         return jsonify({'error': 'Sin permisos'}), 403
     grade = Grade.query.get_or_404(grade_id)
+    ensure_course_open(grade.course_subject.course if grade.course_subject else None)
     data = request.get_json()
     if 'value' in data:
         grade.value = float(data['value'])
@@ -115,6 +119,7 @@ def delete_grade(grade_id):
     if claims.get('role') not in ['admin', 'directivo', 'profesor']:
         return jsonify({'error': 'Sin permisos'}), 403
     grade = Grade.query.get_or_404(grade_id)
+    ensure_course_open(grade.course_subject.course if grade.course_subject else None)
     db.session.delete(grade)
     db.session.commit()
     return jsonify({'message': 'Calificación eliminada'}), 200
@@ -155,6 +160,16 @@ def student_grade_summary(student_id):
 # Las notas recién ingresadas quedan como "no publicadas": solo las ve el equipo
 # docente. Cuando el profesor publica, pasan a ser visibles para apoderados y alumnos.
 
+def _ensure_grades_open(grades):
+    """409 si alguna de las notas pertenece a un curso de un año cerrado."""
+    vistos = set()
+    for g in grades:
+        cs = g.course_subject
+        if cs and cs.course_id not in vistos:
+            vistos.add(cs.course_id)
+            ensure_course_open(cs.course)
+
+
 def _publish_query(data, school_id):
     """Construye la consulta de notas a (des)publicar según los filtros recibidos."""
     q = Grade.query.join(User, Grade.student_id == User.id).filter(User.school_id == school_id)
@@ -184,7 +199,9 @@ def publish_grades():
         return jsonify({'error': 'Indica grade_ids o algún filtro (course_subject_id, period_id, student_id)'}), 400
     now = datetime.utcnow()
     count = 0
-    for g in q.filter(Grade.is_published == False).all():
+    pendientes = q.filter(Grade.is_published == False).all()
+    _ensure_grades_open(pendientes)
+    for g in pendientes:
         g.is_published = True
         g.published_at = now
         count += 1
@@ -204,7 +221,9 @@ def unpublish_grades():
     if q is None:
         return jsonify({'error': 'Indica grade_ids o algún filtro (course_subject_id, period_id, student_id)'}), 400
     count = 0
-    for g in q.filter(Grade.is_published == True).all():
+    publicadas = q.filter(Grade.is_published == True).all()
+    _ensure_grades_open(publicadas)
+    for g in publicadas:
         g.is_published = False
         g.published_at = None
         count += 1

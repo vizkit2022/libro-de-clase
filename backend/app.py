@@ -66,6 +66,7 @@ def create_app():
     from routes.matricula import matricula_bp
     from routes.onboarding import onboarding_bp
     from routes.ia_estado import ia_bp
+    from routes.anios import anios_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -86,6 +87,7 @@ def create_app():
     app.register_blueprint(matricula_bp, url_prefix='/api/matricula')
     app.register_blueprint(onboarding_bp, url_prefix='/api/onboarding')
     app.register_blueprint(ia_bp, url_prefix='/api/ia')
+    app.register_blueprint(anios_bp, url_prefix='/api/anios')
     app.register_blueprint(sitio_bp)
 
     # ── Serve React (SPA catch-all) ───────────────────────────────────────────
@@ -303,7 +305,59 @@ def run_migrations():
                 except Exception:
                     conn.rollback()
 
+        # 8. Estados de matrícula (años académicos). Las columnas se agregan SIN
+        #    default para poder distinguir las filas antiguas (status NULL) y
+        #    rellenarlas una sola vez; las nuevas reciben el default del modelo.
+        for col, definicion in [
+            ('status',            'VARCHAR(20)'),
+            ('enrollment_date',   'DATE'),
+            ('withdrawal_date',   'DATE'),
+            ('withdrawal_reason', 'TEXT'),
+            ('confirmed_at',      'TIMESTAMP'),
+            ('promoted_from_id',  'INTEGER'),
+        ]:
+            try:
+                conn.execute(text(f"ALTER TABLE enrollments ADD COLUMN {col} {definicion}"))
+                conn.commit()
+                print(f"✅ Migración: enrollments.{col} agregada")
+            except Exception:
+                conn.rollback()   # ya existía → ignorar
+
+        # 8b. Backfill (solo filas sin estado → re-ejecutar no cambia nada)
+        activo_sql = "COALESCE(is_active, TRUE)"
+        for sql in (
+            # Fecha de matrícula: la de la ficha, o el día en que se creó la matrícula
+            "UPDATE enrollments SET enrollment_date = COALESCE("
+            " (SELECT sp.enrollment_date FROM student_profiles sp"
+            "  WHERE sp.student_id = enrollments.student_id), DATE(enrolled_at))"
+            " WHERE status IS NULL AND enrollment_date IS NULL",
+            # Fecha y motivo de retiro de la ficha para las matrículas inactivas
+            "UPDATE enrollments SET"
+            " withdrawal_date = (SELECT sp.withdrawal_date FROM student_profiles sp"
+            "  WHERE sp.student_id = enrollments.student_id),"
+            " withdrawal_reason = (SELECT sp.withdrawal_reason FROM student_profiles sp"
+            "  WHERE sp.student_id = enrollments.student_id)"
+            f" WHERE status IS NULL AND NOT {activo_sql} AND withdrawal_date IS NULL",
+            # Estado: activo / trasladado («Cambiado a …») / retirado
+            "UPDATE enrollments SET status = CASE"
+            f" WHEN {activo_sql} THEN 'activo'"
+            " WHEN EXISTS (SELECT 1 FROM student_profiles sp"
+            "  WHERE sp.student_id = enrollments.student_id"
+            "  AND LOWER(sp.course_change) LIKE 'cambiado a%') THEN 'trasladado'"
+            " ELSE 'retirado' END"
+            " WHERE status IS NULL",
+        ):
+            try:
+                r = conn.execute(text(sql))
+                conn.commit()
+                if r.rowcount:
+                    print(f"✅ Migración: backfill de matrículas ({r.rowcount} filas)")
+            except Exception as e:
+                conn.rollback()
+                print(f"⚠️  Backfill de matrículas falló: {e}")
+
         # La tabla convivencia_bitacora se crea automáticamente por db.create_all()
+        # academic_years y student_history también (db.create_all()).
 
 
 def _ensure_all_default_periods():
@@ -477,7 +531,8 @@ def seed_data():
 
     # Matricular alumnos
     for alumno in alumnos:
-        e = Enrollment(student_id=alumno.id, course_id=curso.id, year=2026)
+        e = Enrollment(student_id=alumno.id, course_id=curso.id, year=2026,
+                       status='activo', is_active=True, enrollment_date=date(2026, 3, 1))
         db.session.add(e)
 
     # Asignaturas del curso con profesores

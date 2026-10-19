@@ -783,6 +783,43 @@ tr:hover td { background: #fafafa; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
+/* ── Selector de año académico ────────────────────────────────── */
+.kv-anio { position: relative; padding: 12px 14px 4px; }
+.kv-anio-btn {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 7px 12px 7px 14px; border-radius: 999px; border: none; cursor: pointer;
+  background: #fff; color: #111827; font-family: inherit; text-align: left;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: box-shadow .15s;
+}
+.kv-anio-btn:hover { box-shadow: 0 0 0 3px rgba(107, 142, 245, .35); }
+.kv-anio-btn:focus-visible { outline: 2px solid var(--azul-cl); outline-offset: 2px; }
+.kv-anio-et { font-size: 12px; color: #6b7280; font-weight: 600; }
+.kv-anio-btn b { font-size: 13.5px; font-weight: 800; letter-spacing: -.01em; }
+.kv-anio-candado { display: inline-flex; color: #b45309; }
+.kv-anio-flecha { margin-left: auto; display: inline-flex; color: #6b7280; }
+.kv-anio-menu {
+  position: absolute; left: 14px; right: 14px; top: calc(100% + 2px); z-index: 80;
+  background: #fff; border-radius: 12px; padding: 5px; color: #111827;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .35); max-height: 320px; overflow-y: auto;
+}
+.kv-anio-menu button {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px;
+  background: none; border: none; border-radius: 8px; cursor: pointer;
+  font-family: inherit; font-size: 13.5px; color: #374151; text-align: left;
+}
+.kv-anio-menu button:hover { background: #f3f4f6; }
+.kv-anio-menu button.on { color: var(--azul); font-weight: 700; }
+.kv-anio-op { font-weight: 650; }
+.kv-anio-chip {
+  display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700;
+  color: #92400e; background: #fef3c7; padding: 1px 7px; border-radius: 999px;
+}
+.kv-anio-ok { margin-left: auto; display: inline-flex; color: var(--azul); }
+.kv-anio-menu .kv-anio-gestionar {
+  border-top: 1px solid #f1f5f9; border-radius: 0 0 8px 8px; margin-top: 4px;
+  padding-top: 10px; color: #4b5563; font-weight: 600; font-size: 13px;
+}
+
 .kv-lat-nav { flex: 1; overflow-y: auto; padding: 12px 10px; }
 .kv-grupo {
   font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase;

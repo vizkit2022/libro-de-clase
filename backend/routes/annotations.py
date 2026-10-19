@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
-from models import db, Annotation, User
+from models import db, Annotation, User, Course
 from datetime import date
-from routes.access import current_claims, allowed_student_ids, forbidden
+from routes.access import current_claims, allowed_student_ids, forbidden, ensure_course_open
 
 annotations_bp = Blueprint('annotations', __name__)
 
@@ -43,6 +43,7 @@ def create_annotation():
         return jsonify({'error': 'Sin permisos'}), 403
     creator_id = int(claims['sub'])
     data = request.get_json()
+    ensure_course_open(Course.query.get(data.get('course_id')) if data.get('course_id') else None)
 
     annotation = Annotation(
         student_id=data['student_id'],
@@ -64,6 +65,7 @@ def update_annotation(annotation_id):
     if claims.get('role') not in ['admin', 'directivo', 'profesor']:
         return forbidden()
     annotation = Annotation.query.get_or_404(annotation_id)
+    ensure_course_open(annotation.course)
     data = request.get_json()
     for field in ['annotation_type', 'title', 'description']:
         if field in data:
@@ -80,6 +82,7 @@ def delete_annotation(annotation_id):
     if claims.get('role') not in ['admin', 'directivo', 'profesor']:
         return jsonify({'error': 'Sin permisos'}), 403
     annotation = Annotation.query.get_or_404(annotation_id)
+    ensure_course_open(annotation.course)
     db.session.delete(annotation)
     db.session.commit()
     return jsonify({'message': 'Anotación eliminada'}), 200

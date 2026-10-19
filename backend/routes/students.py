@@ -20,7 +20,7 @@ from sqlalchemy import func
 from models import (db, User, Enrollment, Grade, StudentGuardian,
                     StudentProfile, StudentMedical, StudentFamilyMember,
                     AuthorizationTemplate, StudentAuthorization, StudentDocument,
-                    ensure_authorization_templates)
+                    ensure_authorization_templates, log_student_event)
 from routes.access import current_claims, can_view_student, only_published
 
 students_bp = Blueprint('students', __name__)
@@ -189,6 +189,126 @@ def rut_is_valid(rut):
     r = 11 - (total % 11)
     expected = '0' if r == 11 else 'K' if r == 10 else str(r)
     return expected == dv
+
+
+# ── Historial de cambios en la ficha ────────────────────────────────────────
+
+FIELD_LABELS = {
+    # Usuario
+    'first_name': 'Nombres', 'last_name': 'Apellidos', 'rut': 'N° identificación',
+    'birth_date': 'Fecha de nacimiento', 'gender': 'Sexo', 'address': 'Dirección',
+    'phone': 'Teléfono', 'email': 'Correo',
+    # Perfil
+    'id_type': 'Tipo de identificación', 'matricula_number': 'N° de matrícula',
+    'enrollment_date': 'Fecha de matrícula', 'list_order': 'N° de lista',
+    'social_name': 'Nombre social', 'gender_identity': 'Identidad de género',
+    'gender_other': 'Identidad de género (otra)', 'nationality': 'Nacionalidad',
+    'region': 'Región', 'comuna': 'Comuna', 'city': 'Ciudad',
+    'previous_school': 'Colegio de procedencia', 'repeated_courses': 'Cursos repetidos',
+    'admission_type': 'Tipo de admisión', 'status': 'Estado',
+    'withdrawal_date': 'Fecha de retiro', 'withdrawal_reason': 'Motivo de retiro',
+    'course_change': 'Cambio de curso', 'ethnicity': 'Etnia', 'religion': 'Religión',
+    'baptized': 'Bautizado', 'lives_with': 'Vive con', 'household_size': 'N° de personas en el hogar',
+    'siblings_count': 'N° de hermanos', 'siblings_in_school': 'Hermanos en el colegio',
+    'has_sibling_in_school': 'Tiene hermanos en el colegio', 'staff_child': 'Hijo de funcionario',
+    'pie': 'PIE', 'pie_type': 'Tipo de PIE', 'pie_diagnosis': 'Diagnóstico PIE', 'nee': 'NEE',
+    'priority_status': 'Prioridad', 'sige_data': 'Datos SIGE', 'lunch_benefit': 'Beneficio de alimentación',
+    'pickup_with': 'Retiro con', 'judicial_restriction': 'Prohibición judicial',
+    'judicial_restriction_detail': 'Detalle prohibición judicial',
+    'has_commitment_letter': 'Carta de compromiso',
+    'emergency_contact_name': 'Contacto de emergencia', 'emergency_phone': 'Teléfono de emergencia 1',
+    'emergency_phone_2': 'Teléfono de emergencia 2', 'emergency_email': 'Correo de emergencia',
+    'interests': 'Intereses', 'observations': 'Observaciones', 'extra': 'Otros datos',
+    # Salud
+    'contraindications': 'Contraindicaciones', 'allergies': 'Alergias',
+    'chronic_diseases': 'Enfermedades crónicas', 'special_care': 'Cuidados especiales',
+    'medications': 'Medicamentos', 'problem_visual': 'Problemas visuales',
+    'problem_auditory': 'Problemas auditivos', 'problem_cardiac': 'Problemas cardíacos',
+    'problem_spine': 'Problemas de columna', 'other_problems': 'Otros problemas',
+    'blood_type': 'Grupo sanguíneo', 'health_provider': 'Previsión de salud',
+    'health_insurance': 'Seguro de salud', 'height_cm': 'Estatura (cm)', 'weight_kg': 'Peso (kg)',
+    'waist_cm': 'Cintura (cm)', 'clothing_size': 'Talla', 'specialists': 'Especialistas',
+    'covid_vaccination': 'Vacunación COVID', 'notes': 'Notas',
+    # Familia
+    'relationship': 'Parentesco', 'relationship_other': 'Parentesco (otro)', 'sex': 'Sexo',
+    'marital_status': 'Estado civil', 'work_phone': 'Teléfono laboral',
+    'education_level': 'Estudios', 'profession': 'Profesión', 'occupation': 'Ocupación',
+    'workplace': 'Lugar de trabajo', 'is_household_head': 'Jefe de hogar',
+    'lives_with_student': 'Vive con el alumno', 'can_pickup': 'Puede retirar',
+    'is_economic_tutor': 'Tutor económico', 'is_emergency_contact': 'Contacto de emergencia',
+    'guardian_role': 'Rol de apoderado',
+    # Autorizaciones / documentos
+    'title': 'Título', 'description': 'Descripción', 'signed_by_name': 'Firmado por',
+    'signed_by_rut': 'RUT de quien firma', 'signed_at': 'Fecha de firma',
+    'signature_image': 'Firma', 'filename': 'Archivo', 'category': 'Categoría',
+    'template_id': 'Plantilla', 'signed_by_member_id': 'Firmante',
+}
+_HISTORY_SKIP = {'id', 'student_id', 'created_at', 'updated_at', 'created_by', 'uploaded_by',
+                 'user_id', 'content', 'mime_type', 'size_bytes', 'template_id',
+                 'signed_by_member_id'}
+
+
+def _fmt_value(field, v):
+    if v is None or v == '':
+        return None
+    if field == 'signature_image':
+        return 'Firma registrada'
+    if isinstance(v, bool):
+        return 'Sí' if v else 'No'
+    if isinstance(v, datetime):
+        return v.strftime('%d-%m-%Y %H:%M')
+    if isinstance(v, date):
+        return v.strftime('%d-%m-%Y')
+    if field == 'extra':
+        return 'Actualizado'
+    v = str(v)
+    return v if len(v) <= 300 else v[:297] + '…'
+
+
+def _snapshot(obj, fields=None):
+    """Valores actuales del objeto (sin binarios) para comparar después."""
+    if obj is None:
+        return {}
+    if fields is None:
+        fields = [c.key for c in obj.__table__.columns
+                  if c.key not in _HISTORY_SKIP and not isinstance(c.type, db.LargeBinary)]
+    return {f: getattr(obj, f, None) for f in fields}
+
+
+def _diff(before, after, prefix=''):
+    campos = []
+    for f in after:
+        a, b = before.get(f), after.get(f)
+        if f == 'signature_image':
+            if (a or None) != (b or None):
+                campos.append({'campo': 'Firma', 'antes': None,
+                               'despues': 'Firma actualizada' if b else 'Firma eliminada'})
+            continue
+        fa, fb = _fmt_value(f, a), _fmt_value(f, b)
+        if f == 'extra':
+            fa, fb = (a or None), (b or None)
+            if fa == fb:
+                continue
+            campos.append({'campo': prefix + FIELD_LABELS['extra'], 'antes': None, 'despues': 'Actualizado'})
+            continue
+        if fa != fb:
+            campos.append({'campo': prefix + FIELD_LABELS.get(f, f.replace('_', ' ').capitalize()),
+                           'antes': fa, 'despues': fb})
+    return campos
+
+
+def log_ficha_change(me, sid, seccion, campos, description=None):
+    """Registra 'ficha_editada' si hubo cambios. No hace commit."""
+    if not campos and not description:
+        return
+    if not description:
+        nombres = ', '.join(c['campo'] for c in campos[:6])
+        if len(campos) > 6:
+            nombres += f' y {len(campos) - 6} más'
+        description = f'Ficha editada — {seccion}: {nombres}'
+    log_student_event(sid, 'ficha_editada', description, me.get('school_id'),
+                      details={'seccion': seccion, 'campos': campos or []},
+                      user_id=me.get('user_id') or None)
 
 
 # ── Carga del alumno + permisos ─────────────────────────────────────────────
@@ -367,7 +487,11 @@ def update_profile(sid):
     pdata = data.get('profile') or {}
     if not isinstance(udata, dict) or not isinstance(pdata, dict):
         raise FichaError('Formato inválido: se espera {"user": {...}, "profile": {...}}')
+    u_before = _snapshot(student, USER_EDITABLE)
+    existing_profile = StudentProfile.query.filter_by(student_id=sid).first()
+    p_before = _snapshot(existing_profile)
     _apply_user_fields(student, udata)
+    profile = None
     if pdata:
         profile = get_or_create_profile(sid)
         fields = [f for f in _editable_fields(StudentProfile, PROFILE_READONLY) if f != 'extra']
@@ -377,6 +501,10 @@ def update_profile(sid):
             if extra is not None and not isinstance(extra, dict):
                 raise FichaError('extra debe ser un objeto')
             profile.extra = json.dumps(extra, ensure_ascii=False) if extra else None
+    campos = _diff(u_before, _snapshot(student, USER_EDITABLE))
+    if profile is not None:
+        campos += _diff(p_before, _snapshot(profile))
+    log_ficha_change(me, sid, 'Datos del alumno', campos)
     db.session.commit()
     return jsonify(build_ficha(me, student)), 200
 
@@ -384,13 +512,17 @@ def update_profile(sid):
 @students_bp.route('/<int:sid>/medical', methods=['PUT'])
 @jwt_required()
 def update_medical(sid):
-    load_student(sid, edit=True)
+    me, _student = load_student(sid, edit=True)
     data = _json_body()
+    before = _snapshot(StudentMedical.query.filter_by(student_id=sid).first())
     medical = get_or_create_medical(sid)
+    if not before:
+        before = {k: (False if k.startswith('problem_') else None) for k in _snapshot(medical)}
     _apply(medical, data, _editable_fields(StudentMedical, MEDICAL_READONLY))
     for f in ('problem_visual', 'problem_auditory', 'problem_cardiac', 'problem_spine'):
         if getattr(medical, f) is None:
             setattr(medical, f, False)
+    log_ficha_change(me, sid, 'Salud', _diff(before, _snapshot(medical)))
     db.session.commit()
     return jsonify(medical.to_dict()), 200
 
@@ -432,7 +564,7 @@ def list_family(sid):
 @students_bp.route('/<int:sid>/family', methods=['POST'])
 @jwt_required()
 def create_family_member(sid):
-    load_student(sid, edit=True)
+    me, _student = load_student(sid, edit=True)
     data = _json_body()
     if not data.get('first_name') or not str(data.get('first_name')).strip():
         raise FichaError('El nombre (first_name) es obligatorio')
@@ -442,6 +574,9 @@ def create_family_member(sid):
     db.session.flush()
     if 'guardian_role' in data:
         set_guardian_role(sid, member, data.get('guardian_role') or None)
+    campos = [c for c in _diff({}, _snapshot(member)) if c['despues'] is not None]
+    log_ficha_change(me, sid, 'Familia', campos,
+                     f'Familiar agregado: {member.full_name} ({member.relationship or "sin parentesco"})')
     db.session.commit()
     return jsonify(member.to_dict()), 201
 
@@ -449,12 +584,15 @@ def create_family_member(sid):
 @students_bp.route('/<int:sid>/family/<int:mid>', methods=['PUT'])
 @jwt_required()
 def update_family_member(sid, mid):
-    load_student(sid, edit=True)
+    me, _student = load_student(sid, edit=True)
     member = _member_or_404(sid, mid)
+    before = _snapshot(member)
     data = _json_body()
     _apply_member(member, data)
     if 'guardian_role' in data:
         set_guardian_role(sid, member, data.get('guardian_role') or None)
+    campos = _diff(before, _snapshot(member), prefix=f'{member.full_name} · ')
+    log_ficha_change(me, sid, 'Familia', campos)
     db.session.commit()
     return jsonify(member.to_dict()), 200
 
@@ -462,8 +600,10 @@ def update_family_member(sid, mid):
 @students_bp.route('/<int:sid>/family/<int:mid>', methods=['DELETE'])
 @jwt_required()
 def delete_family_member(sid, mid):
-    load_student(sid, edit=True)
+    me, _student = load_student(sid, edit=True)
     member = _member_or_404(sid, mid)
+    log_ficha_change(me, sid, 'Familia', [],
+                     f'Familiar eliminado: {member.full_name} ({member.relationship or "sin parentesco"})')
     StudentAuthorization.query.filter_by(signed_by_member_id=member.id) \
         .update({'signed_by_member_id': None}, synchronize_session=False)
     db.session.delete(member)
@@ -474,7 +614,7 @@ def delete_family_member(sid, mid):
 @students_bp.route('/<int:sid>/guardians', methods=['PUT'])
 @jwt_required()
 def set_guardians(sid):
-    load_student(sid, edit=True)
+    me, _student = load_student(sid, edit=True)
     data = _json_body()
     t_id = data.get('titular_member_id')
     s_id = data.get('suplente_member_id')
@@ -484,6 +624,8 @@ def set_guardians(sid):
         raise FichaError('El apoderado titular y el suplente deben ser personas distintas')
     family = _family(sid)
     by_id = {m.id: m for m in family}
+    roles_before = {r: next((m.full_name for m in family if m.guardian_role == r), None)
+                    for r in GUARDIAN_ROLES}
     for mid in (t_id, s_id):
         if mid and mid not in by_id:
             raise FichaError('El miembro indicado no pertenece a la familia del alumno')
@@ -495,6 +637,13 @@ def set_guardians(sid):
                 m.guardian_role = None
         if mid:
             by_id[mid].guardian_role = role
+    labels = {'titular': 'Apoderado titular', 'suplente': 'Apoderado suplente'}
+    campos = []
+    for r in GUARDIAN_ROLES:
+        after = next((m.full_name for m in family if m.guardian_role == r), None)
+        if after != roles_before[r]:
+            campos.append({'campo': labels[r], 'antes': roles_before[r], 'despues': after})
+    log_ficha_change(me, sid, 'Apoderados', campos)
     db.session.commit()
     return jsonify([m.to_dict() for m in _family(sid)]), 200
 
@@ -700,6 +849,9 @@ def create_authorization(sid):
     if not a.title:
         raise FichaError('Debe indicar una plantilla (template_id) o un título')
     db.session.add(a)
+    campos = [c for c in _diff({}, _snapshot(a)) if c['despues'] is not None]
+    log_ficha_change(me, sid, 'Autorizaciones', campos,
+                     f'Autorización agregada: {a.title} ({a.status or "pendiente"})')
     db.session.commit()
     return jsonify(a.to_dict()), 201
 
@@ -716,9 +868,14 @@ def _authorization_or_404(sid, aid):
 def update_authorization(sid, aid):
     me, _student = load_student(sid, edit=True)
     a = _authorization_or_404(sid, aid)
+    before = _snapshot(a)
     _apply_authorization(sid, a, _json_body(), me)
     if not a.title:
         raise FichaError('El título es obligatorio')
+    campos = _diff(before, _snapshot(a))
+    if campos:
+        log_ficha_change(me, sid, 'Autorizaciones', campos,
+                         f'Autorización editada: {a.title} — ' + ', '.join(c['campo'] for c in campos))
     db.session.commit()
     return jsonify(a.to_dict()), 200
 
@@ -726,8 +883,9 @@ def update_authorization(sid, aid):
 @students_bp.route('/<int:sid>/authorizations/<int:aid>', methods=['DELETE'])
 @jwt_required()
 def delete_authorization(sid, aid):
-    load_student(sid, edit=True)
+    me, _student = load_student(sid, edit=True)
     a = _authorization_or_404(sid, aid)
+    log_ficha_change(me, sid, 'Autorizaciones', [], f'Autorización eliminada: {a.title}')
     db.session.delete(a)
     db.session.commit()
     return jsonify({'message': 'Autorización eliminada'}), 200
@@ -791,6 +949,8 @@ def upload_document(sid):
         mime_type=coerce(StudentDocument, 'mime_type', mime), size_bytes=len(content),
         content=content, uploaded_by=me['user_id'] or None)
     db.session.add(doc)
+    log_ficha_change(me, sid, 'Documentos', [{'campo': 'Documento', 'antes': None, 'despues': doc.title}],
+                     f'Documento subido: {doc.title} ({doc.category})')
     db.session.commit()
     return jsonify(doc.to_dict()), 201
 
@@ -800,6 +960,7 @@ def upload_document(sid):
 def update_document(sid, did):
     me, _student = load_student(sid, edit=True)
     doc = _document_or_404(sid, did)
+    before = _snapshot(doc, ('filename', 'title', 'category', 'description'))
     if request.mimetype and request.mimetype.startswith('multipart/'):
         data = request.form.to_dict()
         fs = request.files.get('file')
@@ -823,6 +984,10 @@ def update_document(sid, did):
     if 'description' in data:
         doc.description = data.get('description') or None
     doc.updated_at = datetime.utcnow()
+    campos = _diff(before, _snapshot(doc, ('filename', 'title', 'category', 'description')))
+    if campos:
+        log_ficha_change(me, sid, 'Documentos', campos,
+                         f'Documento editado: {doc.title} — ' + ', '.join(c['campo'] for c in campos))
     db.session.commit()
     return jsonify(doc.to_dict()), 200
 
@@ -830,8 +995,9 @@ def update_document(sid, did):
 @students_bp.route('/<int:sid>/documents/<int:did>', methods=['DELETE'])
 @jwt_required()
 def delete_document(sid, did):
-    load_student(sid, edit=True)
+    me, _student = load_student(sid, edit=True)
     doc = _document_or_404(sid, did)
+    log_ficha_change(me, sid, 'Documentos', [], f'Documento eliminado: {doc.title or doc.filename}')
     db.session.delete(doc)
     db.session.commit()
     return jsonify({'message': 'Documento eliminado'}), 200
@@ -866,6 +1032,11 @@ def import_matricula():
     dry_run = (request.form.get('dry_run') or 'true').strip().lower() != 'false'
     create_access = (request.form.get('create_guardian_access') or 'false').strip().lower() == 'true'
     course_id = request.form.get('course_id') or None
+    year = request.form.get('year') or request.args.get('year')
+    try:
+        year = int(year) if year not in (None, '') else None
+    except (TypeError, ValueError):
+        raise FichaError('year inválido')
     result = run_import(fs.read(), me, course_id=course_id, dry_run=dry_run,
-                        create_guardian_access=create_access)
+                        create_guardian_access=create_access, year=year)
     return jsonify(result), 200
