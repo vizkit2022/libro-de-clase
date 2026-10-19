@@ -614,16 +614,23 @@ def apply_row(parsed, ctx):
             a.signed_at = signed_at
         n_auth += 1
 
-    # Matrícula en el curso
+    # Matrícula en el curso. Un alumno retirado, o cambiado desde este curso a otro
+    # («Cambiado a 4° Básica A»), queda en el curso pero con la matrícula inactiva:
+    # así figura en el libro del curso sin contar como alumno vigente.
+    withdrawn = bool(parsed['profile'].get('withdrawal_date'))
+    moved_out = norm_key(parsed['profile'].get('course_change') or '').startswith('cambiado a ')
+    if withdrawn:
+        profile.status = 'retirado'
     course = ctx['courses'].get(parsed['course_name'])
     if course:
         ctx['used_courses'].setdefault(course.id, course)
+        active = not (withdrawn or moved_out)
         enr = Enrollment.query.filter_by(student_id=sid, course_id=course.id).first()
         if not enr:
             db.session.add(Enrollment(student_id=sid, course_id=course.id,
-                                      year=course.year or date.today().year, is_active=True))
-        elif not enr.is_active:
-            enr.is_active = True
+                                      year=course.year or date.today().year, is_active=active))
+        else:
+            enr.is_active = active
     else:
         warnings.append('No se pudo determinar el curso del alumno')
 

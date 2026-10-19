@@ -354,3 +354,33 @@ def test_import_create_guardian_access(app, client, headers, tmp_path):
     with app.app_context():
         u = User.query.filter_by(email='fabiola.seis@example.com').first()
         assert u is not None and u.role == 'apoderado'
+
+
+def test_withdrawn_and_moved_students_keep_inactive_enrollment(app, client, headers, tmp_path):
+    """fecha_retiro → ficha 'retirado' y matrícula inactiva; «Cambiado a X» deja inactivo
+    el curso de origen y «Cambiado desde X» activo el de destino."""
+    from excel_fixture import rut_with_dv
+    from models import Enrollment, StudentProfile, Course
+    ret, mov = rut_with_dv(30777001), rut_with_dv(30777002)
+    origen = [
+        {'rut': ret, 'nombre': 'Rita', 'apellidos': 'Retiro', 'id_curso': '7° Básica X',
+         'fecha_retiro': '15/03/2026', 'observacion_retiro': 'Cambio de colegio'},
+        {'rut': mov, 'nombre': 'Mario', 'apellidos': 'Cambio', 'id_curso': '7° Básica X',
+         'cambio_curso': 'Cambiado a 7° Básica Y'},
+    ]
+    destino = [{'rut': mov, 'nombre': 'Mario', 'apellidos': 'Cambio', 'id_curso': '7° Básica Y',
+                'cambio_curso': 'Cambiado desde 7° Básica X'}]
+    for name, rows in (('x.xlsx', origen), ('y.xlsx', destino)):
+        r = _post_import(client, headers['admin'], xf.build_matricula_xlsx(tmp_path / name, rows),
+                         dry_run='false')
+        assert r.status_code == 200, r.get_data(as_text=True)
+
+    sid_ret, sid_mov = _student_id(app, ret), _student_id(app, mov)
+    with app.app_context():
+        cx = Course.query.filter(Course.name == '7° Básica X').one().id
+        cy = Course.query.filter(Course.name == '7° Básica Y').one().id
+        assert StudentProfile.query.filter_by(student_id=sid_ret).one().status == 'retirado'
+        assert [(e.course_id, e.is_active) for e in Enrollment.query.filter_by(student_id=sid_ret)] == [(cx, False)]
+        assert StudentProfile.query.filter_by(student_id=sid_mov).one().status == 'matriculado'
+        enr = {e.course_id: e.is_active for e in Enrollment.query.filter_by(student_id=sid_mov)}
+        assert enr == {cx: False, cy: True}
