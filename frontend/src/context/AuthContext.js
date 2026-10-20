@@ -97,6 +97,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Deja el cierre de sesión en el historial de auditoría. No se espera la
+    // respuesta: salir nunca debe fallar por la red.
+    try {
+      if (axios.defaults.headers.common['Authorization']) {
+        const p = axios.post('/api/auth/logout');
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      }
+    } catch { /* sin red: igual se cierra la sesión local */ }
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);

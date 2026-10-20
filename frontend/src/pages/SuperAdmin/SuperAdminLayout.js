@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { path: '/super-admin/schools', label: 'Colegios', icon: '🏫' },
   { path: '/super-admin/subscriptions', label: 'Suscripciones', icon: '💳' },
   { path: '/super-admin/admins', label: 'Administradores', icon: '👤' },
+  { path: '/super-admin/auditoria', label: 'Auditoría', icon: '🕘' },
 ];
 
 export default function SuperAdminLayout() {

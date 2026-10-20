@@ -150,35 +150,35 @@ class _Estilos:
         self.primario_txt = _mix(primario, '#000000', 0.45) if _lum(primario) > 0.6 \
             else self.primario
         self.tinte = _mix(primario, '#FFFFFF', 0.90)
-        self.lbl = ParagraphStyle('lbl', fontName='Helvetica', fontSize=6.3, leading=7.6,
+        self.lbl = ParagraphStyle('lbl', fontName='Helvetica', fontSize=8, leading=9.6,
                                   textColor=GRIS_LBL)
-        self.val = ParagraphStyle('val', fontName='Helvetica', fontSize=8.6, leading=10.4,
+        self.val = ParagraphStyle('val', fontName='Helvetica', fontSize=11, leading=13.4,
                                   textColor=GRIS_TXT)
         self.val_b = ParagraphStyle('valb', parent=self.val, fontName='Helvetica-Bold')
         self.alerta = ParagraphStyle('alerta', parent=self.val, fontName='Helvetica-Bold',
                                      textColor=colors.HexColor('#B45309'))
         self.vacio = ParagraphStyle('vacio', parent=self.val, textColor=colors.HexColor('#9CA3AF'))
-        self.sec = ParagraphStyle('sec', fontName='Helvetica-Bold', fontSize=8.2, leading=10,
+        self.sec = ParagraphStyle('sec', fontName='Helvetica-Bold', fontSize=11, leading=13.5,
                                   textColor=self.primario_txt)
-        self.card = ParagraphStyle('card', fontName='Helvetica-Bold', fontSize=7.4, leading=9,
+        self.card = ParagraphStyle('card', fontName='Helvetica-Bold', fontSize=9.5, leading=11.5,
                                    textColor=self.primario_txt)
-        self.small = ParagraphStyle('small', fontName='Helvetica', fontSize=7.6, leading=9.4,
+        self.small = ParagraphStyle('small', fontName='Helvetica', fontSize=9.5, leading=11.8,
                                     textColor=GRIS_TXT)
-        self.small_g = ParagraphStyle('smallg', parent=self.small, fontSize=6.8, leading=8.4,
+        self.small_g = ParagraphStyle('smallg', parent=self.small, fontSize=8.5, leading=10.4,
                                       textColor=GRIS_LBL)
-        self.chip = ParagraphStyle('chip', fontName='Helvetica-Bold', fontSize=6.8, leading=8,
+        self.chip = ParagraphStyle('chip', fontName='Helvetica-Bold', fontSize=8.5, leading=10,
                                    alignment=TA_CENTER)
-        self.esc_nom = ParagraphStyle('escn', fontName='Helvetica-Bold', fontSize=12.5,
-                                      leading=15, textColor=GRIS_TXT)
-        self.esc_dat = ParagraphStyle('escd', fontName='Helvetica', fontSize=7.8, leading=10,
+        self.esc_nom = ParagraphStyle('escn', fontName='Helvetica-Bold', fontSize=15,
+                                      leading=18, textColor=GRIS_TXT)
+        self.esc_dat = ParagraphStyle('escd', fontName='Helvetica', fontSize=9.5, leading=12,
                                       textColor=GRIS_LBL)
-        self.titulo = ParagraphStyle('tit', fontName='Helvetica-Bold', fontSize=15, leading=18,
+        self.titulo = ParagraphStyle('tit', fontName='Helvetica-Bold', fontSize=18, leading=22,
                                      textColor=self.primario_txt, alignment=TA_RIGHT)
-        self.alumno = ParagraphStyle('alu', fontName='Helvetica-Bold', fontSize=13, leading=16,
+        self.alumno = ParagraphStyle('alu', fontName='Helvetica-Bold', fontSize=16, leading=19,
                                      textColor=GRIS_TXT)
-        self.alumno_sub = ParagraphStyle('alus', fontName='Helvetica', fontSize=8, leading=10,
+        self.alumno_sub = ParagraphStyle('alus', fontName='Helvetica', fontSize=10, leading=12.5,
                                          textColor=GRIS_LBL)
-        self.firma = ParagraphStyle('firma', fontName='Helvetica', fontSize=7.4, leading=9,
+        self.firma = ParagraphStyle('firma', fontName='Helvetica', fontSize=9.5, leading=11.5,
                                     textColor=GRIS_LBL, alignment=TA_CENTER)
 
 
@@ -193,10 +193,10 @@ def _campo(E, label, valor, bold=False, alerta=False):
             _p(v, st) if v else Paragraph(VACIO, E.vacio)]
 
 
-def _chip(E, estado, ancho=20 * mm):
+def _chip(E, estado, ancho=25 * mm):
     texto, fondo, fg = CHIP.get((estado or '').lower(), (estado or VACIO, '#F3F4F6', '#374151'))
     st = ParagraphStyle('c', parent=E.chip, textColor=colors.HexColor(fg))
-    t = Table([[Paragraph(escape(texto), st)]], colWidths=[ancho], rowHeights=[4.4 * mm])
+    t = Table([[Paragraph(escape(texto), st)]], colWidths=[ancho], rowHeights=[5.8 * mm])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor(fondo)),
         ('ROUNDEDCORNERS', [5, 5, 5, 5]),
@@ -210,7 +210,7 @@ def _chip(E, estado, ancho=20 * mm):
 def _seccion(E, titulo):
     """Barra delgada: acento de color a la izquierda, fondo tenue y título."""
     t = Table([['', Paragraph(escape(titulo.upper()), E.sec)]],
-              colWidths=[1.2 * mm, ANCHO - 1.2 * mm], rowHeights=[5.6 * mm])
+              colWidths=[1.2 * mm, ANCHO - 1.2 * mm], rowHeights=[7.2 * mm])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (0, 0), E.primario),
         ('BACKGROUND', (1, 0), (1, 0), E.tinte),
@@ -357,7 +357,7 @@ def _encabezado(E, school, year, curso, profile, en, estado):
         datos.append('Teléfono: ' + school.phone)
     izq = [Paragraph(escape(nombre), E.esc_nom)]
     if datos:
-        izq.append(Paragraph(escape('  ·  '.join(datos)), E.esc_dat))
+        izq.append(Paragraph('<br/>'.join(escape(d) for d in datos), E.esc_dat))
 
     logo = _logo_flowable(school, Image, 15 * mm) if school else None
     if logo is not None and logo.drawWidth > 32 * mm:   # logos muy anchos
@@ -365,7 +365,7 @@ def _encabezado(E, school, year, curso, profile, en, estado):
         logo.drawWidth *= esc
         logo.drawHeight *= esc
     w_logo = (logo.drawWidth + 4 * mm) if logo is not None else 0
-    w_der = 62 * mm
+    w_der = 78 * mm
     der = [Paragraph(escape(f'Ficha de Matrícula {year}' if year else 'Ficha de Matrícula'),
                      E.titulo)]
     celdas = [logo, izq, der] if logo is not None else [izq, der]
@@ -382,7 +382,7 @@ def _encabezado(E, school, year, curso, profile, en, estado):
     f_mat = getattr(en, 'enrollment_date', None) if en is not None else None
     f_mat = f_mat or (profile.enrollment_date if profile else None)
     w = ANCHO / 5
-    est_cell = [Paragraph('ESTADO', E.lbl), _chip(E, estado, 22 * mm) if estado
+    est_cell = [Paragraph('ESTADO', E.lbl), _chip(E, estado, 26 * mm) if estado
                 else Paragraph(VACIO, E.vacio)]
     franja = Table([[
         _campo(E, 'Curso', curso.name if curso else None, True),
@@ -426,7 +426,7 @@ def _make_canvas(E, school_name, emitido):
             self.setStrokeColor(GRIS_LINEA)
             self.setLineWidth(0.5)
             self.line(MARGEN, y + 3.6 * mm, A4[0] - MARGEN, y + 3.6 * mm)
-            self.setFont('Helvetica', 7)
+            self.setFont("Helvetica", 8.5)
             self.setFillColor(GRIS_LBL)
             self.drawString(MARGEN, y, school_name)
             self.drawRightString(A4[0] - MARGEN, y,
@@ -514,7 +514,7 @@ def build_ficha_pdf(student_id, year=None):
 
     def mini_sec(t):
         s = Table([['', Paragraph(escape(t.upper()), E.sec)]],
-                  colWidths=[1.2 * mm, sec_w - 1.2 * mm], rowHeights=[5.6 * mm])
+                  colWidths=[1.2 * mm, sec_w - 1.2 * mm], rowHeights=[7.2 * mm])
         s.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (0, 0), E.primario),
             ('BACKGROUND', (1, 0), (1, 0), E.tinte),
@@ -540,10 +540,11 @@ def build_ficha_pdf(student_id, year=None):
     suplente = next((m for m in familia if m.guardian_role == 'suplente'), None)
     madre = next((m for m in familia if m.relationship == 'Madre'), None)
     padre = next((m for m in familia if m.relationship == 'Padre'), None)
-    story.append(_seccion(E, 'Apoderados'))
-    story.append(_par_cards(E, ('Apoderado titular', titular), ('Apoderado suplente', suplente)))
-    story.append(_seccion(E, 'Madre y padre'))
-    story.append(_par_cards(E, ('Madre', madre), ('Padre', padre)))
+    # Título y tarjetas juntos: un título de sección no queda solo al pie de la página
+    story.append(KeepTogether([_seccion(E, 'Apoderados'),
+                               _par_cards(E, ('Apoderado titular', titular), ('Apoderado suplente', suplente))]))
+    story.append(KeepTogether([_seccion(E, 'Madre y padre'),
+                               _par_cards(E, ('Madre', madre), ('Padre', padre))]))
 
     # ── Salud
     def prob(label, v):
@@ -567,7 +568,7 @@ def build_ficha_pdf(student_id, year=None):
     # ── Autorizaciones
     bloque = [_seccion(E, 'Autorizaciones')]
     if auths:
-        w_chip, w_quien, w_firma = 24 * mm, 42 * mm, 30 * mm
+        w_chip, w_quien, w_firma = 27 * mm, 46 * mm, 32 * mm
         w_txt = ANCHO - w_chip - w_quien - w_firma
         data = [[Paragraph('AUTORIZACIÓN', E.lbl), Paragraph('ESTADO', E.lbl),
                  Paragraph('FIRMADO POR', E.lbl), Paragraph('FIRMA', E.lbl)]]
@@ -587,7 +588,7 @@ def build_ficha_pdf(student_id, year=None):
                 quien.append(Paragraph(VACIO, E.vacio))
             firma = _img_from_data_url(a.signature_image, w_firma - 6, 9 * mm) \
                 or Paragraph(VACIO, E.vacio)
-            data.append([txt, _chip(E, st, 20 * mm), quien, firma])
+            data.append([txt, _chip(E, st, 23 * mm), quien, firma])
         t = Table(data, colWidths=[w_txt, w_chip, w_quien, w_firma], repeatRows=1)
         estilo = [
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),

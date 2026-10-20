@@ -329,6 +329,62 @@ def log_student_event(student_id, event, description, school_id, year=None, cour
     return h
 
 
+class AuditLog(db.Model):
+    """
+    Historial de accesos y cambios de toda la plataforma (auditoría).
+
+    A diferencia de StudentHistory (vida escolar de un alumno), registra cada
+    inicio de sesión, cada request que modifica datos y cada descarga de
+    archivos. Lo escribe servicios/auditoria.py con una conexión propia, fuera
+    de la sesión de la request.
+    """
+    __tablename__ = 'audit_logs'
+    __table_args__ = (
+        db.Index('ix_audit_logs_school_created', 'school_id', 'created_at'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, nullable=True)      # None: super_admin / anónimo
+    user_id = db.Column(db.Integer, nullable=True)
+    user_name = db.Column(db.String(200))
+    user_email = db.Column(db.String(200))
+    role = db.Column(db.String(30))
+    # login | login_fallido | logout | crear | editar | eliminar | descargar | importar | accion
+    event = db.Column(db.String(20), nullable=False)
+    method = db.Column(db.String(10))
+    path = db.Column(db.String(500))
+    endpoint = db.Column(db.String(120))
+    status_code = db.Column(db.Integer)
+    entity = db.Column(db.String(60))
+    entity_id = db.Column(db.Integer)
+    description = db.Column(db.Text)
+    details = db.Column(db.Text)                          # JSON saneado
+    ip = db.Column(db.String(64))
+    user_agent = db.Column(db.String(300))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    def get_details(self):
+        import json
+        try:
+            return json.loads(self.details) if self.details else None
+        except Exception:
+            return None
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'school_id': self.school_id,
+            'user_id': self.user_id, 'user_name': self.user_name,
+            'user_email': self.user_email, 'role': self.role,
+            'event': self.event, 'method': self.method, 'path': self.path,
+            'endpoint': self.endpoint, 'status_code': self.status_code,
+            'ok': self.status_code is None or self.status_code < 400,
+            'entity': self.entity, 'entity_id': self.entity_id,
+            'description': self.description, 'details': self.get_details(),
+            'ip': self.ip, 'user_agent': self.user_agent,
+            # Se guarda en UTC: la «Z» deja que el navegador la muestre en hora local
+            'created_at': (self.created_at.isoformat() + 'Z') if self.created_at else None,
+        }
+
+
 class CourseSubject(db.Model):
     __tablename__ = 'course_subjects'
     id = db.Column(db.Integer, primary_key=True)

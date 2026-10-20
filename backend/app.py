@@ -67,6 +67,7 @@ def create_app():
     from routes.onboarding import onboarding_bp
     from routes.ia_estado import ia_bp
     from routes.anios import anios_bp
+    from routes.auditoria import auditoria_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -88,7 +89,12 @@ def create_app():
     app.register_blueprint(onboarding_bp, url_prefix='/api/onboarding')
     app.register_blueprint(ia_bp, url_prefix='/api/ia')
     app.register_blueprint(anios_bp, url_prefix='/api/anios')
+    app.register_blueprint(auditoria_bp, url_prefix='/api/auditoria')
     app.register_blueprint(sitio_bp)
+
+    # ── Auditoría: registra cambios y descargas de cada request ──────────────
+    from servicios.auditoria import instalar as instalar_auditoria
+    instalar_auditoria(app)
 
     # ── Serve React (SPA catch-all) ───────────────────────────────────────────
     @app.route('/', defaults={'path': ''})
@@ -358,6 +364,7 @@ def run_migrations():
 
         # La tabla convivencia_bitacora se crea automáticamente por db.create_all()
         # academic_years y student_history también (db.create_all()).
+        # audit_logs (auditoría) también: db.create_all() crea la tabla y sus índices.
 
 
 def _ensure_all_default_periods():

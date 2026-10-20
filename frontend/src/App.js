@@ -19,6 +19,7 @@ import SubjectCurriculumPage from './pages/Courses/SubjectCurriculumPage';
 import ProfesorPage from './pages/Profesor/ProfesorPage';
 import StudentFichaPage from './pages/Students/StudentFichaPage';
 import AniosPage from './pages/Anios/AniosPage';
+import AuditoriaPage from './pages/Auditoria/AuditoriaPage';
 import StudentImportPage from './pages/Students/StudentImportPage';
 import ConvivenciaDashboard from './pages/Convivencia/ConvivenciaDashboard';
 import ConvivenciaCasosPage, { ConvivenciaCasoForm } from './pages/Convivencia/ConvivenciaCasosPage';
@@ -83,6 +84,7 @@ export default function App() {
             <Route path="schools/:id/edit" element={<SchoolFormPage />} />
             <Route path="subscriptions" element={<SubscriptionsPage />} />
             <Route path="admins" element={<AdminsPage />} />
+            <Route path="auditoria" element={<AuditoriaPage />} />
           </Route>
 
           {/* App normal de colegios */}
@@ -97,6 +99,7 @@ export default function App() {
             <Route path="users" element={<PrivateRoute roles={['admin','directivo']}><UsersPage /></PrivateRoute>} />
             <Route path="parameters" element={<PrivateRoute roles={['admin','directivo']}><ParametersPage /></PrivateRoute>} />
             <Route path="anios" element={<PrivateRoute roles={['admin','directivo']}><AniosPage /></PrivateRoute>} />
+            <Route path="auditoria" element={<PrivateRoute roles={['admin']}><AuditoriaPage /></PrivateRoute>} />
             <Route path="periods" element={<PrivateRoute roles={['admin','directivo']}><PeriodsPage /></PrivateRoute>} />
             <Route path="courses" element={<PrivateRoute roles={['admin','directivo','profesor']}><CoursesPage /></PrivateRoute>} />
             <Route path="courses/:id" element={<PrivateRoute roles={['admin','directivo','profesor']}><CourseDetailPage /></PrivateRoute>} />

@@ -25,6 +25,7 @@ const SECCIONES = [
       { to: '/users', icono: 'personas', label: 'Usuarios', roles: ['admin', 'directivo'] },
       { to: '/parameters', icono: 'colegio', label: 'Colegio', roles: ['admin', 'directivo'] },
       { to: '/anios', icono: 'calendario', label: 'Años académicos', roles: ['admin', 'directivo'] },
+      { to: '/auditoria', icono: 'historial', label: 'Auditoría', roles: ['admin'] },
     ],
   },
   {
@@ -63,6 +64,7 @@ const TITULOS = {
   '/users': ['General', 'Usuarios'],
   '/parameters': ['General', 'Colegio'],
   '/anios': ['General', 'Años académicos'],
+  '/auditoria': ['General', 'Historial de accesos y cambios'],
   '/courses': ['Gestión pedagógica', 'Cursos'],
   '/matricula': ['Gestión pedagógica', 'Matrícula'],
   '/students/import': ['Gestión pedagógica', 'Importar Libro de Matrícula'],
