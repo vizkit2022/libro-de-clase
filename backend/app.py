@@ -68,6 +68,7 @@ def create_app():
     from routes.ia_estado import ia_bp
     from routes.anios import anios_bp
     from routes.auditoria import auditoria_bp
+    from routes.personalidad import personalidad_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -90,6 +91,7 @@ def create_app():
     app.register_blueprint(ia_bp, url_prefix='/api/ia')
     app.register_blueprint(anios_bp, url_prefix='/api/anios')
     app.register_blueprint(auditoria_bp, url_prefix='/api/auditoria')
+    app.register_blueprint(personalidad_bp, url_prefix='/api/personalidad')
     app.register_blueprint(sitio_bp)
 
     # ── Auditoría: registra cambios y descargas de cada request ──────────────

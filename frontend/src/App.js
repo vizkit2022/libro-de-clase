@@ -28,6 +28,8 @@ import CargaAcademicaDashboard from './pages/CargaAcademica/CargaAcademicaDashbo
 import CargaDocenteDetail from './pages/CargaAcademica/CargaDocenteDetail';
 import MatriculaPage from './pages/Matricula/MatriculaPage';
 import OnboardingPage from './pages/Onboarding/OnboardingPage';
+import PersonalidadCursosPage, { PersonalidadCursoPage, PersonalidadAlumnoPage } from './pages/Personalidad/PersonalidadPage';
+import PersonalidadPautaPage from './pages/Personalidad/PersonalidadPautaPage';
 
 // Super Admin
 import SuperAdminLayout from './pages/SuperAdmin/SuperAdminLayout';
@@ -119,6 +121,11 @@ export default function App() {
             <Route path="convivencia/casos/nuevo" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoForm /></PrivateRoute>} />
             <Route path="convivencia/casos/:id" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoDetail /></PrivateRoute>} />
             <Route path="convivencia/casos/:id/editar" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoForm /></PrivateRoute>} />
+            {/* Gestión docente: informe de personalidad */}
+            <Route path="personalidad" element={<PrivateRoute roles={['admin','directivo','profesor']}><PersonalidadCursosPage /></PrivateRoute>} />
+            <Route path="personalidad/pauta" element={<PrivateRoute roles={['admin','directivo']}><PersonalidadPautaPage /></PrivateRoute>} />
+            <Route path="personalidad/cursos/:courseId" element={<PrivateRoute roles={['admin','directivo','profesor']}><PersonalidadCursoPage /></PrivateRoute>} />
+            <Route path="personalidad/cursos/:courseId/alumnos/:studentId" element={<PrivateRoute roles={['admin','directivo','profesor']}><PersonalidadAlumnoPage /></PrivateRoute>} />
             {/* Módulo Carga Académica */}
             <Route path="matricula" element={<PrivateRoute roles={['admin','directivo']}><MatriculaPage /></PrivateRoute>} />
             <Route path="carga-academica" element={<PrivateRoute roles={['admin','directivo']}><CargaAcademicaDashboard /></PrivateRoute>} />

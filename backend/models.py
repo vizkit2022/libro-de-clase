@@ -1402,6 +1402,121 @@ class SolicitudDemo(db.Model):
         }
 
 
+# ── Informe de personalidad ─────────────────────────────────────────────────
+# Pauta de desarrollo personal y social que el profesor jefe llena por
+# semestre. Las áreas y criterios son del colegio (se agregan o desactivan
+# sin perder lo ya respondido); las respuestas son por alumno, año y semestre.
+
+PERSONALIDAD_ESCALA = (
+    ('S', 'Siempre'), ('G', 'Generalmente'), ('AV', 'A Veces'),
+    ('N', 'Nunca'), ('NO', 'No Observado'),
+)
+PERSONALIDAD_VALORES = tuple(k for k, _ in PERSONALIDAD_ESCALA)
+
+# Pauta con la que parte cada colegio (la del formulario de la Escuela Franz Liszt)
+PERSONALIDAD_PAUTA_BASE = [
+    ('Relaciones Interpersonales', [
+        'Mantiene un actitud respetuosa y lenguaje adecuado.',
+        'Demuestra aceptación, respeto y preocupación por los demás y su entorno.',
+        'Reconoce sus errores y actúa en consecuencia.',
+        'Relata con veracidad situaciones en las que se ve involucrado.',
+    ]),
+    ('Crecimiento Personal', [
+        'Manifiesta autocontrol en su actuar.',
+        'Es perseverante frente a nuevos desafíos, limitaciones o dificultades.',
+        'Demuestra seguridad y confianza en su modo de actuar.',
+        'Su presentación personal cumple con lo planteado en nuestros Reglamentos.',
+        'Acepta sugerencias y reconoce situaciones de mejora para su crecimiento personal.',
+    ]),
+    ('Participación', [
+        'Cumple de manera puntual con sus evaluaciones, tareas, materiales y otros compromisos escolares.',
+        'Realiza y finaliza sus actividades en el tiempo acordado para ello.',
+        'Se presenta diariamente con los útiles necesarios para cada clase.',
+        'Dadas las instrucciones, es capaz de realizar su trabajo en forma autónoma.',
+        'Expresa adecuadamente sus ideas y opiniones con argumentos claros y respetuosos.',
+        'Acepta, cumple y respeta los acuerdos de cada clase y normas establecidas por el Colegio.',
+        'Participa de forma activa y comprometida en las clases y actividades escolares.',
+    ]),
+    ('Participación de los Padres, Madres y/o Apoderados(as)', [
+        'Asiste a Reuniones de Apoderados(as) y Citaciones cada vez que es requerido.',
+        'Cumple con los materiales que su pupilo(a) necesita para su quehacer escolar.',
+        'Manifiesta una actitud de respeto hacia todos los/las integrantes de la Comunidad Educativa.',
+        'Presenta oportunamente justificativos, licencias médicas o informes requeridos.',
+        'Respeta el Conducto Regular, Proyecto Educativo y normas del Establecimiento.',
+        'Cumple puntualmente con el horario de entrada y salida de clases de su pupilo(a).',
+        'Cumple con compromisos y/o sugerencias del Personal del Establecimiento.',
+    ]),
+]
+
+
+class PersonalidadArea(db.Model):
+    __tablename__ = 'personalidad_areas'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False, index=True)
+    nombre = db.Column(db.String(200), nullable=False)
+    orden = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    criterios = db.relationship('PersonalidadCriterio', backref='area', lazy=True,
+                                order_by='PersonalidadCriterio.orden')
+
+
+class PersonalidadCriterio(db.Model):
+    __tablename__ = 'personalidad_criterios'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False, index=True)
+    area_id = db.Column(db.Integer, db.ForeignKey('personalidad_areas.id'), nullable=False, index=True)
+    texto = db.Column(db.Text, nullable=False)
+    orden = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class PersonalidadRespuesta(db.Model):
+    __tablename__ = 'personalidad_respuestas'
+    __table_args__ = (db.UniqueConstraint('student_id', 'criterio_id', 'year', 'semestre',
+                                          name='uq_personalidad_respuesta'),)
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False, index=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    criterio_id = db.Column(db.Integer, db.ForeignKey('personalidad_criterios.id'), nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    semestre = db.Column(db.Integer, nullable=False)          # 1 | 2
+    valor = db.Column(db.String(3), nullable=False)           # S | G | AV | N | NO
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PersonalidadObservacion(db.Model):
+    __tablename__ = 'personalidad_observaciones'
+    __table_args__ = (db.UniqueConstraint('student_id', 'year', 'semestre',
+                                          name='uq_personalidad_observacion'),)
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False, index=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    year = db.Column(db.Integer, nullable=False)
+    semestre = db.Column(db.Integer, nullable=False)
+    texto = db.Column(db.Text)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+def ensure_personalidad_pauta(school_id):
+    """Carga la pauta base si el colegio aún no tiene áreas. No hace commit.
+    Devuelve True si la creó."""
+    if not school_id or PersonalidadArea.query.filter_by(school_id=school_id).first():
+        return False
+    for i, (nombre, criterios) in enumerate(PERSONALIDAD_PAUTA_BASE, start=1):
+        area = PersonalidadArea(school_id=school_id, nombre=nombre, orden=i)
+        db.session.add(area)
+        db.session.flush()
+        for j, texto in enumerate(criterios, start=1):
+            db.session.add(PersonalidadCriterio(school_id=school_id, area_id=area.id,
+                                                texto=texto, orden=j))
+    return True
+
+
 # Sincroniza is_active/status de las matrículas antes de cada flush
 from sqlalchemy import event as _sa_event
 from sqlalchemy.orm import Session as _SaSession

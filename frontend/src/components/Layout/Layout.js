@@ -35,8 +35,14 @@ const SECCIONES = [
       { to: '/matricula', icono: 'lista', label: 'Matrícula', roles: ['admin', 'directivo'] },
       { to: '/students/import', icono: 'lista', label: 'Libro de Matrícula', roles: ['admin', 'directivo'] },
       { to: '/subjects', icono: 'libros', label: 'Asignaturas', roles: ['admin', 'directivo', 'profesor'] },
-      { to: '/grades', icono: 'lapiz', label: 'Calificaciones', roles: ['admin', 'directivo', 'profesor'] },
       { to: '/periods', icono: 'calendario', label: 'Períodos', roles: ['admin', 'directivo'] },
+    ],
+  },
+  {
+    titulo: 'Gestión docente',
+    items: [
+      { to: '/grades', icono: 'lapiz', label: 'Calificaciones', roles: ['admin', 'directivo', 'profesor'] },
+      { to: '/personalidad', icono: 'informe', label: 'Informe de personalidad', roles: ['admin', 'directivo', 'profesor'] },
     ],
   },
   {
@@ -70,8 +76,10 @@ const TITULOS = {
   '/students/import': ['Gestión pedagógica', 'Importar Libro de Matrícula'],
   '/students': ['Gestión pedagógica', 'Ficha del alumno'],
   '/subjects': ['Gestión pedagógica', 'Asignaturas'],
-  '/grades': ['Gestión pedagógica', 'Calificaciones'],
+  '/grades': ['Gestión docente', 'Calificaciones'],
   '/periods': ['Gestión pedagógica', 'Períodos'],
+  '/personalidad': ['Gestión docente', 'Informe de personalidad'],
+  '/personalidad/pauta': ['Gestión docente', 'Pauta del informe de personalidad'],
   '/carga-academica': ['Planificación', 'Carga Académica'],
   '/convivencia': ['Planificación', 'Convivencia Escolar'],
   '/reports': ['Información', 'Reportes'],
