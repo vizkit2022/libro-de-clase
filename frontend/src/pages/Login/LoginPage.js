@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './LoginPage.css';
 
-// Las mismas fotos del sitio público: el ingreso se siente parte de Kolevia
+// Las mismas fotos del sitio público: el ingreso se siente parte de Recreo Edu
 const FONDOS = [
   '/inicio/img/aula-1.jpg',
   '/inicio/img/aula-2.jpg',
@@ -62,9 +62,9 @@ export default function LoginPage() {
 
         <div className="kv-marca-cont">
           <a href="/" className="kv-logo">
-            <img src="/inicio/img/kolevia-isotipo.png" alt="" width="44" height="44" />
+            <img src="/inicio/img/recreo-isotipo.png" alt="" width="44" height="44" />
             <span className="kv-lock">
-              <b>Kolevia</b>
+              <b>Recreo Edu</b>
               <i>Tecnología para educar</i>
             </span>
           </a>
@@ -83,7 +83,7 @@ export default function LoginPage() {
           </div>
 
           <p className="kv-pie">
-            ¿Tu colegio todavía no usa Kolevia?{' '}
+            ¿Tu colegio todavía no usa Recreo Edu?{' '}
             <a href="/#contacto">Pide una demostración</a>
           </p>
         </div>
@@ -93,9 +93,9 @@ export default function LoginPage() {
       <main className="kv-acceso">
         <div className="kv-caja">
           <a href="/" className="kv-logo kv-logo-movil">
-            <img src="/inicio/img/kolevia-isotipo.png" alt="" width="38" height="38" />
+            <img src="/inicio/img/recreo-isotipo.png" alt="" width="38" height="38" />
             <span className="kv-lock">
-              <b>Kolevia</b>
+              <b>Recreo Edu</b>
               <i>Tecnología para educar</i>
             </span>
           </a>

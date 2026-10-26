@@ -1380,7 +1380,7 @@ class HorarioCelda(db.Model):
 
 
 class SolicitudDemo(db.Model):
-    """Solicitud de demo enviada desde el sitio público de Kolevia."""
+    """Solicitud de demo enviada desde el sitio público de Recreo Edu."""
     __tablename__ = 'solicitudes_demo'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(200), nullable=False)

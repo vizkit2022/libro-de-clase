@@ -85,7 +85,7 @@ function tituloDe(ruta) {
   const base = Object.keys(TITULOS)
     .filter(k => ruta.startsWith(k + '/'))
     .sort((a, b) => b.length - a.length)[0];
-  return base ? TITULOS[base] : ['', 'Kolevia'];
+  return base ? TITULOS[base] : ['', 'Recreo Edu'];
 }
 
 const ROLES_CON_ANIO = ['admin', 'directivo', 'profesor'];
@@ -178,9 +178,9 @@ export default function Layout() {
 
       <aside className="kv-lat">
         <a href="/" className="kv-lat-marca">
-          <img src="/inicio/img/kolevia-isotipo.png" alt="" width="32" height="32" />
+          <img src="/inicio/img/recreo-isotipo.png" alt="" width="32" height="32" />
           <span>
-            <b>Kolevia</b>
+            <b>Recreo Edu</b>
             <i>Tecnología para educar</i>
           </span>
         </a>

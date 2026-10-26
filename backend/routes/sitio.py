@@ -1,4 +1,4 @@
-"""Sitio público de Kolevia: landing y captura de solicitudes de demo."""
+"""Sitio público de Recreo Edu: landing y captura de solicitudes de demo."""
 import json
 import os
 import re
@@ -96,7 +96,7 @@ _UF_CACHE = {'dia': None, 'valor': None, 'fecha': None}
 
 def _leer_json(url):
     peticion = urllib.request.Request(
-        url, headers={'User-Agent': 'Kolevia/1.0 (+https://kolevia.cl)'})
+        url, headers={'User-Agent': 'RecreoEdu/1.0 (+https://kolevia.cl)'})
     with urllib.request.urlopen(peticion, timeout=8) as r:
         return json.loads(r.read().decode('utf-8'))
 
@@ -199,7 +199,7 @@ def llms():
     citan mejor cuando encuentran un resumen en texto plano que cuando tienen
     que deducirlo del HTML.
     """
-    cuerpo = '''# Kolevia
+    cuerpo = '''# Recreo Edu
 
 > Plataforma chilena de gestión escolar para colegios de educación básica y
 > media. Reúne el libro de clases digital, las calificaciones, la carga
