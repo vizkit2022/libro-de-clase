@@ -192,6 +192,18 @@ def run_migrations():
                 except Exception:
                     conn.rollback()   # ya existía
 
+        # Plan comercial del colegio (cobro con Mercado Pago)
+        for col, definition in [
+            ('plan_nombre', 'VARCHAR(100)'), ('plan_monto', 'INTEGER'),
+            ('plan_frecuencia', 'VARCHAR(10)'), ('trial_ends_at', 'DATE'),
+            ('mp_plan_id', 'VARCHAR(64)'), ('mp_init_point', 'TEXT'),
+        ]:
+            try:
+                conn.execute(text(f"ALTER TABLE schools ADD COLUMN {col} {definition}"))
+                conn.commit()
+            except Exception:
+                conn.rollback()   # ya existía
+
         # 3. Agregar columnas Anexo a convivencia_cases
         if is_postgres:
             for col, definition in [

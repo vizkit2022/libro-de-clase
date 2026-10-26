@@ -29,6 +29,7 @@ import CargaDocenteDetail from './pages/CargaAcademica/CargaDocenteDetail';
 import MatriculaPage from './pages/Matricula/MatriculaPage';
 import OnboardingPage from './pages/Onboarding/OnboardingPage';
 import PersonalidadCursosPage, { PersonalidadCursoPage, PersonalidadAlumnoPage } from './pages/Personalidad/PersonalidadPage';
+import PlanPage from './pages/Plan/PlanPage';
 import PersonalidadPautaPage from './pages/Personalidad/PersonalidadPautaPage';
 
 // Super Admin
@@ -100,6 +101,7 @@ export default function App() {
             <Route path="onboarding" element={<PrivateRoute roles={['admin','directivo']}><OnboardingPage /></PrivateRoute>} />
             <Route path="users" element={<PrivateRoute roles={['admin','directivo']}><UsersPage /></PrivateRoute>} />
             <Route path="parameters" element={<PrivateRoute roles={['admin','directivo']}><ParametersPage /></PrivateRoute>} />
+            <Route path="plan" element={<PrivateRoute roles={['admin','directivo']}><PlanPage /></PrivateRoute>} />
             <Route path="anios" element={<PrivateRoute roles={['admin','directivo']}><AniosPage /></PrivateRoute>} />
             <Route path="auditoria" element={<PrivateRoute roles={['admin']}><AuditoriaPage /></PrivateRoute>} />
             <Route path="periods" element={<PrivateRoute roles={['admin','directivo']}><PeriodsPage /></PrivateRoute>} />

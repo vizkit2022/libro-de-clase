@@ -1,0 +1,42 @@
+/* ═══ Plan del colegio (admin y super admin) ═══ */
+.pl { max-width: 760px; margin: 0 auto; }
+.pl-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+.pl-cab h2 { margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -.015em; }
+.pl-cab h3 { margin: 0; font-size: 15px; font-weight: 800; color: #0f172a; }
+.pl-cab p { margin: 3px 0 0; font-size: 13px; color: #64748b; }
+
+.pl-caja { background: #fff; border: 1px solid #eef0f5; border-radius: 16px; padding: 20px 24px; margin-bottom: 16px; }
+.pl-resumen-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.pl-nombre { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #64748b; }
+.pl-precio { font-size: 30px; font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin-top: 2px; }
+.pl-precio small { font-size: 14px; font-weight: 600; color: #64748b; letter-spacing: 0; }
+
+.pl-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 18px 0 6px; }
+.pl-datos div { background: #f8fafc; border: 1px solid #eef0f5; border-radius: 10px; padding: 10px 12px; }
+.pl-datos dt { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #94a3b8; }
+.pl-datos dd { margin: 3px 0 0; font-size: 14px; color: #0f172a; font-weight: 600; overflow-wrap: anywhere; }
+
+.pl-acciones { display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.pl-nota { font-size: 12.5px; color: #64748b; margin: 8px 0 0; line-height: 1.5; flex: 1; min-width: 220px; }
+.pl-btn-mp { background: #009ee3 !important; padding: 10px 20px; font-size: 14px; }
+
+.pl-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; margin-top: 6px; }
+.pl-atajos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.pl-sub { font-size: 13px; color: #374151; margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+.pl-sub-tit { margin: 0 0 10px; font-size: 14px; font-weight: 800; color: #0f172a; }
+
+.pl-pagos { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+.pl-pagos th { text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; padding: 7px 10px; background: #f8fafc; }
+.pl-pagos td { padding: 9px 10px; border-top: 1px solid #f1f5f9; color: #1f2937; }
+.pl-mono { font-family: ui-monospace, monospace; font-size: 11.5px; color: #94a3b8; }
+
+.pl-chip-azul { background: #dbeafe; color: #1d4ed8; }
+.pl-chip-verde { background: #dcfce7; color: #15803d; }
+.pl-chip-ambar { background: #fef3c7; color: #b45309; }
+.pl-chip-rojo { background: #fee2e2; color: #b91c1c; }
+.pl-chip-gris, .ip-chip-gris { background: #f1f5f9; color: #64748b; }
+
+@media (max-width: 640px) {
+  .pl-form { grid-template-columns: 1fr; }
+  .pl-caja { padding: 16px; }
+}

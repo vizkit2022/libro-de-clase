@@ -33,6 +33,15 @@ class School(db.Model):
     # Estado del plan: active | inactive | trial | expired
     plan_status = db.Column(db.String(20), default='active')
     subscription_expires_at = db.Column(db.DateTime, nullable=True)
+    # Plan comercial que define el super admin. Se cobra con una suscripción
+    # de Mercado Pago (un preapproval_plan por colegio) que empieza a cobrar
+    # cuando termina la prueba.
+    plan_nombre = db.Column(db.String(100))
+    plan_monto = db.Column(db.Integer)                 # CLP por período
+    plan_frecuencia = db.Column(db.String(10))         # mensual | anual
+    trial_ends_at = db.Column(db.Date)                 # último día de prueba
+    mp_plan_id = db.Column(db.String(64))
+    mp_init_point = db.Column(db.Text)
 
     # Puesta en marcha. El avance de cada paso se calcula mirando los datos
     # reales (si hay cursos, si hay asignaturas...), así que acá solo se
@@ -70,6 +79,10 @@ class School(db.Model):
             'is_active': self.is_active,
             'plan': self.plan, 'plan_status': self.plan_status,
             'subscription_expires_at': self.subscription_expires_at.isoformat() if self.subscription_expires_at else None,
+            'plan_nombre': self.plan_nombre, 'plan_monto': self.plan_monto,
+            'plan_frecuencia': self.plan_frecuencia,
+            'trial_ends_at': self.trial_ends_at.isoformat() if self.trial_ends_at else None,
+            'mp_plan_id': self.mp_plan_id,
             'user_count': self.contar_facturables(),
             'usuarios_por_rol': self.contar_por_rol(),
             'onboarding_year': self.onboarding_year,
@@ -525,6 +538,34 @@ class Subscription(db.Model):
             'start_date': self.start_date.isoformat() if self.start_date else None,
             'next_payment_date': self.next_payment_date.isoformat() if self.next_payment_date else None,
             'end_date': self.end_date.isoformat() if self.end_date else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class SubscriptionPayment(db.Model):
+    """Cada cobro de la suscripción (authorized_payment de Mercado Pago)."""
+    __tablename__ = 'subscription_payments'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False, index=True)
+    subscription_id = db.Column(db.Integer, db.ForeignKey('subscriptions.id'))
+    mp_authorized_payment_id = db.Column(db.String(64), unique=True)
+    mp_payment_id = db.Column(db.String(64))
+    amount = db.Column(db.Float)
+    currency = db.Column(db.String(10), default='CLP')
+    # scheduled | processed | recycling | cancelled (cobro) + approved | rejected... (pago)
+    status = db.Column(db.String(30))
+    payment_status = db.Column(db.String(30))
+    status_detail = db.Column(db.String(120))
+    debit_date = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'amount': self.amount, 'currency': self.currency,
+            'status': self.status, 'payment_status': self.payment_status,
+            'status_detail': self.status_detail, 'mp_payment_id': self.mp_payment_id,
+            'debit_date': self.debit_date.isoformat() if self.debit_date else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 

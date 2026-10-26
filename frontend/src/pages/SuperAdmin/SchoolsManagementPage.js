@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import PlanColegio from './PlanColegio';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PlanBadge } from './SuperAdminDashboard';
 
@@ -310,11 +311,7 @@ export function SchoolDetailPage() {
   const navigate = useNavigate();
   const [school, setSchool] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [simulating, setSimulating] = useState(false);
-  const [simMonths, setSimMonths] = useState(1);
-  const [simEmail, setSimEmail] = useState('');
   const [message, setMessage] = useState('');
-  const MP_CONFIGURED = false; // En local, false hasta que configures MP_ACCESS_TOKEN
 
   const load = useCallback(() => {
     axios.get(`/api/super-admin/schools/${id}`)
@@ -330,38 +327,6 @@ export function SchoolDetailPage() {
     setMessage(plan === 'paid' ? '✅ Plan cambiado a De Pago' : '✅ Plan cambiado a Gratuito');
     load();
     setTimeout(() => setMessage(''), 3000);
-  };
-
-  const handleSimulate = async () => {
-    setSimulating(true);
-    try {
-      const res = await axios.post(`/api/payments/subscriptions/${id}/simulate-payment`, {
-        months: simMonths,
-        payer_email: simEmail || 'test@colegio.cl'
-      });
-      setMessage('✅ Pago simulado exitosamente');
-      load();
-    } catch (err) {
-      setMessage('❌ ' + (err.response?.data?.error || 'Error al simular'));
-    } finally {
-      setSimulating(false);
-      setTimeout(() => setMessage(''), 4000);
-    }
-  };
-
-  const handleMPSubscription = async () => {
-    try {
-      const res = await axios.post('/api/payments/subscriptions/create', {
-        school_id: parseInt(id),
-        payer_email: simEmail || school.email || '',
-      });
-      // Redirigir al checkout de Mercado Pago
-      const url = res.data.sandbox_init_point || res.data.init_point;
-      window.open(url, '_blank');
-    } catch (err) {
-      setMessage('❌ ' + (err.response?.data?.error || 'Error al crear suscripción MP'));
-      setTimeout(() => setMessage(''), 4000);
-    }
   };
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Cargando...</div>;
@@ -509,50 +474,8 @@ export function SchoolDetailPage() {
         )}
       </div>
 
-      {/* Sección de Pago / Suscripción */}
-      <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)', marginBottom: 20 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>💳 Gestión de Suscripción</h3>
-        <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>
-          Plan mensual: <strong>$29.990 CLP / mes</strong>
-        </p>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Email del pagador</label>
-          <input
-            type="email" value={simEmail} onChange={e => setSimEmail(e.target.value)}
-            placeholder="pagador@colegio.cl"
-            style={{ padding: '9px 14px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 14, width: '100%', boxSizing: 'border-box', outline: 'none' }}
-          />
-        </div>
-
-        {!MP_CONFIGURED ? (
-          // Modo desarrollo: simular pago
-          <div style={{ background: '#f8fafc', borderRadius: 12, padding: 20, border: '1px dashed #e2e8f0' }}>
-            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 12 }}>
-              🧪 <strong>Modo Desarrollo</strong> — Mercado Pago no configurado. Puedes simular un pago para pruebas.
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <label style={{ fontSize: 13, color: '#374151', fontWeight: 600 }}>Meses:</label>
-              <select value={simMonths} onChange={e => setSimMonths(parseInt(e.target.value))}
-                style={{ padding: '7px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14, outline: 'none' }}>
-                {[1, 3, 6, 12].map(m => <option key={m} value={m}>{m} {m === 1 ? 'mes' : 'meses'}</option>)}
-              </select>
-              <button onClick={handleSimulate} disabled={simulating}
-                style={{ padding: '9px 20px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 600, fontSize: 13, opacity: simulating ? 0.7 : 1 }}>
-                {simulating ? 'Simulando...' : '✅ Simular Pago Exitoso'}
-              </button>
-            </div>
-          </div>
-        ) : (
-          // Modo producción: Mercado Pago real
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <button onClick={handleMPSubscription}
-              style={{ padding: '11px 22px', background: 'linear-gradient(135deg, #009ee3, #0077cc)', color: '#fff', border: 'none', borderRadius: 12, cursor: 'pointer', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>💳</span> Suscribir con Mercado Pago
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Plan comercial y cobro con Mercado Pago */}
+      <PlanColegio schoolId={id} onCambio={load} />
 
       {/* Historial de suscripciones */}
       {school.subscriptions && school.subscriptions.length > 0 && (
