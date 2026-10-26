@@ -6,7 +6,8 @@ import urllib.request
 
 from datetime import date
 
-from flask import (Blueprint, request, jsonify, send_from_directory, Response)
+from flask import (Blueprint, request, jsonify, send_from_directory, Response,
+                   abort)
 from flask_jwt_extended import jwt_required, get_jwt
 
 from models import db, SolicitudDemo
@@ -188,6 +189,29 @@ def sitemap():
   </url>
 </urlset>
 '''
+    return Response(cuerpo, mimetype='application/xml')
+
+
+# Verificación de propiedad en Google Search Console y Bing Webmaster.
+# Ambos piden servir un archivo con un nombre que ellos entregan; se
+# configura por variable de entorno para no tener que desplegar código
+# cada vez que cambie. Ej.: GOOGLE_SITE_VERIFICATION=google1a2b3c4d.html
+@sitio_bp.route('/google<codigo>.html')
+def verificacion_google(codigo):
+    esperado = (os.environ.get('GOOGLE_SITE_VERIFICATION') or '').strip()
+    if not esperado or esperado != 'google%s.html' % codigo:
+        abort(404)
+    return Response('google-site-verification: %s\n' % esperado,
+                    mimetype='text/html')
+
+
+@sitio_bp.route('/BingSiteAuth.xml')
+def verificacion_bing():
+    codigo = (os.environ.get('BING_SITE_VERIFICATION') or '').strip()
+    if not codigo:
+        abort(404)
+    cuerpo = ('<?xml version="1.0"?>\n<users>\n  <user>%s</user>\n</users>\n'
+              % codigo)
     return Response(cuerpo, mimetype='application/xml')
 
 
