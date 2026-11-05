@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout/Layout';
 import LoginPage from './pages/Login/LoginPage';
+import { RecuperarClavePage, NuevaClavePage } from './pages/Login/RecuperarClavePage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import UsersPage from './pages/Users/UsersPage';
 import ParametersPage from './pages/Parameters/ParametersPage';
@@ -73,6 +74,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/recuperar-clave" element={<RecuperarClavePage />} />
+          <Route path="/nueva-clave" element={<NuevaClavePage />} />
 
           {/* Portal Super Admin (layout propio) */}
           <Route path="/super-admin" element={

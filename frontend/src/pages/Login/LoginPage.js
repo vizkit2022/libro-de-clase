@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import './LoginPage.css';
 
@@ -18,6 +19,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [verClave, setVerClave] = useState(false);
   const [lamina, setLamina] = useState(0);
+  const [puedeRecuperar, setPuedeRecuperar] = useState(false);
+
+  useEffect(() => {
+    axios.get('/api/auth/recuperar/disponible')
+      .then(({ data }) => setPuedeRecuperar(!!data.disponible))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -158,8 +166,9 @@ export default function LoginPage() {
           </form>
 
           <p className="kv-ayuda">
-            ¿Olvidaste tu contraseña? Pídele a la dirección de tu colegio que la
-            restablezca.
+            {puedeRecuperar
+              ? <Link to="/recuperar-clave">¿Olvidaste tu contraseña?</Link>
+              : '¿Olvidaste tu contraseña? Pídele a la dirección de tu colegio que la restablezca.'}
           </p>
         </div>
 

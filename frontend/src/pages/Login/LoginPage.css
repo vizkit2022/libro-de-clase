@@ -184,6 +184,14 @@
   text-align: center; line-height: 1.5;
 }
 
+.kv-ayuda a { color: var(--azul); font-weight: 600; text-decoration: none; }
+.kv-ayuda a:hover { text-decoration: underline; }
+
+/* Recuperar clave: solo el formulario, sin el panel de marca */
+.kv-solo { grid-template-columns: 1fr; }
+.kv-solo .kv-logo-movil { display: inline-flex; }
+.kv-enlace-boton { box-sizing: border-box; text-decoration: none; }
+
 .kv-volver { position: absolute; bottom: 26px; font-size: 13.5px; margin: 0; }
 .kv-volver a { color: var(--txt-3); text-decoration: none; transition: color .15s; }
 .kv-volver a:hover { color: var(--azul); }
