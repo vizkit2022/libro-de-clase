@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth, sinColegio } from './context/AuthContext';
 import Layout from './components/Layout/Layout';
 import LoginPage from './pages/Login/LoginPage';
+import { RecuperarClavePage, NuevaClavePage } from './pages/Login/RecuperarClavePage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import UsersPage from './pages/Users/UsersPage';
 import ParametersPage from './pages/Parameters/ParametersPage';
@@ -90,6 +91,8 @@ export default function App() {
           <Route path="/bienvenida/datos" element={
             <PrivateRoute roles={['admin','directivo']} permitirSinColegio><AutoOnboardingPage /></PrivateRoute>
           } />
+          <Route path="/recuperar-clave" element={<RecuperarClavePage />} />
+          <Route path="/nueva-clave" element={<NuevaClavePage />} />
 
           {/* Portal Super Admin (layout propio) */}
           <Route path="/super-admin" element={

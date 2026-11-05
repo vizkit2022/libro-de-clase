@@ -48,6 +48,7 @@ def create_app():
 
     # ── Blueprints ────────────────────────────────────────────────────────────
     from routes.auth import auth_bp
+    from routes.recuperar import recuperar_bp
     from routes.users import users_bp
     from routes.schools import schools_bp
     from routes.periods import periods_bp
@@ -73,6 +74,7 @@ def create_app():
     from routes.autoonboarding import autoonboarding_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(recuperar_bp, url_prefix='/api/auth/recuperar')
     app.register_blueprint(users_bp, url_prefix='/api/users')
     app.register_blueprint(schools_bp, url_prefix='/api/schools')
     app.register_blueprint(periods_bp, url_prefix='/api/periods')

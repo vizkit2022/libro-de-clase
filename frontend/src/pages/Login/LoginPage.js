@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth, rutaInicial } from '../../context/AuthContext';
 import PanelMarca, { LogoMovil, Aviso, OjoClave } from './PanelMarca';
 import { BloqueGoogle, useConfigRegistro } from '../Registro/BotonGoogle';
@@ -13,6 +14,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [verClave, setVerClave] = useState(false);
   const config = useConfigRegistro();
+  const [puedeRecuperar, setPuedeRecuperar] = useState(false);
+
+  useEffect(() => {
+    axios.get('/api/auth/recuperar/disponible')
+      .then(({ data }) => setPuedeRecuperar(!!data.disponible))
+      .catch(() => {});
+  }, []);
 
   // Toda sesión que se abre acá (clave o Google) termina en este salto
   useEffect(() => {
@@ -99,8 +107,9 @@ export default function LoginPage() {
           </p>
 
           <p className="kv-ayuda">
-            ¿Olvidaste tu contraseña? Pídele a la dirección de tu colegio que la
-            restablezca.
+            {puedeRecuperar
+              ? <Link to="/recuperar-clave">¿Olvidaste tu contraseña?</Link>
+              : '¿Olvidaste tu contraseña? Pídele a la dirección de tu colegio que la restablezca.'}
           </p>
         </div>
 
