@@ -391,6 +391,11 @@ def run_migrations():
         for tabla, col, definicion in [
             ('schools', 'origen',                 'VARCHAR(20)'),
             ('schools', 'tiene_demo',             'BOOLEAN DEFAULT FALSE'),
+            ('schools', 'plan_uf',                'DOUBLE PRECISION'),
+            ('schools', 'plan_automatico',        'BOOLEAN DEFAULT FALSE'),
+            ('planes_catalogo', 'monto_uf',       'DOUBLE PRECISION'),
+            ('planes_catalogo', 'usuarios_min',   'INTEGER'),
+            ('planes_catalogo', 'usuarios_max',   'INTEGER'),
             ('schools', 'comuna',                 'VARCHAR(100)'),
             ('schools', 'tipo_establecimiento',   'VARCHAR(50)'),
             ('schools', 'cantidad_alumnos_aprox', 'INTEGER'),
@@ -456,12 +461,17 @@ def seed_authorization_templates():
         print(f"⚠️  No se pudieron crear las plantillas de autorización: {e}")
 
 
-def seed_planes_catalogo():
-    """Plan predeterminado si el catálogo está vacío.
+TRAMOS_INICIALES = (
+    ('1 a 3 usuarios', 1, 3, 0.7),
+    ('4 a 10 usuarios', 4, 10, 1.3),
+    ('11 a 20 usuarios', 11, 20, 2.5),
+    ('21 a 30 usuarios', 21, 30, 4.0),
+    ('31 a 40 usuarios', 31, 40, 6.0),
+)
 
-    El precio publicado es 0,7 UF por usuario, no un monto fijo en pesos, así que
-    el monto queda en NULL hasta que el super admin lo defina.
-    """
+
+def seed_planes_catalogo():
+    """Tramos publicados en el sitio, si el catálogo está vacío."""
     from models import PlanCatalogo
     from sqlalchemy import text
     try:
@@ -473,11 +483,13 @@ def seed_planes_catalogo():
             if PlanCatalogo.query.first():
                 db.session.commit()
                 return
-        db.session.add(PlanCatalogo(
-            nombre='Plan Base', monto=None, frecuencia='mensual', dias_prueba=30,
-            descripcion='0,7 UF por usuario al mes. Se cuentan docentes y '
-                        'administradores; estudiantes y apoderados no se cobran.',
-            activo=True, predeterminado=True))
+        for i, (nombre, desde, hasta, uf) in enumerate(TRAMOS_INICIALES):
+            db.session.add(PlanCatalogo(
+                nombre=nombre, monto_uf=uf, usuarios_min=desde, usuarios_max=hasta,
+                frecuencia='mensual', dias_prueba=30, activo=True,
+                predeterminado=i == 0,
+                descripcion='Se cuentan docentes y administradores; estudiantes y '
+                            'apoderados no se cobran.'))
         db.session.commit()
     except Exception as e:
         db.session.rollback()

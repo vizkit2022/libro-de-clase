@@ -83,14 +83,7 @@
       },
       "provider": { "@id": "https://kolevia.cl/#organizacion" },
       "offers": [
-        {
-          "@type": "Offer",
-          "name": "Plan Base",
-          "price": "0.7",
-          "priceCurrency": "CLF",
-          "description": "0,7 UF por usuario al mes, contando docentes y administradores. Estudiantes y apoderados no se cobran.",
-          "availability": "https://schema.org/InStock"
-        },
+{{OFERTAS_TRAMOS}}
         {
           "@type": "Offer",
           "name": "Prueba gratis de 30 días",
@@ -472,6 +465,12 @@
   .precio-pie{text-align:center;font-size:12.5px;color:var(--txt-3);margin-top:26px}
 
   /* Calculadora, dentro de la tarjeta del plan */
+  .tramos{width:100%;border-collapse:collapse;margin:0 0 18px;font-size:14px}
+  .tramos th{font-size:11.5px;font-weight:650;color:var(--txt-3);text-align:left;padding:0 0 7px;
+    border-bottom:1px solid var(--bor)}
+  .tramos td{padding:8px 0;border-bottom:1px solid var(--bor);color:var(--txt-2)}
+  .tramos th:last-child,.tramos td:last-child{text-align:right}
+  .tramos td:last-child{font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums}
   .calc{margin-top:22px;padding-top:20px;border-top:1px solid var(--bor)}
   .calc-t{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:14px}
   .calc-lab{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
@@ -738,7 +737,7 @@
       "name": "¿Cuánto cuesta y qué se cuenta como usuario?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "El Plan Base son 0,7 UF por usuario al mes, y se cuentan solo docentes y administradores. Los estudiantes y apoderados usan la plataforma sin costo adicional, así que un colegio de 600 alumnos con 30 docentes paga sobre 30, no sobre 630. Si el valor no calza con la realidad del establecimiento, está el Plan Especial: conversamos la situación y nos adaptamos."
+        "text": "El Plan Base se cobra por tramos al mes, {{RESUMEN_TRAMOS}}, y se cuentan solo docentes y administradores. Los estudiantes y apoderados usan la plataforma sin costo adicional, así que un colegio de 600 alumnos con 30 docentes y administradores {{EJEMPLO_30}}. Si el valor no calza con la realidad del establecimiento, está el Plan Especial: conversamos la situación y nos adaptamos."
       }
     },
     {
@@ -754,7 +753,7 @@
       "name": "¿Hay una opción gratis o más económica para colegios pequeños?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Estudiantes y apoderados usan Recreo Edu sin costo, y no hay cobro de instalación: solo se pagan las cuentas de docentes y administradores, así que un colegio pequeño paga poco. Para los establecimientos que hoy no pueden costear el Plan Base está el Plan Especial, con valores ajustados a la realidad económica de cada colegio. Ningún colegio debería quedarse fuera por el precio."
+        "text": "Estudiantes y apoderados usan Recreo Edu sin costo, y no hay cobro de instalación: el valor depende solo de cuántos docentes y administradores tienen cuenta, así que un colegio pequeño paga poco. Para los establecimientos que hoy no pueden costear el Plan Base está el Plan Especial, con valores ajustados a la realidad económica de cada colegio. Ningún colegio debería quedarse fuera por el precio."
       }
     },
     {
@@ -1379,9 +1378,9 @@
   <div class="env">
     <div class="cab rev">
       <p class="et">Planes</p>
-      <h2>Pagas por quien administra, no por cada alumno</h2>
-      <p>El cobro se calcula sobre docentes y administradores. Estudiantes y apoderados
-         usan la plataforma sin costo adicional.</p>
+      <h2>Pagas según tu equipo, no por cada alumno</h2>
+      <p>El valor depende del tramo de docentes y administradores con cuenta. Estudiantes
+         y apoderados usan la plataforma sin costo adicional.</p>
     </div>
     <div class="planes rev-g">
       <div class="plan">
@@ -1389,11 +1388,18 @@
         <p class="plan-d">Todos los módulos, para colegios que necesitan ordenar su
            gestión pedagógica completa.</p>
         <div class="precio">
-          <strong>0,7 UF</strong>
-          <span>por usuario<br>al mes</span>
+          <strong>{{PRECIO_DESDE}}</strong>
+          <span>desde, según<br>tu tramo, al mes</span>
         </div>
+        <table class="tramos">
+          <thead><tr><th scope="col">Usuarios</th><th scope="col">Al mes</th></tr></thead>
+          <tbody>
+{{FILAS_TRAMOS}}
+          </tbody>
+        </table>
         <p class="plan-n">Se cuentan docentes y administradores con cuenta activa.
-           Estudiantes y apoderados no pagan.</p>
+           Estudiantes y apoderados no pagan. Con más de {{TOPE}} usuarios, conversamos un
+           Plan Especial.</p>
         <ul class="lista">
           <li><svg width="19" height="19"><use href="#tic"/></svg>Los diez módulos incluidos</li>
           <li><svg width="19" height="19"><use href="#tic"/></svg>Usuarios ilimitados para estudiantes y apoderados</li>
@@ -1408,14 +1414,14 @@
           <p class="calc-t">Calcula lo que pagaría tu colegio</p>
           <label class="calc-lab" for="calcN">
             <span>Docentes y administradores con cuenta</span>
-            <strong id="calcNum">20</strong>
+            <strong id="calcNum">{{INICIO_CALCULADORA}}</strong>
           </label>
-          <input type="range" id="calcN" min="1" max="80" step="1" value="20"
+          <input type="range" id="calcN" min="1" max="{{MAX_CALCULADORA}}" step="1" value="{{INICIO_CALCULADORA}}"
                  aria-label="Cantidad de docentes y administradores con cuenta">
-          <div class="calc-escala"><span>1</span><span>80</span></div>
+          <div class="calc-escala"><span>1</span><span>Más de {{TOPE}}</span></div>
           <p class="calc-tot">
             <span>Al mes</span>
-            <span><b id="calcUfMes">14 UF</b><em id="calcPesosMes">&mdash;</em></span>
+            <span><b id="calcUfMes">{{UF_INICIAL}}</b><em id="calcPesosMes">&mdash;</em></span>
           </p>
           <p class="calc-pie" id="calcPie">Buscando el valor de la UF de hoy&hellip;</p>
         </div>
@@ -1424,7 +1430,7 @@
       <div class="plan plan-esp">
         <span class="plan-tag">A medida</span>
         <h3>Plan Especial</h3>
-        <p class="plan-d">Para colegios con necesidades específicas, y también para
+        <p class="plan-d">Para colegios con más de {{TOPE}} usuarios o necesidades específicas, y también para
            establecimientos que hoy no pueden costear el plan base.</p>
         <div class="precio">
           <strong>Conversemos</strong>
@@ -1443,8 +1449,8 @@
         <a href="#contacto" class="btn btn-g" style="width:100%;margin-top:22px">Hablar con nosotros</a>
       </div>
     </div>
-    <p class="precio-pie">Los valores se expresan en UF y se facturan en pesos según el
-       valor del día. No hay costo de instalación, y puedes probar 30 días gratis sin
+    <p class="precio-pie">Los valores se expresan en UF y se cobran en pesos con el valor
+       de la UF del día en que te suscribes. No hay costo de instalación, y puedes probar 30 días gratis sin
        tarjeta de crédito.</p>
   </div>
 </section>
@@ -1499,7 +1505,7 @@
       </details>
       <details class="faq">
         <summary>¿Cuánto cuesta y qué se cuenta como usuario?</summary>
-        <div class="resp"><p>El Plan Base son 0,7 UF por usuario al mes, y se cuentan solo docentes y administradores. Los estudiantes y apoderados usan la plataforma sin costo adicional, así que un colegio de 600 alumnos con 30 docentes paga sobre 30, no sobre 630.</p><p>Si el valor no calza con la realidad del establecimiento, está el Plan Especial: conversamos la situación y nos adaptamos.</p></div>
+        <div class="resp"><p>El Plan Base se cobra por tramos al mes, {{RESUMEN_TRAMOS}}, y se cuentan solo docentes y administradores. Los estudiantes y apoderados usan la plataforma sin costo adicional, así que un colegio de 600 alumnos con 30 docentes y administradores {{EJEMPLO_30}}.</p><p>Si el valor no calza con la realidad del establecimiento, está el Plan Especial: conversamos la situación y nos adaptamos.</p></div>
       </details>
       <details class="faq">
         <summary>¿Puedo probar Recreo Edu antes de pagar?</summary>
@@ -1507,7 +1513,7 @@
       </details>
       <details class="faq">
         <summary>¿Hay una opción gratis o más económica para colegios pequeños?</summary>
-        <div class="resp"><p>Estudiantes y apoderados usan Recreo Edu sin costo, y no hay cobro de instalación: solo se pagan las cuentas de docentes y administradores, así que un colegio pequeño paga poco.</p><p>Para los establecimientos que hoy no pueden costear el Plan Base está el Plan Especial, con valores ajustados a la realidad económica de cada colegio. Ningún colegio debería quedarse fuera por el precio.</p></div>
+        <div class="resp"><p>Estudiantes y apoderados usan Recreo Edu sin costo, y no hay cobro de instalación: el valor depende solo de cuántos docentes y administradores tienen cuenta, así que un colegio pequeño paga poco.</p><p>Para los establecimientos que hoy no pueden costear el Plan Base está el Plan Especial, con valores ajustados a la realidad económica de cada colegio. Ningún colegio debería quedarse fuera por el precio.</p></div>
       </details>
       <details class="faq">
         <summary>¿Hay que instalar algo en el colegio?</summary>
@@ -1752,7 +1758,9 @@
 
   /* ── Calculadora de valor mensual ─────────────────────────────── */
   bloque('calculadora', function () {
-    var UF_POR_USUARIO = 0.7;
+    // El servidor los escribe desde el catálogo de planes: [hasta, UF]
+    var TRAMOS = {{TRAMOS_JS}};
+    var TOPE = TRAMOS.length ? TRAMOS[TRAMOS.length - 1][0] : 0;
     var control = document.getElementById('calcN');
     if (!control) return;
 
@@ -1762,23 +1770,23 @@
     var pie = document.getElementById('calcPie');
     var uf = null;   // valor de la UF del día; null mientras no se sepa
 
-    function enUf(n) {
-      // 0,7 × 3 = 2,0999... en coma flotante: redondear antes de mostrar
-      var v = Math.round(n * UF_POR_USUARIO * 100) / 100;
-      return v.toLocaleString('es-CL', { maximumFractionDigits: 1 }) + ' UF';
-    }
-
-    function enPesos(n) {
-      if (!uf) return '—';
-      return '$' + Math.round(n * UF_POR_USUARIO * uf)
-                       .toLocaleString('es-CL', { maximumFractionDigits: 0 });
+    function ufDelTramo(n) {
+      for (var i = 0; i < TRAMOS.length; i++) {
+        if (n <= TRAMOS[i][0]) return TRAMOS[i][1];
+      }
+      return null;   // sobre el último tramo: Plan Especial
     }
 
     function pintar() {
       var n = parseInt(control.value, 10) || 1;
-      num.textContent = n;
-      ufMes.textContent = enUf(n);
-      pesosMes.textContent = enPesos(n);
+      var valor = ufDelTramo(n);
+      num.textContent = valor === null ? 'Más de ' + TOPE : n;
+      ufMes.textContent = valor === null
+        ? 'Conversemos'
+        : valor.toLocaleString('es-CL', { maximumFractionDigits: 2 }) + ' UF';
+      pesosMes.textContent = valor !== null && uf
+        ? '$' + Math.round(valor * uf).toLocaleString('es-CL', { maximumFractionDigits: 0 })
+        : '—';
     }
 
     control.addEventListener('input', pintar);
@@ -1787,7 +1795,7 @@
     function sinUf(texto) { pie.textContent = texto; }
 
     if (typeof fetch !== 'function') {
-      sinUf('Se factura en pesos según el valor de la UF del día de emisión.');
+      sinUf('Se cobra en pesos con la UF del día en que te suscribes.');
       return;
     }
 
@@ -1804,12 +1812,12 @@
         // valor bueno. La fecha va igual, así que el dato no engaña.
         pie.textContent = 'Calculado con la UF del ' + fecha + ': $' +
           uf.toLocaleString('es-CL', { minimumFractionDigits: 2 }) +
-          '. El valor final se factura en pesos según la UF del día de emisión.';
+          '. El monto se fija con la UF del día en que te suscribes.';
         pintar();
       })
       .catch(function () {
         sinUf('No pudimos obtener el valor de la UF de hoy, así que mostramos ' +
-              'solo el total en UF. Se factura en pesos según la UF del día.');
+              'solo el total en UF. Se cobra en pesos con la UF del día en que te suscribes.');
       });
   });
 

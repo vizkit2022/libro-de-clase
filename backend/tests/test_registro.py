@@ -248,7 +248,7 @@ def test_crear_colegio(client, app):
     assert d['prueba'] == {'dias': 30, 'termina': termina.isoformat()}
     s = d['school']
     assert s['origen'] == 'autoregistro' and s['rut'] is None and s['plan_status'] == 'trial'
-    assert s['plan_nombre'] == 'Plan Base' and s['comuna'] == 'Temuco'
+    assert s['plan_nombre'] == '1 a 3 usuarios' and s['plan_automatico'] is True and s['comuna'] == 'Temuco'
     assert s['prueba'] == {'dias_restantes': 30, 'termina': termina.isoformat(),
                            'vencida': False, 'suscrito': False}
     assert d['user']['school_id'] == s['id']

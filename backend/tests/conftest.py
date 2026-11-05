@@ -60,6 +60,14 @@ def client(app):
     return app.test_client()
 
 
+@pytest.fixture(autouse=True)
+def _uf_sin_red(monkeypatch):
+    """Los tests no salen a internet a buscar el valor de la UF."""
+    from routes import sitio
+    monkeypatch.setattr(sitio, '_UF_FUENTES', (('fija', lambda: (40000.0, '2026-11-05')),))
+    sitio._UF_CACHE.update({'dia': None, 'valor': None, 'fecha': None})
+
+
 # ── Auth helpers ─────────────────────────────────────────────────────────────
 def login(client, email, password):
     """Devuelve headers {'Authorization': 'Bearer <token>'} (campo access_token)."""

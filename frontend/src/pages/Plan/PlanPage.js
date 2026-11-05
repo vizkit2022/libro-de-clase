@@ -7,6 +7,7 @@ import './PlanPage.css';
 
 export const clp = (n) => (n || n === 0)
   ? `$${Math.round(Number(n)).toLocaleString('es-CL')}` : '—';
+export const enUf = (n) => `${Number(n).toLocaleString('es-CL', { maximumFractionDigits: 2 })} UF`;
 export const fecha = (iso) => iso
   ? new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString('es-CL',
     { day: 'numeric', month: 'long', year: 'numeric' })
@@ -84,7 +85,7 @@ export default function PlanPage() {
     );
   }
 
-  const { plan, estado, suscripcion: sub } = datos;
+  const { plan, estado, suscripcion: sub, tramo } = datos;
   const porPeriodo = plan.frecuencia === 'anual' ? 'al año' : 'al mes';
   const puedeSuscribir = esAdmin && datos.mp_configurado && plan.monto
     && ['prueba', 'vencido', 'pausado'].includes(estado) && sub?.status !== 'authorized';
@@ -103,7 +104,13 @@ export default function PlanPage() {
 
       {estado === 'sin_plan' ? (
         <div className="pl-caja">
-          <p className="ui-vacio">Tu colegio aún no tiene un plan asignado. Escríbenos y lo activamos.</p>
+          <p className="ui-vacio">
+            {tramo?.sobre_limite
+              ? `Tienes ${tramo.usuarios} docentes y administradores. Con más de ${tramo.tope} el plan se conversa: escríbenos y lo dejamos listo.`
+              : tramo && !tramo.uf_disponible
+                ? 'No pudimos obtener el valor de la UF de hoy. Vuelve a intentarlo en unos minutos.'
+                : 'Tu colegio aún no tiene un plan asignado. Escríbenos y lo activamos.'}
+          </p>
         </div>
       ) : (
         <div className="pl-caja pl-resumen">
@@ -111,13 +118,19 @@ export default function PlanPage() {
             <div>
               <span className="pl-nombre">{plan.nombre || 'Plan'}</span>
               {plan.monto
-                ? <div className="pl-precio">{clp(plan.monto)} <small>{porPeriodo}</small></div>
+                ? <div className="pl-precio">{clp(plan.monto)} <small>{porPeriodo}{plan.uf ? ` · ${enUf(plan.uf)}` : ''}</small></div>
                 : <div className="pl-precio pl-precio-pend">Valor por confirmar</div>}
             </div>
             <EstadoPlan estado={estado} dias={plan.dias_prueba} />
           </div>
 
           <dl className="pl-datos">
+            {tramo && (
+              <div>
+                <dt>Usuarios que cuentan</dt>
+                <dd>{tramo.usuarios} {tramo.usuarios === 1 ? 'docente o administrador' : 'docentes y administradores'}</dd>
+              </div>
+            )}
             <div>
               <dt>Prueba gratis</dt>
               <dd>{plan.trial_ends_at
@@ -154,6 +167,7 @@ export default function PlanPage() {
                 Registras tu tarjeta en Mercado Pago y {plan.dias_prueba
                   ? `el primer cobro llega cuando termina la prueba (${fecha(plan.trial_ends_at)}).`
                   : 'se cobra el primer período al suscribirte.'}
+                {plan.uf && ' El monto en pesos se fija con la UF del día en que te suscribes.'}
               </p>
               <button type="button" className="ui-btn ui-btn-pri pl-btn-mp" onClick={suscribir} disabled={yendo}>
                 {yendo ? 'Abriendo Mercado Pago…' : 'Suscribirme con Mercado Pago'}

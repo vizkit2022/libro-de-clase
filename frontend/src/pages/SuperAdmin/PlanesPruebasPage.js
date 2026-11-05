@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import Modal, { msgError } from '../../components/UI/Modal';
-import { clp, fecha } from '../Plan/PlanPage';
+import { clp, enUf, fecha } from '../Plan/PlanPage';
 import '../../components/UI/ui.css';
 import '../Plan/PlanPage.css';
 import './PlanesPruebas.css';
@@ -36,6 +36,133 @@ function validarPlan(f) {
   return '';
 }
 
+const decimal = (n) => Number(n).toLocaleString('es-CL', { maximumFractionDigits: 3 });
+
+function aFilas(tramos) {
+  return tramos.map(t => ({ id: t.id, hasta: String(t.usuarios_max), uf: String(t.monto_uf) }));
+}
+
+// La escala se edita completa: cada tramo parte donde termina el anterior.
+function EscalaTramos({ planes, onCambio }) {
+  const tramos = planes
+    .filter(p => p.monto_uf && p.activo !== false)
+    .sort((a, b) => a.usuarios_min - b.usuarios_min);
+  const original = JSON.stringify(aFilas(tramos));
+  const [filas, setFilas] = useState(() => aFilas(tramos));
+  const [dias, setDias] = useState(String(tramos[0]?.dias_prueba ?? 30));
+  const [valorUf, setValorUf] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const diasGuardados = tramos[0]?.dias_prueba;
+  // El catálogo llega después del primer render y vuelve a llegar al guardar
+  useEffect(() => { setFilas(JSON.parse(original)); }, [original]);
+  useEffect(() => { if (diasGuardados) setDias(String(diasGuardados)); }, [diasGuardados]);
+  useEffect(() => {
+    axios.get('/api/uf').then(r => setValorUf(r.data?.valor || null)).catch(() => setValorUf(null));
+  }, []);
+
+  const predeterminado = planes.find(p => p.predeterminado && p.activo !== false);
+  const cambiar = (i, campo, valor) => {
+    setMsg(null);
+    setFilas(fs => fs.map((f, j) => (j === i ? { ...f, [campo]: valor } : f)));
+  };
+  const hastaDe = (f) => parseInt(f.hasta, 10);
+  const desdeDe = (i) => (i === 0 ? 1 : (hastaDe(filas[i - 1]) || 0) + 1);
+  const agregar = () => {
+    setMsg(null);
+    setFilas(fs => {
+      const ultimo = fs.length ? hastaDe(fs[fs.length - 1]) || 0 : 0;
+      return [...fs, { id: null, hasta: String(ultimo + 10), uf: '' }];
+    });
+  };
+  const quitar = (i) => { setMsg(null); setFilas(fs => fs.filter((_, j) => j !== i)); };
+  const tope = filas.length ? hastaDe(filas[filas.length - 1]) : 0;
+  const hayCambios = JSON.stringify(filas) !== original || Number(dias) !== tramos[0]?.dias_prueba;
+
+  const guardar = async () => {
+    const decimalUf = (t) => Number(String(t).replace(',', '.'));
+    for (let i = 0; i < filas.length; i += 1) {
+      if (!(hastaDe(filas[i]) >= desdeDe(i))) {
+        setMsg({ tipo: 'peligro', txt: `El tramo que parte en ${desdeDe(i)} debe terminar en ${desdeDe(i)} usuarios o más.` });
+        return;
+      }
+      if (!(decimalUf(filas[i].uf) > 0)) {
+        setMsg({ tipo: 'peligro', txt: `El tramo que parte en ${desdeDe(i)} necesita un valor en UF mayor que cero.` });
+        return;
+      }
+    }
+    setGuardando(true);
+    setMsg(null);
+    try {
+      await axios.put('/api/super-admin/tramos', {
+        dias_prueba: Number(dias),
+        tramos: filas.map(f => ({ ...(f.id ? { id: f.id } : {}), usuarios_hasta: hastaDe(f), monto_uf: decimalUf(f.uf) })),
+      });
+      await onCambio();
+      setMsg({ tipo: 'info', txt: 'Listo. El sitio y los colegios sin suscripción ya usan estos valores. Las suscripciones vigentes mantienen su monto.' });
+    } catch (e) {
+      setMsg({ tipo: 'peligro', txt: msgError(e, 'No se pudieron guardar los tramos') });
+    }
+    setGuardando(false);
+  };
+
+  return (
+    <section className="pp-seccion">
+      <div className="pl-cab">
+        <div>
+          <h3>Tramos de precio</h3>
+          <p>Lo que cambies aquí se aplica al sitio público, a la página de plan y a las nuevas suscripciones. Se cuentan docentes y administradores activos.</p>
+        </div>
+      </div>
+      {msg && <div className={`ui-aviso ui-aviso-${msg.tipo}`} role={msg.tipo === 'peligro' ? 'alert' : 'status'}>{msg.txt}</div>}
+      {predeterminado && !predeterminado.monto_uf && tramos.length > 0 && (
+        <div className="ui-aviso ui-aviso-alerta">
+          Los colegios nuevos están partiendo con {predeterminado.nombre}, no con estos tramos.{' '}
+          <button type="button" className="ui-btn ui-btn-sm"
+            onClick={async () => { await axios.put(`/api/super-admin/planes/${tramos[0].id}`, { predeterminado: true }); await onCambio(); }}>
+            Usar tramos
+          </button>
+        </div>
+      )}
+      <div className="pp-tramos-marco">
+        <table className="pp-tramos">
+          <thead>
+            <tr><th scope="col">Usuarios desde</th><th scope="col">Hasta</th><th scope="col">UF al mes</th><th scope="col">Pesos hoy</th><th scope="col">UF por usuario (tope)</th><th aria-label="Acciones" /></tr>
+          </thead>
+          <tbody>
+            {filas.map((f, i) => {
+              const uf = Number(String(f.uf).replace(',', '.'));
+              const hasta = hastaDe(f);
+              return (
+                <tr key={f.id || `nuevo-${i}`}>
+                  <td>{desdeDe(i)}</td>
+                  <td><input aria-label={`Usuarios hasta, tramo ${i + 1}`} type="number" min={desdeDe(i)} step="1" value={f.hasta} onChange={e => cambiar(i, 'hasta', e.target.value)} /></td>
+                  <td><input aria-label={`UF al mes, tramo ${i + 1}`} type="number" min="0.01" step="0.01" value={f.uf} onChange={e => cambiar(i, 'uf', e.target.value)} /></td>
+                  <td>{valorUf && uf > 0 ? clp(uf * valorUf) : '—'}</td>
+                  <td>{uf > 0 && hasta > 0 ? decimal(uf / hasta) : '—'}</td>
+                  <td>{filas.length > 1 && <button type="button" className="ui-btn ui-btn-sm" aria-label={`Quitar tramo ${i + 1}`} onClick={() => quitar(i)}>Quitar</button>}</td>
+                </tr>
+              );
+            })}
+            <tr className="pp-tramo-especial"><td colSpan="2">Más de {tope || 0}</td><td colSpan="4">Plan Especial · Conversemos</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="pp-tramos-pie">
+        <button type="button" className="ui-btn" onClick={agregar}>Agregar tramo</button>
+        <div className="ui-campo pp-tramos-dias">
+          <label htmlFor="pp-dias-tramos">Días de prueba (colegios nuevos)</label>
+          <input id="pp-dias-tramos" type="number" min="1" max="365" step="1" value={dias} onChange={e => { setMsg(null); setDias(e.target.value); }} />
+        </div>
+        <button type="button" className="ui-btn ui-btn-pri" disabled={guardando || !hayCambios} onClick={guardar}>
+          {guardando ? 'Guardando…' : 'Guardar tramos'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function FormPlan({ plan, onClose, onGuardado }) {
   const [form, setForm] = useState(() => (plan
     ? { ...PLAN_VACIO, ...plan, monto: plan.monto ?? '', descripcion: plan.descripcion ?? '' }
@@ -53,9 +180,10 @@ function FormPlan({ plan, onClose, onGuardado }) {
     if (problema) { setError(problema); return; }
     setGuardando(true);
     setError('');
+    const numero = (v) => (v === '' || v === null ? null : Number(v));
     const cuerpo = {
       nombre: form.nombre.trim(),
-      monto: form.monto === '' || form.monto === null ? null : Number(form.monto),
+      monto: numero(form.monto),
       frecuencia: form.frecuencia,
       dias_prueba: Number(form.dias_prueba),
       descripcion: form.descripcion.trim(),
@@ -136,15 +264,18 @@ function Catalogo({ planes, error, onCambio }) {
   };
 
   const predeterminado = planes.find(p => p.predeterminado && p.activo !== false);
+  const fijos = planes.filter(p => !p.monto_uf);
 
   return (
     <section className="pp-seccion">
       <div className="pl-cab">
         <div>
-          <h3>Catálogo de planes</h3>
+          <h3>Planes con monto fijo</h3>
           <p>
             {predeterminado
-              ? <>Cada colegio nuevo parte con <b>{predeterminado.nombre}</b> y <b>{predeterminado.dias_prueba} días</b> de prueba. Para cambiar los días, edita ese plan.</>
+              ? (predeterminado.monto_uf
+                ? 'Para acuerdos especiales con un colegio. Los colegios nuevos parten con los tramos de precio.'
+                : <>Cada colegio nuevo parte con <b>{predeterminado.nombre}</b> y <b>{predeterminado.dias_prueba} días</b> de prueba. Para cambiar los días, edita ese plan.</>)
               : 'Ningún plan está marcado como predeterminado.'}
           </p>
         </div>
@@ -152,10 +283,10 @@ function Catalogo({ planes, error, onCambio }) {
       </div>
 
       {(error || msg) && <div className="ui-aviso ui-aviso-peligro" role="alert">{error || msg}</div>}
-      {!error && !planes.length && <p className="ui-vacio">Todavía no hay planes en el catálogo.</p>}
+      {!error && !fijos.length && <p className="ui-vacio">Todavía no hay planes con monto fijo.</p>}
 
       <div className="pp-planes">
-        {planes.map(p => {
+        {fijos.map(p => {
           const activo = p.activo !== false;
           return (
             <article key={p.id} className={`pp-plan ${activo ? '' : 'inactivo'} ${p.predeterminado ? 'pred' : ''}`}>
@@ -248,7 +379,8 @@ function GestionarPrueba({ fila, planes, onClose, onCambio }) {
     'No se pudo extender la prueba');
 
   const aplicarPlan = () => ejecutar(
-    () => axios.post(`/api/super-admin/schools/${fila.school_id}/aplicar-plan`, { plan_id: Number(planId) }),
+    () => axios.post(`/api/super-admin/schools/${fila.school_id}/aplicar-plan`,
+      planId === 'auto' ? { automatico: true } : { plan_id: Number(planId) }),
     () => 'Plan aplicado al colegio.',
     'No se pudo aplicar el plan');
 
@@ -279,10 +411,13 @@ function GestionarPrueba({ fila, planes, onClose, onCambio }) {
           <label htmlFor="pp-aplicar">Plan del catálogo</label>
           <select id="pp-aplicar" value={planId} onChange={e => setPlanId(e.target.value)}>
             <option value="">Elige un plan…</option>
+            <option value="auto">Automático según sus usuarios</option>
             {activos.map(p => (
               // Un plan sin monto no se puede cobrar: el servidor no deja aplicarlo
-              <option key={p.id} value={p.id} disabled={!p.monto}>
-                {p.nombre}{p.monto ? ` · ${clp(p.monto)} ${porFrecuencia(p.frecuencia)}` : ' · sin monto definido'}
+              <option key={p.id} value={p.id} disabled={!p.monto && !p.monto_uf}>
+                {p.nombre}{p.monto_uf
+                  ? ` · fijo en ${enUf(p.monto_uf)} ${porFrecuencia(p.frecuencia)}`
+                  : p.monto ? ` · ${clp(p.monto)} ${porFrecuencia(p.frecuencia)}` : ' · sin monto definido'}
               </option>
             ))}
           </select>
@@ -360,7 +495,7 @@ function Pruebas({ planes }) {
                 return (
                   <tr key={f.school_id}>
                     <td><b>{f.nombre}</b><small>{f.admin_email}</small></td>
-                    <td>{f.plan_nombre || '—'}</td>
+                    <td>{f.plan_nombre || '—'}{f.usuarios ? <small> · {f.usuarios} {f.usuarios === 1 ? 'usuario' : 'usuarios'}</small> : null}</td>
                     <td>{fecha(f.creado)}</td>
                     <td>{fecha(f.trial_ends_at)}</td>
                     <td className="pp-num">{f.dias_restantes ?? '—'}</td>
@@ -407,6 +542,7 @@ export default function PlanesPruebasPage() {
           <p>Lo que reciben los colegios nuevos y cómo van los que ya están probando.</p>
         </div>
       </div>
+      <EscalaTramos planes={planes} onCambio={cargarPlanes} />
       <Catalogo planes={planes} error={error} onCambio={cargarPlanes} />
       <Pruebas planes={planes} />
     </div>

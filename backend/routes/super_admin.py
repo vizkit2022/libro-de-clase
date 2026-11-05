@@ -530,6 +530,27 @@ def _leer_plan(d, plan=None):
             if not valido:
                 return None, 'El monto debe ser un número entero de pesos mayor que cero'
             campos['monto'] = int(monto)
+    if 'monto_uf' in d:
+        uf = d['monto_uf']
+        if uf in (None, ''):
+            campos['monto_uf'] = None
+        else:
+            try:
+                valido = not isinstance(uf, bool) and 0 < float(uf) <= 1000
+            except (TypeError, ValueError):
+                valido = False
+            if not valido:
+                return None, 'El valor en UF debe ser mayor que cero'
+            campos['monto_uf'] = float(uf)
+    for campo in ('usuarios_min', 'usuarios_max'):
+        if campo in d:
+            valor = d[campo]
+            if valor in (None, ''):
+                campos[campo] = None
+            elif isinstance(valor, bool) or not isinstance(valor, int) or valor < 1:
+                return None, 'La cantidad de usuarios debe ser un número entero mayor que cero'
+            else:
+                campos[campo] = valor
     if 'frecuencia' in d:
         if d['frecuencia'] not in FRECUENCIAS:
             return None, 'La frecuencia debe ser mensual o anual'
@@ -551,6 +572,33 @@ def _leer_plan(d, plan=None):
     return campos, None
 
 
+def _problema_de_tramo(campos, plan=None):
+    """Un plan es un tramo en UF o tiene un monto fijo, y los tramos activos no se pisan."""
+    valor = lambda k, defecto=None: campos.get(k, getattr(plan, k, defecto) if plan else defecto)
+    uf, desde, hasta = valor('monto_uf'), valor('usuarios_min'), valor('usuarios_max')
+    if uf is None and desde is None and hasta is None:
+        return None
+    if uf is None or desde is None or hasta is None:
+        return 'Un tramo necesita su valor en UF y los usuarios desde y hasta'
+    if valor('monto'):
+        return 'Un plan tiene un monto en pesos o un valor en UF, no ambos'
+    if valor('frecuencia', 'mensual') != 'mensual':
+        return 'Los tramos en UF se cobran mensualmente'
+    if desde > hasta:
+        return 'Los usuarios "desde" no pueden superar a los usuarios "hasta"'
+    if valor('activo', True):
+        otros = PlanCatalogo.query.filter(PlanCatalogo.activo.is_(True),
+                                          PlanCatalogo.monto_uf.isnot(None),
+                                          PlanCatalogo.usuarios_min <= hasta,
+                                          PlanCatalogo.usuarios_max >= desde)
+        if plan is not None:
+            otros = otros.filter(PlanCatalogo.id != plan.id)
+        pisado = otros.first()
+        if pisado:
+            return f'Ese rango de usuarios se superpone con {pisado.nombre}'
+    return None
+
+
 def _dejar_unico_predeterminado(plan):
     PlanCatalogo.query.filter(PlanCatalogo.id != plan.id, PlanCatalogo.predeterminado.is_(True))\
         .update({'predeterminado': False}, synchronize_session='fetch')
@@ -567,6 +615,7 @@ def listar_planes():
 @require_super_admin
 def crear_plan():
     campos, error = _leer_plan(request.get_json(silent=True) or {})
+    error = error or _problema_de_tramo(campos)
     if error:
         return jsonify({'error': error}), 400
     plan = PlanCatalogo(**{'frecuencia': 'mensual', 'dias_prueba': 30, 'activo': True,
@@ -586,6 +635,7 @@ def crear_plan():
 def editar_plan(plan_id):
     plan = PlanCatalogo.query.get_or_404(plan_id)
     campos, error = _leer_plan(request.get_json(silent=True) or {}, plan)
+    error = error or _problema_de_tramo(campos, plan)
     if error:
         return jsonify({'error': error}), 400
     activo = campos.get('activo', plan.activo)
@@ -615,6 +665,66 @@ def desactivar_plan(plan_id):
     return jsonify(plan.to_dict()), 200
 
 
+@super_admin_bp.route('/tramos', methods=['PUT'])
+@require_super_admin
+def guardar_tramos():
+    """Reemplaza la escala completa en una transacción: mover un límite cambia dos tramos,
+    y guardarlos de a uno pasaría por un estado con rangos superpuestos.
+
+    {tramos: [{id?, usuarios_hasta, monto_uf}], dias_prueba?}. El primero parte en 1 y
+    cada uno sigue al anterior, así que no quedan huecos ni rangos pisados.
+    """
+    d = request.get_json(silent=True) or {}
+    filas = d.get('tramos')
+    if not isinstance(filas, list) or not 1 <= len(filas) <= 20:
+        return jsonify({'error': 'Define entre 1 y 20 tramos'}), 400
+
+    escala, desde = [], 1
+    for fila in filas:
+        fila = fila if isinstance(fila, dict) else {}
+        hasta, uf = fila.get('usuarios_hasta'), fila.get('monto_uf')
+        if isinstance(hasta, bool) or not isinstance(hasta, int) or hasta < desde:
+            return jsonify({'error': f'El tramo que parte en {desde} usuarios debe terminar '
+                                     f'en {desde} o más'}), 400
+        if isinstance(uf, bool) or not isinstance(uf, (int, float)) or not 0 < uf <= 1000:
+            return jsonify({'error': f'El tramo que parte en {desde} usuarios necesita un '
+                                     'valor en UF mayor que cero'}), 400
+        escala.append((fila.get('id'), desde, hasta, round(float(uf), 2)))
+        desde = hasta + 1
+
+    actuales = {p.id: p for p in PlanCatalogo.tramos_activos()}
+    dias = d.get('dias_prueba')
+    if dias is None:
+        dias = next(iter(actuales.values())).dias_prueba if actuales else 30
+    elif isinstance(dias, bool) or not isinstance(dias, int) or not 1 <= dias <= mp.MAX_PRUEBA_DIAS:
+        return jsonify({'error': 'Los días de prueba deben ir entre 1 y 365'}), 400
+
+    usados = []
+    for plan_id, inicio, fin, uf in escala:
+        plan = actuales.pop(plan_id, None)
+        if plan is None:
+            plan = PlanCatalogo(activo=True, predeterminado=False, frecuencia='mensual',
+                                descripcion='Se cuentan docentes y administradores; estudiantes '
+                                            'y apoderados no se cobran.')
+            db.session.add(plan)
+        plan.nombre = '1 usuario' if inicio == fin == 1 else (
+            f'{inicio} usuarios' if inicio == fin else f'{inicio} a {fin} usuarios')
+        plan.usuarios_min, plan.usuarios_max, plan.monto_uf = inicio, fin, uf
+        plan.dias_prueba = dias
+        usados.append(plan)
+
+    # Los que salieron de la escala se desactivan; si uno era el predeterminado, lo reemplaza el primero
+    heredar = False
+    for plan in actuales.values():
+        heredar = heredar or plan.predeterminado
+        plan.activo, plan.predeterminado = False, False
+    if heredar:
+        usados[0].predeterminado = True
+    db.session.commit()
+    return jsonify([p.to_dict() for p in PlanCatalogo.query.order_by(
+        PlanCatalogo.activo.desc(), PlanCatalogo.id).all()]), 200
+
+
 DIAS_POR_VENCER = 7
 ESTADOS_PRUEBA = ('activa', 'por_vencer', 'vencida', 'suscrito')
 
@@ -641,6 +751,7 @@ def listar_pruebas():
     colegios = School.query.filter_by(origen='autoregistro').order_by(School.created_at.desc()).all()
     ids = [s.id for s in colegios]
     alumnos, accesos, admins = {}, {}, {}
+    from servicios.tramos import usuarios_facturables
     if ids:
         alumnos = dict(db.session.query(User.school_id, db.func.count(User.id))
                        .filter(User.school_id.in_(ids), User.role == 'alumno', User.is_active.is_(True))
@@ -664,6 +775,7 @@ def listar_pruebas():
             'school_id': s.id, 'nombre': s.name, 'admin_email': admins.get(s.id),
             'creado': s.created_at.isoformat() if s.created_at else None,
             'plan_nombre': s.plan_nombre,
+            'usuarios': usuarios_facturables(s),
             'trial_ends_at': s.trial_ends_at.isoformat() if s.trial_ends_at else None,
             'dias_restantes': mp.dias_de_prueba(s, hoy), 'estado': estado,
             'alumnos': alumnos.get(s.id, 0),
@@ -706,15 +818,36 @@ def prorrogar_prueba(school_id):
 def aplicar_plan(school_id):
     """Copia un plan del catálogo al colegio. La fecha de fin de prueba no cambia."""
     school = School.query.get_or_404(school_id)
-    plan_id = (request.get_json(silent=True) or {}).get('plan_id')
+    d = request.get_json(silent=True) or {}
+    from servicios.tramos import aplicar_tramo, monto_en_pesos
+    if d.get('automatico') is True:
+        school.plan_automatico = True
+        aplicar_tramo(school)
+        avisos = []
+        if school.plan_monto:
+            avisos = guardar_plan(school, school.plan_nombre, school.plan_monto,
+                                  school.plan_frecuencia or 'mensual', school.trial_ends_at)
+        db.session.commit()
+        data = plan_payload(school, True)
+        data['avisos'] = avisos
+        return jsonify(data), 200
+
+    plan_id = d.get('plan_id')
     plan = db.session.get(PlanCatalogo, plan_id) if isinstance(plan_id, int) else None
     if plan is None:
         return jsonify({'error': 'El plan no existe'}), 404
     if not plan.activo:
         return jsonify({'error': 'Ese plan está desactivado'}), 400
-    if not plan.monto:
+    monto = plan.monto
+    if plan.monto_uf:
+        monto = monto_en_pesos(plan.monto_uf)
+        if monto is None:
+            return jsonify({'error': 'No pudimos obtener el valor de la UF de hoy'}), 503
+    if not monto:
         return jsonify({'error': 'Ese plan aún no tiene monto: defínelo antes de aplicarlo'}), 400
-    avisos = guardar_plan(school, plan.nombre, plan.monto, plan.frecuencia, school.trial_ends_at)
+    # Elegido a mano: queda fijo aunque cambien los usuarios del colegio
+    school.plan_automatico, school.plan_uf = False, plan.monto_uf
+    avisos = guardar_plan(school, plan.nombre, monto, plan.frecuencia, school.trial_ends_at)
     db.session.commit()
     data = plan_payload(school, True)
     data['avisos'] = avisos

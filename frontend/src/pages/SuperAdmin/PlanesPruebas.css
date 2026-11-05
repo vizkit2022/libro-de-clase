@@ -45,3 +45,14 @@
   .pp { padding: 16px; }
   .pp-seccion { padding: 16px; }
 }
+
+/* Tramos de precio */
+.pp-tramos-marco { overflow-x: auto; }
+.pp-tramos { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 14px; }
+.pp-tramos th { text-align: left; font-size: 12px; font-weight: 600; color: var(--ui-txt-2, #4b5563); padding: 0 10px 8px; }
+.pp-tramos td { padding: 7px 10px; border-top: 1px solid var(--ui-borde, #e5e7eb); font-variant-numeric: tabular-nums; }
+.pp-tramos input { width: 84px; padding: 7px 9px; font: inherit; border: 1px solid var(--ui-borde, #e5e7eb); border-radius: 8px; box-sizing: border-box; }
+.pp-tramo-especial td { color: var(--ui-txt-2, #4b5563); }
+.pp-tramos-pie { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.pp-tramos-dias { margin: 0; }
+.pp-tramos-dias input { width: 100px; }

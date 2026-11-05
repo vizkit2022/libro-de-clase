@@ -47,14 +47,14 @@ def crear(client, sa, **campos):
 def vigente_al_final(client, sa):
     """Deja el plan sembrado como predeterminado para no contaminar otras pruebas."""
     base = next(p for p in client.get('/api/super-admin/planes', headers=sa).get_json()
-                if p['nombre'] == 'Plan Base')
+                if p['usuarios_min'] == 1)
     client.put(f"/api/super-admin/planes/{base['id']}", headers=sa, json={'predeterminado': True, 'activo': True})
 
 
-def test_siembra_un_plan_predeterminado_sin_monto(client, sa):
+def test_siembra_un_tramo_predeterminado_sin_monto_fijo(client, sa):
     planes = client.get('/api/super-admin/planes', headers=sa).get_json()
     base = [p for p in planes if p['predeterminado']]
-    assert len(base) == 1 and base[0]['nombre'] == 'Plan Base'
+    assert len(base) == 1 and base[0]['nombre'] == '1 a 3 usuarios' and base[0]['monto_uf'] == 0.7
     assert base[0]['monto'] is None and base[0]['dias_prueba'] == 30 and base[0]['activo'] is True
 
 
@@ -170,6 +170,7 @@ def test_prorroga_sincroniza_mercado_pago_si_hay_monto(client, sa, app, falso_mp
     _, sid, _ = colegio(client)
     with app.app_context():
         s = db.session.get(School, sid)
+        s.plan_automatico = False       # plan acordado a mano: no sigue a los tramos
         s.plan_monto, s.plan_nombre, s.plan_frecuencia = 49990, 'Plan X', 'anual'
         db.session.commit()
     r = client.post(f'/api/super-admin/schools/{sid}/prueba', headers=sa, json={'dias': 7})
@@ -237,7 +238,7 @@ def test_tabla_de_pruebas(client, sa, app):
     assert por_id[activa]['admin_email'] == email and por_id[activa]['dias_restantes'] == 30
     assert por_id[activa]['ultimo_acceso'] and por_id[activa]['plan_nombre']
     assert set(por_id[activa]) == {'school_id', 'nombre', 'admin_email', 'creado', 'plan_nombre', 'trial_ends_at',
-                                   'dias_restantes', 'estado', 'alumnos', 'ultimo_acceso'}
+                                   'usuarios', 'dias_restantes', 'estado', 'alumnos', 'ultimo_acceso'}
     assert por_id[por_vencer]['estado'] == 'por_vencer' and por_id[por_vencer]['dias_restantes'] == 4
     assert por_id[vencida]['estado'] == 'vencida' and por_id[vencida]['dias_restantes'] == 0
     assert por_id[pagada]['estado'] == 'suscrito'

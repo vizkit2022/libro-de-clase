@@ -106,3 +106,45 @@ describe('Planes y pruebas', () => {
     expect((await screen.findAllByText('Servidor caído')).length).toBeGreaterThan(0);
   });
 });
+
+describe('Tramos de precio', () => {
+  const TRAMOS = [
+    { id: 10, nombre: '1 a 3 usuarios', monto: null, monto_uf: 0.7, usuarios_min: 1, usuarios_max: 3, frecuencia: 'mensual', dias_prueba: 30, activo: true, predeterminado: true },
+    { id: 11, nombre: '4 a 10 usuarios', monto: null, monto_uf: 1.3, usuarios_min: 4, usuarios_max: 10, frecuencia: 'mensual', dias_prueba: 30, activo: true, predeterminado: false },
+  ];
+
+  beforeEach(() => {
+    axios.get.mockImplementation((url) => {
+      if (url.endsWith('/planes')) return Promise.resolve({ data: TRAMOS });
+      if (url === '/api/uf') return Promise.resolve({ data: { valor: 40000 } });
+      return Promise.resolve({ data: PRUEBAS });
+    });
+    axios.put.mockResolvedValue({ data: {} });
+  });
+
+  test('muestra pesos y UF por usuario, y guarda la escala completa', async () => {
+    montar();
+    const uf = await screen.findByLabelText('UF al mes, tramo 2');
+    expect(await screen.findByText('$52.000')).toBeTruthy();
+    expect(screen.getByText('0,13')).toBeTruthy();
+    expect(screen.getByText('Más de 10')).toBeTruthy();
+
+    fireEvent.change(uf, { target: { value: '1.5' } });
+    fireEvent.change(screen.getByLabelText('Usuarios hasta, tramo 1'), { target: { value: '5' } });
+    expect(within(screen.getAllByRole('row')[2]).getByText('6')).toBeTruthy();   // el siguiente parte donde termina este
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar tramos' }));
+    await waitFor(() => expect(axios.put).toHaveBeenCalledWith('/api/super-admin/tramos', {
+      dias_prueba: 30,
+      tramos: [{ id: 10, usuarios_hasta: 5, monto_uf: 0.7 }, { id: 11, usuarios_hasta: 10, monto_uf: 1.5 }],
+    }));
+  });
+
+  test('no guarda un tramo sin valor', async () => {
+    montar();
+    const uf = await screen.findByLabelText('UF al mes, tramo 2');
+    fireEvent.change(uf, { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar tramos' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(axios.put).not.toHaveBeenCalled();
+  });
+});

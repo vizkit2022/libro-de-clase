@@ -293,6 +293,7 @@ def crear_colegio():
         # lo pasa a 'paid' cuando el plan tenga precio
         plan='paid' if plan and plan.monto else 'free', plan_status='trial',
         trial_ends_at=hoy + timedelta(days=dias - 1),
+        plan_automatico=bool(plan and plan.monto_uf),
         plan_nombre=plan.nombre if plan else None,
         plan_monto=plan.monto if plan else None,
         plan_frecuencia=plan.frecuencia if plan else 'mensual',

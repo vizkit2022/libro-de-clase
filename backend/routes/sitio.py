@@ -10,7 +10,7 @@ from flask import (Blueprint, request, jsonify, send_from_directory, Response,
                    abort)
 from flask_jwt_extended import jwt_required, get_jwt
 
-from models import db, SolicitudDemo
+from models import db, PlanCatalogo, SolicitudDemo
 
 sitio_bp = Blueprint('sitio', __name__)
 
@@ -24,7 +24,61 @@ EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 @sitio_bp.route('/inicio')
 @sitio_bp.route('/inicio/')
 def landing():
-    return send_from_directory(LANDING_DIR, 'index.html')
+    with open(os.path.join(LANDING_DIR, 'index.html'), encoding='utf-8') as f:
+        return Response(_con_tramos(f.read()), mimetype='text/html')
+
+
+def _uf(valor):
+    return ('%.2f' % valor).rstrip('0').rstrip('.').replace('.', ',') + ' UF'
+
+
+def _rango(t):
+    return str(t.usuarios_min) if t.usuarios_min == t.usuarios_max else f'{t.usuarios_min} a {t.usuarios_max}'
+
+
+def _resumen_tramos(tramos):
+    primero, ultimo = tramos[0], tramos[-1]
+    texto = f'desde {_uf(primero.monto_uf)} para {_rango(primero)} usuarios'
+    if len(tramos) > 1:
+        texto += f' hasta {_uf(ultimo.monto_uf)} para {_rango(ultimo)}'
+    return texto
+
+
+def _con_tramos(html):
+    """Escribe los precios en el HTML del servidor, y no con JavaScript, para que también
+    los lean los buscadores. El catálogo de planes es la única fuente de los valores."""
+    tramos = PlanCatalogo.tramos_activos()
+    tope = tramos[-1].usuarios_max if tramos else 0
+    inicio = min(20, tope) or 1
+
+    def uf_de(n):
+        return next((t.monto_uf for t in tramos if t.usuarios_min <= n <= t.usuarios_max), None)
+
+    ejemplo = uf_de(30)
+    uf_inicial = uf_de(inicio)
+    ofertas = ''.join(
+        json.dumps({'@type': 'Offer', 'name': f'Plan Base, {_rango(t)} usuarios',
+                    'price': ('%.2f' % t.monto_uf).rstrip('0').rstrip('.'), 'priceCurrency': 'CLF',
+                    'description': f'{_uf(t.monto_uf)} al mes para colegios con {_rango(t)} docentes '
+                                   'y administradores. Estudiantes y apoderados no se cobran.',
+                    'availability': 'https://schema.org/InStock'}, ensure_ascii=False) + ',\n'
+        for t in tramos)
+    valores = {
+        'OFERTAS_TRAMOS': ofertas.rstrip('\n'),
+        'FILAS_TRAMOS': '\n'.join(f'            <tr><td>{_rango(t)}</td><td>{_uf(t.monto_uf)}</td></tr>'
+                                  for t in tramos),
+        'RESUMEN_TRAMOS': _resumen_tramos(tramos) if tramos else 'según la cantidad de usuarios',
+        'EJEMPLO_30': f'paga {_uf(ejemplo)} al mes' if ejemplo else 'conversa un Plan Especial',
+        'PRECIO_DESDE': _uf(tramos[0].monto_uf) if tramos else 'Conversemos',
+        'TOPE': str(tope),
+        'MAX_CALCULADORA': str(tope + 1),
+        'INICIO_CALCULADORA': str(inicio),
+        'UF_INICIAL': _uf(uf_inicial) if uf_inicial else 'Conversemos',
+        'TRAMOS_JS': json.dumps([[t.usuarios_max, t.monto_uf] for t in tramos]),
+    }
+    for clave, valor in valores.items():
+        html = html.replace('{{%s}}' % clave, valor)
+    return html
 
 
 @sitio_bp.route('/inicio/img/<path:archivo>')
@@ -117,12 +171,11 @@ def _uf_mindicador():
 _UF_FUENTES = (('gael', _uf_gael), ('mindicador', _uf_mindicador))
 
 
-@sitio_bp.route('/api/uf')
-def valor_uf():
+def _consultar_uf():
+    """(respuesta, fallas). La respuesta es None si no hay ningún valor disponible."""
     hoy = date.today()
     if _UF_CACHE['dia'] == hoy and _UF_CACHE['valor']:
-        return jsonify({'valor': _UF_CACHE['valor'],
-                        'fecha': _UF_CACHE['fecha']}), 200
+        return {'valor': _UF_CACHE['valor'], 'fecha': _UF_CACHE['fecha']}, []
 
     fallas = []
     for nombre, obtener in _UF_FUENTES:
@@ -135,7 +188,7 @@ def valor_uf():
             if not 10000 < valor < 200000:
                 raise ValueError('valor fuera de rango: %s' % valor)
             _UF_CACHE.update({'dia': hoy, 'valor': valor, 'fecha': fecha})
-            return jsonify({'valor': valor, 'fecha': fecha}), 200
+            return {'valor': valor, 'fecha': fecha}, []
         except Exception as e:
             fallas.append('%s: %s' % (nombre, str(e)[:60]))
 
@@ -143,9 +196,22 @@ def valor_uf():
     # La página muestra la fecha, así que no engaña a nadie, y la UF cambia
     # centésimas al día: mejor eso que dejar la calculadora sin pesos.
     if _UF_CACHE['valor']:
-        return jsonify({'valor': _UF_CACHE['valor'],
-                        'fecha': _UF_CACHE['fecha'], 'rezagado': True}), 200
+        return {'valor': _UF_CACHE['valor'], 'fecha': _UF_CACHE['fecha'],
+                'rezagado': True}, fallas
+    return None, fallas
 
+
+def valor_uf_hoy():
+    """El valor de la UF para calcular un cobro, o None si no se pudo obtener."""
+    respuesta, _ = _consultar_uf()
+    return respuesta['valor'] if respuesta else None
+
+
+@sitio_bp.route('/api/uf')
+def valor_uf():
+    respuesta, fallas = _consultar_uf()
+    if respuesta:
+        return jsonify(respuesta), 200
     return jsonify({'error': 'La UF de hoy no está disponible',
                     'detalle': ' | '.join(fallas)[:200]}), 503
 
@@ -260,9 +326,9 @@ escolar de colegios chilenos.
 
 ## Planes
 
-- **Plan Base**: 0,7 UF por usuario al mes. Se cuentan docentes y
+- **Plan Base**, por tramos al mes: {{TRAMOS_TEXTO}}. Se cuentan docentes y
   administradores; estudiantes y apoderados no se cobran.
-- **Plan Especial**: para colegios con necesidades específicas y para
+- **Plan Especial**: para colegios con más de {{TOPE}} usuarios, con necesidades específicas y para
   establecimientos que no pueden costear el plan base.
 
 ## Qué lo distingue
@@ -271,4 +337,8 @@ La carga horaria se calcula con la Tabla Legal del MINEDUC y la convivencia
 escolar usa los anexos oficiales, de modo que los informes salen en el formato
 que el establecimiento ya entrega, sin rehacerlos a mano.
 '''
+    tramos = PlanCatalogo.tramos_activos()
+    cuerpo = cuerpo.replace('{{TRAMOS_TEXTO}}', '; '.join(
+        f'{_rango(t)} usuarios, {_uf(t.monto_uf)}' for t in tramos))
+    cuerpo = cuerpo.replace('{{TOPE}}', str(tramos[-1].usuarios_max if tramos else 0))
     return Response(cuerpo, mimetype='text/plain; charset=utf-8')

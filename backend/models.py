@@ -43,6 +43,8 @@ class School(db.Model):
     # cuando termina la prueba.
     plan_nombre = db.Column(db.String(100))
     plan_monto = db.Column(db.Integer)                 # CLP por período
+    plan_uf = db.Column(db.Float)                      # UF del tramo, si viene de uno
+    plan_automatico = db.Column(db.Boolean, default=False)   # el tramo sigue a sus usuarios
     plan_frecuencia = db.Column(db.String(10))         # mensual | anual
     trial_ends_at = db.Column(db.Date)                 # último día de prueba
     mp_plan_id = db.Column(db.String(64))
@@ -93,6 +95,7 @@ class School(db.Model):
             'plan': self.plan, 'plan_status': self.plan_status,
             'subscription_expires_at': self.subscription_expires_at.isoformat() if self.subscription_expires_at else None,
             'plan_nombre': self.plan_nombre, 'plan_monto': self.plan_monto,
+            'plan_uf': self.plan_uf, 'plan_automatico': bool(self.plan_automatico),
             'plan_frecuencia': self.plan_frecuencia,
             'trial_ends_at': self.trial_ends_at.isoformat() if self.trial_ends_at else None,
             'mp_plan_id': self.mp_plan_id,
@@ -1594,6 +1597,9 @@ class PlanCatalogo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     monto = db.Column(db.Integer)                      # CLP por período; NULL = por definir
+    monto_uf = db.Column(db.Float)                     # tramo: UF al mes para ese rango de usuarios
+    usuarios_min = db.Column(db.Integer)
+    usuarios_max = db.Column(db.Integer)
     frecuencia = db.Column(db.String(10), default='mensual', nullable=False)
     dias_prueba = db.Column(db.Integer, default=30, nullable=False)
     descripcion = db.Column(db.Text)
@@ -1606,9 +1612,24 @@ class PlanCatalogo(db.Model):
         """El plan con que parten los colegios nuevos (puede no haber)."""
         return cls.query.filter_by(predeterminado=True, activo=True).order_by(cls.id).first()
 
+    @classmethod
+    def tramos_activos(cls):
+        return cls.query.filter(cls.activo.is_(True), cls.monto_uf.isnot(None))\
+            .order_by(cls.usuarios_min).all()
+
+    @classmethod
+    def tramo_para(cls, usuarios):
+        """El tramo activo que cubre esa cantidad de usuarios, o None si no hay."""
+        n = max(usuarios, 1)
+        return cls.query.filter(cls.activo.is_(True), cls.monto_uf.isnot(None),
+                                cls.usuarios_min <= n, cls.usuarios_max >= n)\
+            .order_by(cls.usuarios_min).first()
+
     def to_dict(self):
         return {
             'id': self.id, 'nombre': self.nombre, 'monto': self.monto,
+            'monto_uf': self.monto_uf, 'usuarios_min': self.usuarios_min,
+            'usuarios_max': self.usuarios_max,
             'frecuencia': self.frecuencia, 'dias_prueba': self.dias_prueba,
             'descripcion': self.descripcion, 'activo': bool(self.activo),
             'predeterminado': bool(self.predeterminado),

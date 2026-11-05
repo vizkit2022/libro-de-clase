@@ -52,6 +52,8 @@ def _error_mp(e):
 
 
 def plan_payload(school, para_super_admin=False):
+    from servicios.tramos import aplicar_tramo
+    tramo = aplicar_tramo(school)
     estado = mp.actualizar_estado(school)
     db.session.commit()
     sub = mp.suscripcion_vigente(school) or Subscription.query.filter_by(school_id=school.id)\
@@ -61,12 +63,13 @@ def plan_payload(school, para_super_admin=False):
     data = {
         'colegio': {'id': school.id, 'nombre': school.name},
         'plan': {
-            'nombre': school.plan_nombre, 'monto': school.plan_monto,
+            'nombre': school.plan_nombre, 'monto': school.plan_monto, 'uf': school.plan_uf,
             'frecuencia': school.plan_frecuencia or 'mensual',
             'trial_ends_at': school.trial_ends_at.isoformat() if school.trial_ends_at else None,
             'dias_prueba': mp.dias_de_prueba(school),
         },
         'estado': estado,
+        'tramo': tramo,
         'suscripcion': sub.to_dict() if sub else None,
         'pagos': [p.to_dict() for p in pagos],
         'mp_configurado': mp.configurado(),
@@ -93,6 +96,16 @@ def ver_plan():
 def suscribir():
     """Actualiza la prueba restante en el plan de Mercado Pago y entrega el link."""
     school = School.query.get_or_404(get_jwt()['school_id'])
+    from servicios.tramos import aplicar_tramo
+    tramo = aplicar_tramo(school)
+    if tramo and not tramo['uf_disponible']:
+        db.session.rollback()
+        return jsonify({'error': 'No pudimos obtener el valor de la UF de hoy. '
+                                 'Inténtalo de nuevo en unos minutos.'}), 503
+    if tramo and tramo['sobre_limite']:
+        db.session.commit()
+        return jsonify({'error': f"Con más de {tramo['tope']} usuarios el plan se conversa. "
+                                 'Escríbenos y lo dejamos listo.'}), 400
     if not school.plan_monto:
         return jsonify({'error': 'Tu colegio aún no tiene un plan asignado. '
                                  'Escríbenos para activarlo.'}), 400
@@ -152,6 +165,8 @@ def definir_plan(school_id):
         if error:
             return jsonify({'error': error}), 400
 
+    # Un plan definido a mano deja de seguir a los tramos
+    school.plan_automatico, school.plan_uf = False, None
     avisos = guardar_plan(school, d.get('nombre'), monto, frecuencia, fin)
     db.session.commit()
     data = plan_payload(school, True)

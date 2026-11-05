@@ -69,8 +69,8 @@ def test_vencida_deja_leer_entrar_y_pagar(client, app):
     assert client.get('/api/auth/me', headers=h).get_json()['school']['prueba']['vencida'] is True
     assert client.post('/api/auth/change-password', headers=h, json={
         'current_password': 'una-clave-larga', 'new_password': 'otra-clave-larga'}).status_code == 200
-    # pagos: no es 402 (acá responde que aún no tiene monto)
-    assert client.post('/api/payments/plan/suscribir', headers=h).status_code == 400
+    # pagos: no es 402 (acá responde que Mercado Pago no está configurado)
+    assert client.post('/api/payments/plan/suscribir', headers=h).status_code == 503
     assert client.post('/api/payments/plan/verificar', headers=h, json={}).status_code == 200
 
 
