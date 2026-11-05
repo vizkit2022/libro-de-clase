@@ -85,7 +85,7 @@ export default function PlanPage() {
     );
   }
 
-  const { plan, estado, suscripcion: sub, tramo } = datos;
+  const { plan, estado, suscripcion: sub, tramo, ajuste } = datos;
   const porPeriodo = plan.frecuencia === 'anual' ? 'al año' : 'al mes';
   const puedeSuscribir = esAdmin && datos.mp_configurado && plan.monto
     && ['prueba', 'vencido', 'pausado'].includes(estado) && sub?.status !== 'authorized';
@@ -149,6 +149,12 @@ export default function PlanPage() {
             )}
           </dl>
 
+          {ajuste && (
+            <div className="ui-aviso ui-aviso-info">
+              Desde el {fecha(ajuste.aplicar_desde)}, tu suscripción pasará a {clp(ajuste.monto_nuevo)} al mes,
+              según tu tramo de usuarios y el valor de la UF.
+            </div>
+          )}
           {estado === 'vencido' && (
             <div className="ui-aviso ui-aviso-alerta">
               La prueba terminó. Suscríbete para seguir usando la plataforma sin interrupciones.

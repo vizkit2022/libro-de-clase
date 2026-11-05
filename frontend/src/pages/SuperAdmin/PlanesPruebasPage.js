@@ -163,6 +163,119 @@ function EscalaTramos({ planes, onCambio }) {
   );
 }
 
+const ESTADOS_AJUSTE = {
+  enviando: ['Enviando aviso', 'pl-chip-ambar'],
+  avisado: ['Avisado', 'pl-chip-azul'],
+  aplicado: ['Aplicado', 'pl-chip-verde'],
+  cancelado: ['Cancelado', 'pl-chip-gris'],
+  revision: ['Revisar a mano', 'pl-chip-ambar'],
+};
+
+// Cada mes compara lo que paga cada suscripción con lo que le corresponde hoy.
+function AjusteMensual() {
+  const [datos, setDatos] = useState(null);
+  const [confirmar, setConfirmar] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const cargar = useCallback(async () => {
+    try {
+      const { data } = await axios.get('/api/super-admin/ajustes');
+      setDatos(data);
+    } catch (e) {
+      setMsg({ tipo: 'peligro', txt: msgError(e, 'No se pudieron cargar los ajustes') });
+    }
+  }, []);
+  useEffect(() => { cargar(); }, [cargar]);
+
+  const revisar = async () => {
+    setOcupado(true);
+    setMsg(null);
+    try {
+      const { data: r } = await axios.post('/api/super-admin/ajustes/revisar');
+      if (r.detenido) setMsg({ tipo: 'alerta', txt: `No se revisó: ${r.detenido}.` });
+      else if (r.errores?.length) setMsg({ tipo: 'alerta', txt: `Avisados: ${r.avisados}. Aplicados: ${r.aplicados}. Con problemas: ${r.errores.join(' · ')}` });
+      else setMsg({ tipo: 'info', txt: `Revisadas: ${r.revisados}. Avisados: ${r.avisados}. Aplicados: ${r.aplicados}. Por revisar a mano: ${r.revision}.` });
+      await cargar();
+    } catch (e) {
+      setMsg({ tipo: 'peligro', txt: msgError(e, 'No se pudo hacer la revisión') });
+    }
+    setConfirmar(false);
+    setOcupado(false);
+  };
+
+  const cancelar = async (id) => {
+    setMsg(null);
+    try {
+      await axios.post(`/api/super-admin/ajustes/${id}/cancelar`);
+      await cargar();
+    } catch (e) {
+      setMsg({ tipo: 'peligro', txt: msgError(e, 'No se pudo cancelar el ajuste') });
+    }
+  };
+
+  const previsto = datos?.previsto || [];
+  const ajustes = datos?.ajustes || [];
+  const listo = datos?.mp_configurado && datos?.correo_configurado;
+
+  return (
+    <section className="pp-seccion">
+      <div className="pl-cab">
+        <div>
+          <h3>Ajuste mensual de suscripciones</h3>
+          <p>Si el monto sube, se avisa por correo y cambia {datos?.dias_aviso ?? 10} días después. Si baja, se aplica de inmediato.</p>
+        </div>
+        <button type="button" className="ui-btn" disabled={!listo} onClick={() => setConfirmar(true)}>Revisar ahora</button>
+      </div>
+      {msg && <div className={`ui-aviso ui-aviso-${msg.tipo}`} role="status">{msg.txt}</div>}
+      {datos && !datos.mp_configurado && <div className="ui-aviso ui-aviso-alerta">Falta configurar Mercado Pago.</div>}
+      {datos && !datos.correo_configurado && <div className="ui-aviso ui-aviso-alerta">Falta configurar el envío de correos.</div>}
+      {datos && <p className="pp-txt">Revisión automática: <b>{datos.automatico ? 'activada' : 'apagada'}</b>.{!datos.automatico && ' Solo corre con el botón.'}</p>}
+
+      {datos && (
+        <div className="pp-tramos-marco">
+          <table className="pp-tramos">
+            <thead><tr><th scope="col">Colegio</th><th scope="col">Usuarios</th><th scope="col">Paga hoy</th><th scope="col">Pagaría</th><th scope="col">Estado</th><th aria-label="Acciones" /></tr></thead>
+            <tbody>
+              {previsto.map(p => (
+                <tr key={`p-${p.school_id}`}>
+                  <td>{p.colegio}</td><td>{p.usuarios}</td><td>{clp(p.monto_actual)}</td>
+                  <td>{p.monto_nuevo ? clp(p.monto_nuevo) : 'Plan Especial'}</td>
+                  <td><span className="ui-chip pl-chip-gris">Previsto</span></td><td />
+                </tr>
+              ))}
+              {ajustes.map(a => {
+                const [txt, cls] = ESTADOS_AJUSTE[a.estado] || [a.estado, 'pl-chip-gris'];
+                return (
+                  <tr key={a.id}>
+                    <td>{a.colegio}{a.error ? <small> · {a.error}</small> : null}</td><td>{a.usuarios}</td><td>{clp(a.monto_anterior)}</td>
+                    <td>{a.monto_nuevo ? clp(a.monto_nuevo) : 'Plan Especial'}{a.estado === 'avisado' ? <small> · desde {fecha(a.aplicar_desde)}</small> : null}</td>
+                    <td><span className={`ui-chip ${cls}`}>{txt}</span></td>
+                    <td>{['avisado', 'revision'].includes(a.estado) && (
+                      <button type="button" className="ui-btn ui-btn-sm" onClick={() => cancelar(a.id)}>Cancelar</button>
+                    )}</td>
+                  </tr>
+                );
+              })}
+              {!previsto.length && !ajustes.length && <tr><td colSpan="6">No hay cambios previstos.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {confirmar && (
+        <Modal titulo="¿Revisar las suscripciones ahora?" ocupado={ocupado} onClose={() => setConfirmar(false)}
+          pie={<>
+            <button type="button" className="ui-btn" disabled={ocupado} onClick={() => setConfirmar(false)}>Cancelar</button>
+            <button type="button" className="ui-btn ui-btn-pri" disabled={ocupado} onClick={revisar}>{ocupado ? 'Revisando…' : 'Revisar'}</button>
+          </>}>
+          <p className="pp-txt">Se enviarán los avisos a los colegios cuyo monto sube, y las bajas se aplicarán de inmediato en Mercado Pago.</p>
+        </Modal>
+      )}
+    </section>
+  );
+}
+
 function FormPlan({ plan, onClose, onGuardado }) {
   const [form, setForm] = useState(() => (plan
     ? { ...PLAN_VACIO, ...plan, monto: plan.monto ?? '', descripcion: plan.descripcion ?? '' }
@@ -543,6 +656,7 @@ export default function PlanesPruebasPage() {
         </div>
       </div>
       <EscalaTramos planes={planes} onCambio={cargarPlanes} />
+      <AjusteMensual />
       <Catalogo planes={planes} error={error} onCambio={cargarPlanes} />
       <Pruebas planes={planes} />
     </div>

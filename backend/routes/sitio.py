@@ -207,6 +207,12 @@ def valor_uf_hoy():
     return respuesta['valor'] if respuesta else None
 
 
+def uf_vigente_para_cobro():
+    """Como valor_uf_hoy, pero sin aceptar un valor rezagado: cambia cobros ya suscritos."""
+    respuesta, _ = _consultar_uf()
+    return respuesta['valor'] if respuesta and not respuesta.get('rezagado') else None
+
+
 @sitio_bp.route('/api/uf')
 def valor_uf():
     respuesta, fallas = _consultar_uf()

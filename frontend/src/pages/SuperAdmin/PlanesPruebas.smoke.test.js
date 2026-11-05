@@ -148,3 +148,39 @@ describe('Tramos de precio', () => {
     expect(axios.put).not.toHaveBeenCalled();
   });
 });
+
+describe('Ajuste mensual', () => {
+  const AJUSTES = {
+    automatico: false, dias_aviso: 10, mp_configurado: true, correo_configurado: true,
+    previsto: [{ school_id: 1, colegio: 'Colegio Previsto', usuarios: 4, monto_actual: 28000, monto_nuevo: 52000, tramo: '4 a 10 usuarios' }],
+    ajustes: [{ id: 9, school_id: 2, colegio: 'Colegio Avisado', estado: 'avisado', usuarios: 12, monto_anterior: 52000, monto_nuevo: 100000, aplicar_desde: '2026-11-15' }],
+  };
+
+  beforeEach(() => {
+    axios.get.mockImplementation((url) => {
+      if (url === '/api/super-admin/ajustes') return Promise.resolve({ data: AJUSTES });
+      if (url.endsWith('/planes')) return Promise.resolve({ data: PLANES });
+      return Promise.resolve({ data: PRUEBAS });
+    });
+    axios.post.mockResolvedValue({ data: { detenido: null, revisados: 2, avisados: 1, aplicados: 0, revision: 0, errores: [] } });
+  });
+
+  test('muestra lo previsto y pide confirmar antes de revisar', async () => {
+    montar();
+    expect(await screen.findByText('Colegio Previsto')).toBeTruthy();
+    expect(screen.getByText('Colegio Avisado')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar ahora' }));
+    expect(axios.post).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar' }));
+    await waitFor(() => expect(axios.post).toHaveBeenCalledWith('/api/super-admin/ajustes/revisar'));
+  });
+
+  test('sin Mercado Pago no se puede revisar', async () => {
+    axios.get.mockImplementation((url) => Promise.resolve({
+      data: url === '/api/super-admin/ajustes' ? { ...AJUSTES, mp_configurado: false } : (url.endsWith('/planes') ? PLANES : PRUEBAS),
+    }));
+    montar();
+    expect(await screen.findByText('Falta configurar Mercado Pago.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Revisar ahora' })).toBeDisabled();
+  });
+});

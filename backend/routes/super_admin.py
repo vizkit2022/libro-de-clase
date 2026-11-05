@@ -725,6 +725,39 @@ def guardar_tramos():
         PlanCatalogo.activo.desc(), PlanCatalogo.id).all()]), 200
 
 
+@super_admin_bp.route('/ajustes', methods=['GET'])
+@require_super_admin
+def listar_ajustes():
+    from models import AjusteSuscripcion
+    from servicios import ajuste_suscripciones as ajuste
+    from servicios.correo import correo_configurado
+    filas = AjusteSuscripcion.query.order_by(AjusteSuscripcion.created_at.desc()).limit(100).all()
+    return jsonify({
+        'automatico': ajuste.automatico_activo(), 'dias_aviso': ajuste.dias_de_aviso(),
+        'mp_configurado': mp.configurado(), 'correo_configurado': correo_configurado(),
+        'previsto': ajuste.vista_previa(), 'ajustes': [a.to_dict() for a in filas],
+    }), 200
+
+
+@super_admin_bp.route('/ajustes/revisar', methods=['POST'])
+@require_super_admin
+def revisar_ajustes():
+    from servicios import ajuste_suscripciones as ajuste
+    return jsonify(ajuste.revisar()), 200
+
+
+@super_admin_bp.route('/ajustes/<int:ajuste_id>/cancelar', methods=['POST'])
+@require_super_admin
+def cancelar_ajuste(ajuste_id):
+    from models import AjusteSuscripcion
+    fila = AjusteSuscripcion.query.get_or_404(ajuste_id)
+    if fila.estado not in ('avisado', 'revision'):
+        return jsonify({'error': 'Ese ajuste ya no se puede cancelar'}), 409
+    fila.estado = 'cancelado'
+    db.session.commit()
+    return jsonify(fila.to_dict()), 200
+
+
 DIAS_POR_VENCER = 7
 ESTADOS_PRUEBA = ('activa', 'por_vencer', 'vencida', 'suscrito')
 

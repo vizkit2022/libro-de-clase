@@ -51,6 +51,14 @@ def _error_mp(e):
     return jsonify({'error': str(e)}), (e.status if e.status in (400, 404, 503) else 502)
 
 
+def _ajuste_avisado(school):
+    from models import AjusteSuscripcion
+    a = AjusteSuscripcion.query.filter_by(school_id=school.id, estado='avisado').first()
+    if not a or not mp.suscripcion_vigente(school):
+        return None
+    return {'monto_nuevo': a.monto_nuevo, 'aplicar_desde': a.aplicar_desde.isoformat()}
+
+
 def plan_payload(school, para_super_admin=False):
     from servicios.tramos import aplicar_tramo
     tramo = aplicar_tramo(school)
@@ -70,6 +78,7 @@ def plan_payload(school, para_super_admin=False):
         },
         'estado': estado,
         'tramo': tramo,
+        'ajuste': _ajuste_avisado(school),
         'suscripcion': sub.to_dict() if sub else None,
         'pagos': [p.to_dict() for p in pagos],
         'mp_configurado': mp.configurado(),

@@ -108,6 +108,9 @@ def create_app():
     from servicios.prueba import instalar as instalar_guardia_colegio
     instalar_guardia_colegio(app)
 
+    from servicios.ajuste_suscripciones import instalar as instalar_ajuste
+    instalar_ajuste(app)
+
     # ── Serve React (SPA catch-all) ───────────────────────────────────────────
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')

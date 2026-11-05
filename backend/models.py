@@ -1637,6 +1637,41 @@ class PlanCatalogo(db.Model):
         }
 
 
+class AjusteSuscripcion(db.Model):
+    """Cambio de monto de una suscripción por tramo o UF (servicios/ajuste_suscripciones.py).
+    estado: enviando | avisado | aplicado | cancelado | revision"""
+    __tablename__ = 'ajustes_suscripcion'
+    __table_args__ = (db.UniqueConstraint('school_id', 'periodo', name='uq_ajuste_colegio_periodo'),)
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False, index=True)
+    subscription_id = db.Column(db.Integer, db.ForeignKey('subscriptions.id'), nullable=False)
+    periodo = db.Column(db.String(7), nullable=False)      # AAAA-MM
+    estado = db.Column(db.String(20), nullable=False)
+    monto_anterior = db.Column(db.Integer, nullable=False)
+    monto_nuevo = db.Column(db.Integer)                    # NULL: sobre el último tramo
+    usuarios = db.Column(db.Integer)
+    tramo_nombre = db.Column(db.String(100))
+    uf_tramo = db.Column(db.Float)
+    uf_valor = db.Column(db.Float)
+    aplicar_desde = db.Column(db.Date, nullable=False)
+    avisado_at = db.Column(db.DateTime)
+    aplicado_at = db.Column(db.DateTime)
+    error = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        school = db.session.get(School, self.school_id)
+        return {
+            'id': self.id, 'school_id': self.school_id, 'colegio': school.name if school else None,
+            'periodo': self.periodo, 'estado': self.estado, 'monto_anterior': self.monto_anterior,
+            'monto_nuevo': self.monto_nuevo, 'usuarios': self.usuarios, 'tramo': self.tramo_nombre,
+            'aplicar_desde': self.aplicar_desde.isoformat() if self.aplicar_desde else None,
+            'avisado_at': self.avisado_at.isoformat() if self.avisado_at else None,
+            'aplicado_at': self.aplicado_at.isoformat() if self.aplicado_at else None,
+            'error': self.error,
+        }
+
+
 class DatoEjemplo(db.Model):
     """Qué filas son datos de ejemplo. Borrarlos se decide con esta lista y no
     adivinando por nombres: lo que no está acá es del colegio y no se toca."""
