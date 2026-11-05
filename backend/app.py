@@ -1,4 +1,5 @@
 import os
+from contextlib import contextmanager
 from flask import Flask, send_from_directory
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
@@ -130,7 +131,7 @@ def create_app():
             return send_from_directory(FRONTEND_BUILD, 'index.html')
         return {'error': 'Frontend no compilado. Ejecuta: cd frontend && npm run build'}, 503
 
-    with app.app_context():
+    with app.app_context(), _candado_de_arranque():
         db.create_all()  # crea tablas nuevas (no altera columnas existentes)
         run_migrations()
         seed_data()
@@ -138,6 +139,24 @@ def create_app():
         seed_planes_catalogo()
 
     return app
+
+
+@contextmanager
+def _candado_de_arranque():
+    """Los workers de gunicorn arrancan a la vez: si dos crean la misma tabla nueva, uno se
+    cae y con él el despliegue. En Postgres, migran de a uno."""
+    if 'postgresql' not in (db.engine.url.drivername or ''):
+        yield
+        return
+    from sqlalchemy import text
+    with db.engine.connect() as conexion:
+        conexion.execute(text('SELECT pg_advisory_lock(727000)'))
+        conexion.commit()       # el candado es de la sesión y no debe quedar una transacción abierta
+        try:
+            yield
+        finally:
+            conexion.execute(text('SELECT pg_advisory_unlock(727000)'))
+            conexion.commit()
 
 
 def run_migrations():
