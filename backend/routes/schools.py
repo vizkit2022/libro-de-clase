@@ -5,11 +5,17 @@ from models import db, School
 
 schools_bp = Blueprint('schools', __name__)
 
+
+def _puede_operar(claims, school_id):
+    """Cada colegio opera solo sobre sí mismo; el super admin, sobre cualquiera."""
+    return claims.get('role') == 'super_admin' or claims.get('school_id') == school_id
+
+
 @schools_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_schools():
     claims = get_jwt()
-    if claims.get('role') == 'admin' and request.args.get('all'):
+    if claims.get('role') == 'super_admin' and request.args.get('all'):
         schools = School.query.all()
     else:
         school = School.query.get(claims.get('school_id'))
@@ -19,6 +25,8 @@ def get_schools():
 @schools_bp.route('/<int:school_id>', methods=['GET'])
 @jwt_required()
 def get_school(school_id):
+    if not _puede_operar(get_jwt(), school_id):
+        return jsonify({'error': 'Sin permisos'}), 403
     school = School.query.get_or_404(school_id)
     return jsonify(school.to_dict()), 200
 
@@ -26,8 +34,9 @@ def get_school(school_id):
 @jwt_required()
 def create_school():
     claims = get_jwt()
-    if claims.get('role') != 'admin':
-        return jsonify({'error': 'Solo administradores pueden crear colegios'}), 403
+    # Un admin de colegio crea el suyo por /api/registro/colegio, no aquí
+    if claims.get('role') != 'super_admin':
+        return jsonify({'error': 'Solo el super administrador puede crear colegios'}), 403
     data = request.get_json()
     school = School(
         name=data['name'], rut=data.get('rut'),
@@ -66,6 +75,8 @@ LARGOS = {
 def update_school(school_id):
     claims = get_jwt()
     if claims.get('role') not in ['admin', 'directivo', 'super_admin']:
+        return jsonify({'error': 'Sin permisos'}), 403
+    if not _puede_operar(claims, school_id):
         return jsonify({'error': 'Sin permisos'}), 403
     school = School.query.get_or_404(school_id)
     data = request.get_json() or {}
@@ -107,6 +118,8 @@ def upload_logo(school_id):
     claims = get_jwt()
     # El super_admin también administra colegios desde su panel
     if claims.get('role') not in ['admin', 'directivo', 'super_admin']:
+        return jsonify({'error': 'Sin permisos'}), 403
+    if not _puede_operar(claims, school_id):
         return jsonify({'error': 'Sin permisos'}), 403
     school = School.query.get_or_404(school_id)
 

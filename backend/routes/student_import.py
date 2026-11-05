@@ -18,7 +18,7 @@ from io import BytesIO
 
 from sqlalchemy import func
 
-from models import (db, User, Course, Enrollment, StudentProfile, StudentMedical,
+from models import (db, User, Course, Enrollment, StudentProfile, StudentMedical, CLAVE_INUTILIZABLE,
                     StudentFamilyMember, AuthorizationTemplate, StudentAuthorization,
                     ensure_authorization_templates, log_student_event)
 from routes.access import year_is_closed, closed_year_message
@@ -460,7 +460,7 @@ def _student_email(parsed, school_id, exclude_id=None):
     if email and not _email_taken(email, exclude_id):
         return email, None
     warn = f'El email {email} ya está en uso; se usa uno generado' if email else None
-    base = re.sub(r'[^0-9k]', '', parsed['rut'].lower())
+    base = re.sub(r'[^0-9k]', '', (parsed['rut'] or parsed['clave']).lower())
     candidate = f'alumno.{base}@sincorreo.{school_id}.local'
     n = 2
     while _email_taken(candidate, exclude_id):
@@ -527,7 +527,8 @@ def check_course_open(course):
 def apply_row(parsed, ctx):
     school_id = ctx['school_id']
     warnings = parsed['warnings']
-    rkey = parsed['rut'].replace('.', '')
+    # `clave`: alumno sin RUT, o ya cargado sin él (solo en la carga inicial)
+    rkey = parsed.get('clave') or parsed['rut'].replace('.', '')
     student = ctx['students'].get(rkey)
     action = 'actualizar' if student else 'crear'
 
@@ -549,7 +550,12 @@ def apply_row(parsed, ctx):
         student = User(school_id=school_id, email=email, role='alumno', is_active=True,
                        first_name='-', last_name='-')
         _set_nonempty(student, udata)
-        student.set_password(STUDENT_DEFAULT_PASSWORD)
+        # sin_clave: cuenta sin acceso hasta que el colegio entregue una. Además,
+        # hashear por alumno se come el tiempo de la petición en un archivo grande.
+        if ctx.get('sin_clave'):
+            student.password_hash = CLAVE_INUTILIZABLE
+        else:
+            student.set_password(STUDENT_DEFAULT_PASSWORD)
         db.session.add(student)
         db.session.flush()
         ctx['students'][rkey] = student
@@ -662,7 +668,7 @@ def apply_row(parsed, ctx):
                 profile.course_change or enr.withdrawal_reason)
         estado_txt = {'activo': '', 'retirado': ', retirado', 'trasladado': ', trasladado'}[status]
         log_student_event(sid, 'importacion',
-                          f'Importado desde Libro de Matrícula (curso {course.name}{estado_txt})',
+                          f'Importado desde {ctx.get("fuente", "Libro de Matrícula")} (curso {course.name}{estado_txt})',
                           school_id, year=enr.year, course_id=course.id,
                           user_id=ctx['user_id'] or None,
                           details={'accion': action, 'estado': status})

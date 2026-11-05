@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
-from models import db, Course, Enrollment, CourseSubject, User, StudentGuardian
+from models import db, Course, Enrollment, CourseSubject, User, StudentGuardian, Subject
 from sqlalchemy import or_
 from datetime import date
-from routes.access import forbidden, ensure_course_open
+from routes.access import forbidden, ensure_course_open, ensure_del_colegio
 
 courses_bp = Blueprint('courses', __name__)
 
@@ -69,6 +69,7 @@ def create_course():
         return jsonify({'error': 'Sin permisos'}), 403
     school_id = claims.get('school_id')
     data = request.get_json()
+    ensure_del_colegio(User, data.get('head_teacher_id'), school_id)
     course = Course(
         school_id=school_id, name=data['name'],
         level=data.get('level'), letter=data.get('letter'),
@@ -88,6 +89,7 @@ def update_course(course_id):
         return jsonify({'error': 'Sin permisos'}), 403
     course = Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404()
     data = request.get_json()
+    ensure_del_colegio(User, data.get('head_teacher_id'), claims.get('school_id'))
     for field in ['name', 'level', 'letter', 'year', 'head_teacher_id', 'description', 'is_active']:
         if field in data:
             setattr(course, field, data[field])
@@ -104,6 +106,7 @@ def enroll_student(course_id):
     data = request.get_json()
     course = Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404()
     ensure_course_open(course)
+    ensure_del_colegio(User, data.get('student_id'), claims.get('school_id'))
     year = data.get('year', course.year or date.today().year)
     existing = Enrollment.query.filter_by(
         student_id=data['student_id'], course_id=course_id, year=year
@@ -132,6 +135,8 @@ def add_subject(course_id):
         return jsonify({'error': 'Sin permisos'}), 403
     data = request.get_json()
     ensure_course_open(Course.query.filter_by(id=course_id, school_id=claims.get('school_id')).first_or_404())
+    ensure_del_colegio(Subject, data.get('subject_id'), claims.get('school_id'))
+    ensure_del_colegio(User, data.get('teacher_id'), claims.get('school_id'))
     ya = CourseSubject.query.filter_by(
         course_id=course_id, subject_id=data['subject_id']).first()
     if ya:
@@ -156,6 +161,7 @@ def update_course_subject(course_id, cs_id):
     cs = CourseSubject.query.filter_by(id=cs_id, course_id=course_id).first_or_404()
     data = request.get_json() or {}
     if 'teacher_id' in data:
+        ensure_del_colegio(User, data['teacher_id'] or None, claims.get('school_id'))
         cs.teacher_id = data['teacher_id'] or None
     if 'hours_per_week' in data:
         try:

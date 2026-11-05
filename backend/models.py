@@ -8,6 +8,11 @@ db = SQLAlchemy()
 # administran, no sobre la matrícula. Alumnos y apoderados no suman.
 ROLES_FACTURABLES = ('admin', 'directivo', 'profesor')
 
+# Hash que ninguna clave puede satisfacer: check_password_hash devuelve False
+# porque no tiene el formato método$sal$hash. Para cuentas que entran con Google,
+# datos de ejemplo y personas importadas que aún no tienen acceso.
+CLAVE_INUTILIZABLE = '!'
+
 
 class School(db.Model):
     __tablename__ = 'schools'
@@ -50,6 +55,14 @@ class School(db.Model):
     onboarding_year = db.Column(db.Integer)
     onboarding_cerrado_at = db.Column(db.DateTime)
 
+    # Autoregistro. NULL = colegio creado por el super admin: nunca se le aplica
+    # el bloqueo por prueba vencida.
+    origen = db.Column(db.String(20))                  # NULL | autoregistro
+    tiene_demo = db.Column(db.Boolean, default=False)  # hay datos de ejemplo cargados
+    comuna = db.Column(db.String(100))
+    tipo_establecimiento = db.Column(db.String(50))
+    cantidad_alumnos_aprox = db.Column(db.Integer)
+
     users = db.relationship('User', backref='school', lazy=True)
     courses = db.relationship('Course', backref='school', lazy=True)
     periods = db.relationship('Period', backref='school', lazy=True)
@@ -88,6 +101,9 @@ class School(db.Model):
             'onboarding_year': self.onboarding_year,
             'onboarding_cerrado_at': (self.onboarding_cerrado_at.isoformat()
                                       if self.onboarding_cerrado_at else None),
+            'origen': self.origen, 'tiene_demo': bool(self.tiene_demo),
+            'comuna': self.comuna, 'tipo_establecimiento': self.tipo_establecimiento,
+            'cantidad_alumnos_aprox': self.cantidad_alumnos_aprox,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
@@ -119,6 +135,11 @@ class User(db.Model):
     # Cuándo se le generó la última clave para entregar. No guardamos la clave
     # en sí: si el colegio la pierde, se genera otra.
     clave_entregada_at = db.Column(db.DateTime)
+    # Registro propio. origen_registro NULL = cuenta creada por el colegio o el
+    # super admin; password | google = se registró sola.
+    email_verificado = db.Column(db.Boolean, default=False)
+    google_sub = db.Column(db.String(255), unique=True, index=True)
+    origen_registro = db.Column(db.String(20))
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
@@ -139,6 +160,8 @@ class User(db.Model):
             'debe_cambiar_clave': bool(self.debe_cambiar_clave),
             'clave_entregada_at': (self.clave_entregada_at.isoformat()
                                    if self.clave_entregada_at else None),
+            'email_verificado': bool(self.email_verificado),
+            'origen_registro': self.origen_registro,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
@@ -1562,3 +1585,42 @@ def ensure_personalidad_pauta(school_id):
 from sqlalchemy import event as _sa_event
 from sqlalchemy.orm import Session as _SaSession
 _sa_event.listen(_SaSession, 'before_flush', _sync_enrollment_flags)
+
+
+class PlanCatalogo(db.Model):
+    """Planes que ofrece la plataforma. Al colegio se le copian los valores, así
+    que cambiar el catálogo no le cambia el plan a nadie."""
+    __tablename__ = 'planes_catalogo'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    monto = db.Column(db.Integer)                      # CLP por período; NULL = por definir
+    frecuencia = db.Column(db.String(10), default='mensual', nullable=False)
+    dias_prueba = db.Column(db.Integer, default=30, nullable=False)
+    descripcion = db.Column(db.Text)
+    activo = db.Column(db.Boolean, default=True, nullable=False)
+    predeterminado = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @classmethod
+    def vigente(cls):
+        """El plan con que parten los colegios nuevos (puede no haber)."""
+        return cls.query.filter_by(predeterminado=True, activo=True).order_by(cls.id).first()
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'nombre': self.nombre, 'monto': self.monto,
+            'frecuencia': self.frecuencia, 'dias_prueba': self.dias_prueba,
+            'descripcion': self.descripcion, 'activo': bool(self.activo),
+            'predeterminado': bool(self.predeterminado),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class DatoEjemplo(db.Model):
+    """Qué filas son datos de ejemplo. Borrarlos se decide con esta lista y no
+    adivinando por nombres: lo que no está acá es del colegio y no se toca."""
+    __tablename__ = 'datos_ejemplo'
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False, index=True)
+    tabla = db.Column(db.String(50), nullable=False)
+    registro_id = db.Column(db.Integer, nullable=False)

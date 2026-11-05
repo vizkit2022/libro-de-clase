@@ -3,6 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import UserAvatar, { avatarColor } from '../UserAvatar/UserAvatar';
 import { Icono } from './iconos';
+import { FranjaPrueba, AvisoDatosEjemplo } from '../Prueba/AvisosPrueba';
 import './Layout.css';
 
 const ROLES = {
@@ -165,6 +166,7 @@ export default function Layout() {
   const { pathname } = useLocation();
   const [abierto, setAbierto] = useState(false);     // menú en móvil
   const [menuUsuario, setMenuUsuario] = useState(false);
+  const [versionCont, setVersionCont] = useState(0);  // remonta la pantalla al borrar el ejemplo
 
   // Al navegar se cierra el menú móvil, si no queda tapando el contenido
   useEffect(() => { setAbierto(false); setMenuUsuario(false); }, [pathname]);
@@ -270,8 +272,11 @@ export default function Layout() {
           </div>
         </header>
 
+        <FranjaPrueba />
+        <AvisoDatosEjemplo onBorrados={() => setVersionCont(v => v + 1)} />
+
         <main className="kv-cont">
-          <Outlet />
+          <React.Fragment key={versionCont}><Outlet /></React.Fragment>
         </main>
       </div>
     </div>

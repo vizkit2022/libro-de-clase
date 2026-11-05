@@ -4,7 +4,11 @@ Permiten gestionar todos los colegios, sus planes y suscripciones.
 """
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
-from models import db, School, User, Subscription, Period
+from models import db, School, User, Subscription, Period, PlanCatalogo, ROLES_FACTURABLES
+from routes.payments import (FRECUENCIAS, cambiar_fin_prueba, guardar_plan, leer_fin_prueba,
+                             plan_payload)
+from servicios import mercadopago as mp
+from servicios.prueba import suscrito
 from datetime import datetime, timedelta, date
 from functools import wraps
 
@@ -499,3 +503,219 @@ def desactivar_usuario(uid):
     u.is_active = False
     db.session.commit()
     return jsonify({'ok': True, 'mensaje': f'{u.first_name} {u.last_name} quedó sin acceso'}), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  CATÁLOGO DE PLANES Y PRUEBAS GRATIS
+# ══════════════════════════════════════════════════════════════════════
+
+def _leer_plan(d, plan=None):
+    """Valida el cuerpo y devuelve (campos, error). En un PUT solo vienen algunos."""
+    campos = {}
+    if 'nombre' in d or plan is None:
+        nombre = d.get('nombre')
+        nombre = nombre.strip() if isinstance(nombre, str) else ''
+        if not nombre or len(nombre) > 100:
+            return None, 'El plan necesita un nombre de hasta 100 caracteres'
+        campos['nombre'] = nombre
+    if 'monto' in d:
+        monto = d['monto']
+        if monto in (None, ''):
+            campos['monto'] = None
+        else:
+            try:
+                valido = not isinstance(monto, bool) and int(monto) == float(monto) and 0 < int(monto) <= 1000000000
+            except (TypeError, ValueError):
+                valido = False
+            if not valido:
+                return None, 'El monto debe ser un número entero de pesos mayor que cero'
+            campos['monto'] = int(monto)
+    if 'frecuencia' in d:
+        if d['frecuencia'] not in FRECUENCIAS:
+            return None, 'La frecuencia debe ser mensual o anual'
+        campos['frecuencia'] = d['frecuencia']
+    if 'dias_prueba' in d:
+        dias = d['dias_prueba']
+        try:
+            valido = not isinstance(dias, bool) and int(dias) == float(dias) and 1 <= int(dias) <= mp.MAX_PRUEBA_DIAS
+        except (TypeError, ValueError):
+            valido = False
+        if not valido:
+            return None, 'Los días de prueba deben ir entre 1 y 365'
+        campos['dias_prueba'] = int(dias)
+    if 'descripcion' in d:
+        campos['descripcion'] = (str(d['descripcion']).strip() or None) if d['descripcion'] else None
+    for bandera in ('activo', 'predeterminado'):
+        if bandera in d:
+            campos[bandera] = bool(d[bandera])
+    return campos, None
+
+
+def _dejar_unico_predeterminado(plan):
+    PlanCatalogo.query.filter(PlanCatalogo.id != plan.id, PlanCatalogo.predeterminado.is_(True))\
+        .update({'predeterminado': False}, synchronize_session='fetch')
+
+
+@super_admin_bp.route('/planes', methods=['GET'])
+@require_super_admin
+def listar_planes():
+    planes = PlanCatalogo.query.order_by(PlanCatalogo.activo.desc(), PlanCatalogo.id).all()
+    return jsonify([p.to_dict() for p in planes]), 200
+
+
+@super_admin_bp.route('/planes', methods=['POST'])
+@require_super_admin
+def crear_plan():
+    campos, error = _leer_plan(request.get_json(silent=True) or {})
+    if error:
+        return jsonify({'error': error}), 400
+    plan = PlanCatalogo(**{'frecuencia': 'mensual', 'dias_prueba': 30, 'activo': True,
+                           'predeterminado': False, **campos})
+    if plan.predeterminado and not plan.activo:
+        return jsonify({'error': 'Un plan desactivado no puede ser el predeterminado'}), 400
+    db.session.add(plan)
+    db.session.flush()
+    if plan.predeterminado:
+        _dejar_unico_predeterminado(plan)
+    db.session.commit()
+    return jsonify(plan.to_dict()), 201
+
+
+@super_admin_bp.route('/planes/<int:plan_id>', methods=['PUT'])
+@require_super_admin
+def editar_plan(plan_id):
+    plan = PlanCatalogo.query.get_or_404(plan_id)
+    campos, error = _leer_plan(request.get_json(silent=True) or {}, plan)
+    if error:
+        return jsonify({'error': error}), 400
+    activo = campos.get('activo', plan.activo)
+    predeterminado = campos.get('predeterminado', plan.predeterminado)
+    # Siempre debe haber uno con que partan los colegios nuevos
+    if plan.predeterminado and not predeterminado:
+        return jsonify({'error': 'Marca otro plan como predeterminado y este dejará de serlo'}), 400
+    if predeterminado and not activo:
+        return jsonify({'error': 'Un plan desactivado no puede ser el predeterminado'}), 400
+    for campo, valor in campos.items():
+        setattr(plan, campo, valor)
+    if plan.predeterminado:
+        _dejar_unico_predeterminado(plan)
+    db.session.commit()
+    return jsonify(plan.to_dict()), 200
+
+
+@super_admin_bp.route('/planes/<int:plan_id>', methods=['DELETE'])
+@require_super_admin
+def desactivar_plan(plan_id):
+    """Baja lógica. Los colegios conservan los valores que se les copiaron."""
+    plan = PlanCatalogo.query.get_or_404(plan_id)
+    if plan.predeterminado:
+        return jsonify({'error': 'Marca otro plan como predeterminado antes de desactivar este'}), 409
+    plan.activo = False
+    db.session.commit()
+    return jsonify(plan.to_dict()), 200
+
+
+DIAS_POR_VENCER = 7
+ESTADOS_PRUEBA = ('activa', 'por_vencer', 'vencida', 'suscrito')
+
+
+def _estado_prueba(school, hoy):
+    if suscrito(school):
+        return 'suscrito'
+    fin = school.trial_ends_at
+    if fin and fin < hoy:
+        return 'vencida'
+    if fin and (fin - hoy).days + 1 <= DIAS_POR_VENCER:
+        return 'por_vencer'
+    return 'activa'
+
+
+@super_admin_bp.route('/pruebas', methods=['GET'])
+@require_super_admin
+def listar_pruebas():
+    """Colegios que se registraron solos, con el estado de su prueba."""
+    filtro = request.args.get('estado')
+    if filtro and filtro not in ESTADOS_PRUEBA:
+        return jsonify({'error': 'Estado no válido'}), 400
+
+    colegios = School.query.filter_by(origen='autoregistro').order_by(School.created_at.desc()).all()
+    ids = [s.id for s in colegios]
+    alumnos, accesos, admins = {}, {}, {}
+    if ids:
+        alumnos = dict(db.session.query(User.school_id, db.func.count(User.id))
+                       .filter(User.school_id.in_(ids), User.role == 'alumno', User.is_active.is_(True))
+                       .group_by(User.school_id).all())
+        accesos = dict(db.session.query(User.school_id, db.func.max(User.last_login))
+                       .filter(User.school_id.in_(ids), User.role.in_(ROLES_FACTURABLES))
+                       .group_by(User.school_id).all())
+        for u in User.query.filter(User.school_id.in_(ids), User.role == 'admin').order_by(User.id.desc()).all():
+            admins[u.school_id] = u.email     # el de menor id, quien lo creó, queda al final
+
+    hoy = date.today()
+    totales = {e: 0 for e in ESTADOS_PRUEBA}
+    filas = []
+    for s in colegios:
+        estado = _estado_prueba(s, hoy)
+        totales[estado] += 1
+        if filtro and estado != filtro:
+            continue
+        ultimo = accesos.get(s.id)
+        filas.append({
+            'school_id': s.id, 'nombre': s.name, 'admin_email': admins.get(s.id),
+            'creado': s.created_at.isoformat() if s.created_at else None,
+            'plan_nombre': s.plan_nombre,
+            'trial_ends_at': s.trial_ends_at.isoformat() if s.trial_ends_at else None,
+            'dias_restantes': mp.dias_de_prueba(s, hoy), 'estado': estado,
+            'alumnos': alumnos.get(s.id, 0),
+            'ultimo_acceso': ultimo.isoformat() if ultimo else None,
+        })
+    return jsonify({'pruebas': filas, 'totales': totales}), 200
+
+
+@super_admin_bp.route('/schools/<int:school_id>/prueba', methods=['POST'])
+@require_super_admin
+def prorrogar_prueba(school_id):
+    """{dias}: suma días a lo que queda, o desde hoy si ya venció. {trial_ends_at}: fecha."""
+    school = School.query.get_or_404(school_id)
+    d = request.get_json(silent=True) or {}
+    hoy = date.today()
+    if d.get('trial_ends_at'):
+        fin, error = leer_fin_prueba(d['trial_ends_at'])
+        if error:
+            return jsonify({'error': error}), 400
+        if fin < hoy:
+            return jsonify({'error': 'La fecha de fin de prueba ya pasó'}), 400
+    else:
+        dias = d.get('dias')
+        if isinstance(dias, bool) or not isinstance(dias, int) or not 1 <= dias <= mp.MAX_PRUEBA_DIAS:
+            return jsonify({'error': 'Indica los días (1 a 365) o una fecha'}), 400
+        base = max(school.trial_ends_at or hoy - timedelta(days=1), hoy - timedelta(days=1))
+        fin = base + timedelta(days=dias)
+        if (fin - hoy).days + 1 > mp.MAX_PRUEBA_DIAS:
+            return jsonify({'error': 'Mercado Pago permite hasta 365 días de prueba'}), 400
+
+    avisos = cambiar_fin_prueba(school, fin)
+    db.session.commit()
+    data = plan_payload(school, True)
+    data['avisos'] = avisos
+    return jsonify(data), 200
+
+
+@super_admin_bp.route('/schools/<int:school_id>/aplicar-plan', methods=['POST'])
+@require_super_admin
+def aplicar_plan(school_id):
+    """Copia un plan del catálogo al colegio. La fecha de fin de prueba no cambia."""
+    school = School.query.get_or_404(school_id)
+    plan_id = (request.get_json(silent=True) or {}).get('plan_id')
+    plan = db.session.get(PlanCatalogo, plan_id) if isinstance(plan_id, int) else None
+    if plan is None:
+        return jsonify({'error': 'El plan no existe'}), 404
+    if not plan.activo:
+        return jsonify({'error': 'Ese plan está desactivado'}), 400
+    if not plan.monto:
+        return jsonify({'error': 'Ese plan aún no tiene monto: defínelo antes de aplicarlo'}), 400
+    avisos = guardar_plan(school, plan.nombre, plan.monto, plan.frecuencia, school.trial_ends_at)
+    db.session.commit()
+    data = plan_payload(school, True)
+    data['avisos'] = avisos
+    return jsonify(data), 200

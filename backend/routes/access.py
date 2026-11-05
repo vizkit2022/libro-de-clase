@@ -101,3 +101,33 @@ def ensure_course_subject_open(course_subject_id):
     cs = CourseSubject.query.get(course_subject_id) if course_subject_id else None
     if cs is not None:
         ensure_course_open(cs.course)
+
+
+# ── Pertenencia al colegio ──────────────────────────────────────────────────
+# Con el registro abierto cualquiera puede ser admin de su propio colegio, así
+# que un id que llega en la request nunca se da por bueno sin comprobarlo.
+
+def _no_encontrado():
+    from flask import abort, make_response
+    abort(make_response(jsonify({'error': 'No encontrado'}), 404))
+
+
+def ensure_del_colegio(modelo, registro_id, school_id):
+    """404 si el id (de un modelo con school_id) no es de este colegio. Sin id no hace nada."""
+    if registro_id in (None, ''):
+        return None
+    fila = modelo.query.filter_by(id=registro_id, school_id=school_id).first()
+    if fila is None:
+        _no_encontrado()
+    return fila
+
+
+def ensure_course_subject_del_colegio(course_subject_id, school_id):
+    from models import Course, CourseSubject
+    if course_subject_id in (None, ''):
+        return None
+    fila = CourseSubject.query.join(Course, CourseSubject.course_id == Course.id).filter(
+        CourseSubject.id == course_subject_id, Course.school_id == school_id).first()
+    if fila is None:
+        _no_encontrado()
+    return fila

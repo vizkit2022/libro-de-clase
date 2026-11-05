@@ -9,6 +9,7 @@
 .pl-resumen-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
 .pl-nombre { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #64748b; }
 .pl-precio { font-size: 30px; font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin-top: 2px; }
+.pl-precio-pend { font-size: 20px; color: #475569; }
 .pl-precio small { font-size: 14px; font-weight: 600; color: #64748b; letter-spacing: 0; }
 
 .pl-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 18px 0 6px; }

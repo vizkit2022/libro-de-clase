@@ -3,8 +3,32 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from models import db, User, School
 from datetime import datetime, timedelta
 from servicios.auditoria import registrar_login
+from servicios.prueba import datos_prueba
 
 auth_bp = Blueprint('auth', __name__)
+
+
+def emitir_token(user):
+    """JWT de la sesión. school_id va en los claims: None para super_admin y para
+    quien se registró y aún no crea su colegio."""
+    claims = {'role': user.role, 'school_id': user.school_id}
+    # Cuenta con clave y correo sin comprobar: si después el dueño real del correo
+    # entra con Google, estos tokens dejan de valer (ver servicios/prueba.py).
+    if user.origen_registro == 'password' and not user.email_verificado:
+        claims['sin_verificar'] = True
+    return create_access_token(identity=str(user.id), additional_claims=claims,
+                               expires_delta=timedelta(hours=12))
+
+
+def school_payload(school):
+    """Colegio más lo necesario para el aviso de prueba. `prueba` es None en los
+    colegios que no se registraron solos."""
+    if not school:
+        return None
+    data = school.to_dict()
+    data['prueba'] = datos_prueba(school) if school.origen == 'autoregistro' else None
+    return data
+
 
 @auth_bp.route('/health', methods=['GET'])
 def health():
@@ -39,21 +63,14 @@ def login():
     db.session.commit()
     registrar_login(user, email=email, ok=True)
 
-    token = create_access_token(
-        identity=str(user.id),
-        additional_claims={
-            'role': user.role,
-            'school_id': user.school_id  # None para super_admin
-        },
-        expires_delta=timedelta(hours=12)
-    )
+    token = emitir_token(user)
 
     school = School.query.get(user.school_id) if user.school_id else None
 
     return jsonify({
         'access_token': token,
         'user': user.to_dict(),
-        'school': school.to_dict() if school else None
+        'school': school_payload(school)
     }), 200
 
 
@@ -72,7 +89,7 @@ def get_me():
     if not user:
         return jsonify({'error': 'Usuario no encontrado'}), 404
     school = School.query.get(user.school_id) if user.school_id else None
-    return jsonify({'user': user.to_dict(), 'school': school.to_dict() if school else None}), 200
+    return jsonify({'user': user.to_dict(), 'school': school_payload(school)}), 200
 
 
 @auth_bp.route('/change-password', methods=['POST'])

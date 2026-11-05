@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth, sinColegio } from './context/AuthContext';
 import Layout from './components/Layout/Layout';
 import LoginPage from './pages/Login/LoginPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
@@ -31,6 +31,10 @@ import OnboardingPage from './pages/Onboarding/OnboardingPage';
 import PersonalidadCursosPage, { PersonalidadCursoPage, PersonalidadAlumnoPage } from './pages/Personalidad/PersonalidadPage';
 import PlanPage from './pages/Plan/PlanPage';
 import PersonalidadPautaPage from './pages/Personalidad/PersonalidadPautaPage';
+import RegistroPage from './pages/Registro/RegistroPage';
+import BienvenidaPage from './pages/Registro/BienvenidaPage';
+import AutoOnboardingPage from './pages/Registro/AutoOnboardingPage';
+import { AvisoPruebaVencida } from './components/Prueba/AvisosPrueba';
 
 // Super Admin
 import SuperAdminLayout from './pages/SuperAdmin/SuperAdminLayout';
@@ -38,17 +42,19 @@ import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard';
 import SchoolsManagementPage, { SchoolFormPage, SchoolDetailPage } from './pages/SuperAdmin/SchoolsManagementPage';
 import SubscriptionsPage from './pages/SuperAdmin/SubscriptionsPage';
 import AdminsPage from './pages/SuperAdmin/AdminsPage';
+import PlanesPruebasPage from './pages/SuperAdmin/PlanesPruebasPage';
 
 const RedirectByRole = () => {
-  const { user } = useAuth();
+  const { user, school } = useAuth();
+  if (sinColegio(user, school)) return <Navigate to="/bienvenida" replace />;
   if (user?.role === 'apoderado') return <Navigate to="/apoderado" replace />;
   if (user?.role === 'super_admin') return <Navigate to="/super-admin" replace />;
   if (user?.role === 'profesor') return <Navigate to="/mis-cursos" replace />;
   return <Navigate to="/dashboard" replace />;
 };
 
-const PrivateRoute = ({ children, roles }) => {
-  const { user, loading } = useAuth();
+const PrivateRoute = ({ children, roles, permitirSinColegio = false }) => {
+  const { user, school, loading } = useAuth();
   if (loading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh'}}>
       <div style={{textAlign:'center'}}>
@@ -58,6 +64,7 @@ const PrivateRoute = ({ children, roles }) => {
     </div>
   );
   if (!user) return <Navigate to="/login" replace />;
+  if (!permitirSinColegio && sinColegio(user, school)) return <Navigate to="/bienvenida" replace />;
   if (roles && !roles.includes(user.role)) {
     if (user.role === 'apoderado') return <Navigate to="/apoderado" replace />;
     if (user.role === 'super_admin') return <Navigate to="/super-admin" replace />;
@@ -71,8 +78,18 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <AvisoPruebaVencida />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/registro" element={<RegistroPage />} />
+
+          {/* Primeros pasos de un colegio nuevo: pantalla completa, sin el menú */}
+          <Route path="/bienvenida" element={
+            <PrivateRoute roles={['admin']} permitirSinColegio><BienvenidaPage /></PrivateRoute>
+          } />
+          <Route path="/bienvenida/datos" element={
+            <PrivateRoute roles={['admin','directivo']} permitirSinColegio><AutoOnboardingPage /></PrivateRoute>
+          } />
 
           {/* Portal Super Admin (layout propio) */}
           <Route path="/super-admin" element={
@@ -86,6 +103,7 @@ export default function App() {
             <Route path="schools/:id" element={<SchoolDetailPage />} />
             <Route path="schools/:id/edit" element={<SchoolFormPage />} />
             <Route path="subscriptions" element={<SubscriptionsPage />} />
+            <Route path="planes" element={<PlanesPruebasPage />} />
             <Route path="admins" element={<AdminsPage />} />
             <Route path="auditoria" element={<AuditoriaPage />} />
           </Route>

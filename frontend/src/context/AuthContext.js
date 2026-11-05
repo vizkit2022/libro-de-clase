@@ -29,6 +29,17 @@ function guardarAnio(v) {
   try { localStorage.setItem(CLAVE_ANIO, String(v)); } catch { /* sin almacenamiento */ }
 }
 
+// Cuenta recién registrada: administrador que todavía no crea su colegio.
+export const sinColegio = (user, school) =>
+  user?.role === 'admin' && !school && !user?.school_id;
+
+// Primera pantalla de cada persona después de iniciar sesión.
+export const rutaInicial = (user, school) => {
+  if (user?.role === 'super_admin') return '/super-admin';
+  if (sinColegio(user, school)) return '/bienvenida';
+  return '/dashboard';
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [school, setSchool] = useState(null);
@@ -65,7 +76,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (user && ROLES_CON_ANIOS.includes(user.role)) recargarAnios();
+    // Una cuenta sin colegio todavía no tiene años que pedir
+    if (user && ROLES_CON_ANIOS.includes(user.role) && !(user.role === 'admin' && user.school_id === null)) recargarAnios();
     else setAnios([]);
   }, [user, recargarAnios]);
 
@@ -85,8 +97,9 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const login = async (email, password) => {
-    const { data } = await axios.post('/api/auth/login', { email, password });
+  // Deja abierta la sesión de una respuesta con {access_token, user, school}:
+  // ingreso con clave, registro, Google o la creación del colegio.
+  const iniciarSesion = (data) => {
     localStorage.setItem('token', data.access_token);
     axios.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
     setUser(data.user);
@@ -95,6 +108,24 @@ export const AuthProvider = ({ children }) => {
     if (data.school) applySchoolTheme(data.school);
     return data;
   };
+
+  const login = async (email, password) => {
+    const { data } = await axios.post('/api/auth/login', { email, password });
+    return iniciarSesion(data);
+  };
+
+  // Vuelve a leer la sesión tras un cambio hecho en otro lado: datos de ejemplo,
+  // suscripción, prueba vencida. Si falla, se sigue con lo que ya se tenía.
+  const refrescarSesion = useCallback(async () => {
+    try {
+      const { data } = await axios.get('/api/auth/me');
+      setUser(data.user);
+      setSchool(data.school);
+      return data;
+    } catch {
+      return null;
+    }
+  }, []);
 
   const logout = () => {
     // Deja el cierre de sesión en el historial de auditoría. No se espera la
@@ -118,13 +149,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateSchool = (updatedSchool) => {
-    setSchool(updatedSchool);
+    // Se mezcla: quien edita los datos del colegio no trae el estado de la prueba
+    setSchool(previo => ({ ...previo, ...updatedSchool }));
     applySchoolTheme(updatedSchool);
   };
 
   return (
     <AuthContext.Provider value={{
-      user, school, loading, login, logout, updateSchool,
+      user, school, loading, login, logout, updateSchool, iniciarSesion, refrescarSesion,
       anio, setAnio, anios, recargarAnios, anioInfo, anioCerrado,
     }}>
       {children}

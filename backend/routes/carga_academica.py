@@ -11,6 +11,7 @@ from datetime import date, datetime
 from functools import wraps
 import json as json_lib
 import io
+from routes.access import ensure_del_colegio
 import os
 
 carga_bp = Blueprint('carga_academica', __name__)
@@ -217,6 +218,7 @@ def get_docente(did):
 @school_required
 def create_docente():
     d = request.get_json()
+    ensure_del_colegio(User, d.get('user_id') or None, _sid())
     row = CargaDocente(
         school_id=_sid(),
         year=d.get('year', _year()),
@@ -240,6 +242,7 @@ def create_docente():
 def update_docente(did):
     row = CargaDocente.query.filter_by(id=did, school_id=_sid()).first_or_404()
     d = request.get_json()
+    ensure_del_colegio(User, d.get('user_id') or None, _sid())
     for f in ['nombre', 'rut', 'departamento', 'nivel', 'horas_contrato', 'orden', 'user_id']:
         if f in d:
             setattr(row, f, d[f] or None if f == 'user_id' else d[f])

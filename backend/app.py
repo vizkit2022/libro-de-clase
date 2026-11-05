@@ -69,6 +69,8 @@ def create_app():
     from routes.anios import anios_bp
     from routes.auditoria import auditoria_bp
     from routes.personalidad import personalidad_bp
+    from routes.registro import registro_bp
+    from routes.autoonboarding import autoonboarding_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -92,11 +94,17 @@ def create_app():
     app.register_blueprint(anios_bp, url_prefix='/api/anios')
     app.register_blueprint(auditoria_bp, url_prefix='/api/auditoria')
     app.register_blueprint(personalidad_bp, url_prefix='/api/personalidad')
+    app.register_blueprint(registro_bp, url_prefix='/api/registro')
+    app.register_blueprint(autoonboarding_bp, url_prefix='/api/autoonboarding')
     app.register_blueprint(sitio_bp)
 
     # ── Auditoría: registra cambios y descargas de cada request ──────────────
     from servicios.auditoria import instalar as instalar_auditoria
     instalar_auditoria(app)
+
+    # ── Admin sin colegio y prueba vencida: se cortan antes de llegar a la ruta ──
+    from servicios.prueba import instalar as instalar_guardia_colegio
+    instalar_guardia_colegio(app)
 
     # ── Serve React (SPA catch-all) ───────────────────────────────────────────
     @app.route('/', defaults={'path': ''})
@@ -122,6 +130,7 @@ def create_app():
         run_migrations()
         seed_data()
         seed_authorization_templates()
+        seed_planes_catalogo()
 
     return app
 
@@ -376,6 +385,35 @@ def run_migrations():
                 conn.rollback()
                 print(f"⚠️  Backfill de matrículas falló: {e}")
 
+        # 9. Registro propio y prueba gratis. Las filas existentes quedan con
+        #    origen y origen_registro en NULL: es lo que las mantiene fuera del
+        #    bloqueo por prueba vencida.
+        for tabla, col, definicion in [
+            ('schools', 'origen',                 'VARCHAR(20)'),
+            ('schools', 'tiene_demo',             'BOOLEAN DEFAULT FALSE'),
+            ('schools', 'comuna',                 'VARCHAR(100)'),
+            ('schools', 'tipo_establecimiento',   'VARCHAR(50)'),
+            ('schools', 'cantidad_alumnos_aprox', 'INTEGER'),
+            ('users',   'email_verificado',       'BOOLEAN DEFAULT FALSE'),
+            ('users',   'google_sub',             'VARCHAR(255)'),
+            ('users',   'origen_registro',        'VARCHAR(20)'),
+        ]:
+            try:
+                conn.execute(text(
+                    f"ALTER TABLE {tabla} ADD COLUMN {col} {definicion}"))
+                conn.commit()
+                print(f"✅ Migración: {tabla}.{col} agregada")
+            except Exception:
+                conn.rollback()   # ya existía → ignorar
+        # Mismo nombre que genera el modelo: en una base nueva ya existe
+        try:
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_sub "
+                              "ON users (google_sub)"))
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print(f"⚠️  Índice users.google_sub: {e}")
+
         # La tabla convivencia_bitacora se crea automáticamente por db.create_all()
         # academic_years y student_history también (db.create_all()).
         # audit_logs (auditoría) también: db.create_all() crea la tabla y sus índices.
@@ -416,6 +454,34 @@ def seed_authorization_templates():
     except Exception as e:
         db.session.rollback()
         print(f"⚠️  No se pudieron crear las plantillas de autorización: {e}")
+
+
+def seed_planes_catalogo():
+    """Plan predeterminado si el catálogo está vacío.
+
+    El precio publicado es 0,7 UF por usuario, no un monto fijo en pesos, así que
+    el monto queda en NULL hasta que el super admin lo defina.
+    """
+    from models import PlanCatalogo
+    from sqlalchemy import text
+    try:
+        if PlanCatalogo.query.first():
+            return
+        # Con varios workers arrancando a la vez, solo uno siembra
+        if 'postgresql' in (db.engine.url.drivername or ''):
+            db.session.execute(text('SELECT pg_advisory_xact_lock(727001)'))
+            if PlanCatalogo.query.first():
+                db.session.commit()
+                return
+        db.session.add(PlanCatalogo(
+            nombre='Plan Base', monto=None, frecuencia='mensual', dias_prueba=30,
+            descripcion='0,7 UF por usuario al mes. Se cuentan docentes y '
+                        'administradores; estudiantes y apoderados no se cobran.',
+            activo=True, predeterminado=True))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"⚠️  No se pudo sembrar el catálogo de planes: {e}")
 
 
 def seed_data():

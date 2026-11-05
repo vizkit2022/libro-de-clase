@@ -32,6 +32,7 @@ _PALABRAS_SENSIBLES = {
     'signature', 'firma', 'base64', 'b64', 'dataurl', 'data_url',
     'photo', 'foto', 'logo', 'image', 'imagen', 'img',
     'file', 'archivo', 'content', 'contenido', 'pdf', 'blob', 'adjunto',
+    'credential', 'credencial',
 }
 # Fragmentos que delatan un secreto aunque vayan pegados a otra palabra
 _FRAGMENTOS_SENSIBLES = ('password', 'contrase', 'token', 'secret', 'base64', 'signature')
@@ -315,6 +316,8 @@ BLUEPRINTS = {
     'sitio':           ('Solicitud de demo', 'una solicitud de demo'),
     'reports':         ('Reporte', 'un reporte'),
     'ia':              ('IA', 'una consulta de IA'),
+    'registro':        ('Registro', 'un registro de cuenta'),
+    'autoonboarding':  ('Puesta en marcha', 'la carga inicial de datos'),
 }
 
 VERBOS = {
@@ -458,6 +461,20 @@ ENDPOINTS = {
     'periods.delete_period':          ('eliminar', None, 'Eliminó un período{id_txt}'),
     'subjects.update_subject':        ('editar', None, 'Editó una asignatura{id_txt}'),
     'subjects.delete_subject':        ('eliminar', None, 'Eliminó una asignatura{id_txt}'),
+    'super_admin.crear_plan':              ('crear', 'Plan', 'Creó un plan del catálogo{nombre_q}'),
+    'super_admin.editar_plan':             ('editar', 'Plan', 'Editó un plan del catálogo{id_txt}'),
+    'super_admin.desactivar_plan':         ('eliminar', 'Plan', 'Desactivó un plan del catálogo{id_txt}'),
+    'super_admin.prorrogar_prueba':        ('accion', None, 'Cambió el fin de prueba de un colegio{id_txt}'),
+    'super_admin.aplicar_plan':            ('accion', None, 'Aplicó un plan del catálogo a un colegio{id_txt}'),
+    # Registro propio y carga inicial
+    'registro.registrar':                  ('crear', 'Usuario', 'Se registró una cuenta nueva'),
+    'registro.registrar_google':           ('accion', 'Sesión', 'Entró con Google'),
+    'registro.crear_colegio':              ('crear', 'Colegio', 'Creó su colegio{nombre_q}'),
+    'autoonboarding.previsualizar':        ('accion', None, 'Previsualizó una planilla de carga inicial'),
+    'autoonboarding.aplicar':              ('importar', None, 'Cargó datos desde una planilla'),
+    'autoonboarding.cargar_demo':          ('accion', None, 'Cargó los datos de ejemplo'),
+    'autoonboarding.borrar_demo':          ('eliminar', None, 'Borró los datos de ejemplo'),
+    'autoonboarding.plantilla':            ('descargar', None, 'Descargó la plantilla de carga inicial'),
     # Otros
     'payments.mp_webhook':            ('accion', None, 'Notificación de pago de Mercado Pago'),
     'ocr.save_annotations':           ('crear', None, 'Guardó anotaciones escaneadas'),

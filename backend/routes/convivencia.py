@@ -5,8 +5,16 @@ from models import (db, ConvivenciaCase, ConvivenciaCaseStep, ConvivenciaBitacor
 from datetime import date, datetime
 from sqlalchemy import extract, func
 import json as json_lib
+from routes.access import ensure_del_colegio
 
 convivencia_bp = Blueprint('convivencia', __name__)
+
+
+def _validar_referencias(data, school_id):
+    """El alumno, curso y profesional de un caso deben ser de este colegio."""
+    ensure_del_colegio(User, data.get('student_id') or None, school_id)
+    ensure_del_colegio(Course, data.get('course_id') or None, school_id)
+    ensure_del_colegio(User, data.get('professional_id') or None, school_id)
 
 
 def school_required(f):
@@ -136,6 +144,8 @@ def create_case():
             .first())
     next_number = (last.case_number + 1) if last else 1
 
+    _validar_referencias(data, school_id)
+
     case = ConvivenciaCase(
         school_id=school_id,
         case_number=next_number,
@@ -179,6 +189,7 @@ def update_case(case_id):
         id=case_id, school_id=claims.get('school_id')
     ).first_or_404()
     data = request.get_json()
+    _validar_referencias(data, claims.get('school_id'))
 
     for field in ['title', 'procedure', 'typification', 'motive',
                   'agreements', 'status', 'criticality', 'estado',

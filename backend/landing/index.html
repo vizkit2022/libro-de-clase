@@ -82,14 +82,25 @@
         "educationalRole": "Equipo directivo, jefes de departamento, docentes y encargados de convivencia escolar"
       },
       "provider": { "@id": "https://kolevia.cl/#organizacion" },
-      "offers": {
-        "@type": "Offer",
-        "name": "Plan Base",
-        "price": "0.7",
-        "priceCurrency": "CLF",
-        "description": "0,7 UF por usuario al mes, contando docentes y administradores. Estudiantes y apoderados no se cobran.",
-        "availability": "https://schema.org/InStock"
-      }
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Plan Base",
+          "price": "0.7",
+          "priceCurrency": "CLF",
+          "description": "0,7 UF por usuario al mes, contando docentes y administradores. Estudiantes y apoderados no se cobran.",
+          "availability": "https://schema.org/InStock"
+        },
+        {
+          "@type": "Offer",
+          "name": "Prueba gratis de 30 días",
+          "url": "https://kolevia.cl/registro",
+          "price": "0",
+          "priceCurrency": "CLP",
+          "description": "30 días de prueba sin tarjeta de crédito: el colegio crea su cuenta y carga sus cursos y alumnos desde Excel.",
+          "availability": "https://schema.org/InStock"
+        }
+      ]
     }
   ]
 }
@@ -632,6 +643,69 @@
   .mock-cuerpo>*,.pie-grid>*{min-width:0}
   .vis{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .tabla{min-width:280px}
+  /* ── De tu Excel a tu colegio ──────────────────────────── */
+  .hero-nota{margin-top:12px;font-size:13.5px;color:rgba(255,255,255,.72)}
+  .dx{background:
+    radial-gradient(760px 420px at 92% 8%,rgba(107,142,245,.2),transparent 62%),
+    radial-gradient(620px 380px at 4% 100%,rgba(124,196,150,.13),transparent 60%),
+    #0e102e;color:#fff;overflow:hidden}
+  /* Al revelarse reciben .vis, que en el resto del sitio dibuja una tarjeta blanca */
+  .dx-txt.vis,.dx-vis.vis{background:none;border:0;border-radius:0;box-shadow:none;padding:0;aspect-ratio:auto;min-height:0;display:block}
+  .dx-vis.vis{display:flex;overflow:visible}
+  .dx-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:56px;align-items:center}
+  .dx-et{font-size:12.5px;font-weight:750;color:#9ad9b4;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+  .dx h2{font-size:clamp(28px,3.2vw,40px);line-height:1.14;letter-spacing:-.028em;font-weight:800;text-wrap:balance;color:#fff}
+  .dx h2 .deg{background:linear-gradient(100deg,#a9bdf9 5%,#9ad9b4 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .dx-baj{font-size:16.5px;color:rgba(255,255,255,.78);margin-top:14px;max-width:520px}
+  .dx-pasos{list-style:none;counter-reset:dx;margin-top:26px;display:grid;gap:17px}
+  .dx-pasos li{counter-increment:dx;position:relative;padding-left:44px}
+  .dx-pasos li::before{content:counter(dx);position:absolute;left:0;top:1px;width:30px;height:30px;border-radius:50%;
+    display:grid;place-items:center;font-size:13.5px;font-weight:800;color:#9ad9b4;
+    background:rgba(154,217,180,.14);box-shadow:inset 0 0 0 1.5px rgba(154,217,180,.55)}
+  .dx-pasos b{display:block;font-size:15.5px;font-weight:700}
+  .dx-pasos span{display:block;font-size:14px;line-height:1.5;color:rgba(255,255,255,.7);margin-top:1px}
+  .dx-ctas{display:flex;align-items:center;gap:14px 18px;flex-wrap:wrap;margin-top:28px}
+  .dx-ctas span{flex:1;min-width:210px;font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.68)}
+  .dx-vis{display:flex;flex-direction:column;align-items:center;min-width:0}
+  .dx-hoja,.dx-listo{width:100%;background:#fff;color:var(--txt);border-radius:14px;box-shadow:0 22px 54px rgba(4,5,26,.45)}
+  .dx-hoja{padding:0 0 12px;overflow:hidden;font-size:11.5px;max-width:420px;transform:rotate(-1.2deg)}
+  .dx-hoja-bar{display:flex;align-items:center;gap:7px;padding:9px 13px;background:#f3f4f6;font-weight:650;color:var(--txt-2)}
+  .dx-hoja-bar i{width:12px;height:12px;border-radius:3px;background:#2f9e62;display:block}
+  .dx-cols,.dx-fila{display:grid;grid-template-columns:.7fr 1fr 1fr 1.2fr;gap:9px;padding:7px 13px}
+  .dx-cols{font-weight:700;color:var(--gris-3);border-bottom:1px solid var(--bor)}
+  .dx-cols span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dx-fila u{display:block;height:7px;border-radius:4px;background:#e5e7eb}
+  .dx-flecha{color:#9ad9b4;padding:10px 0}
+  .dx-listo{padding:16px 18px;max-width:420px;transform:rotate(.8deg)}
+  .dx-listo-t{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:750}
+  .dx-chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px}
+  .dx-chips span{font-size:11.5px;font-weight:650;padding:3px 10px;border-radius:999px;background:rgba(59,79,216,.09);color:var(--azul-os)}
+  .dx-curso{display:grid;grid-template-columns:78px 1fr;gap:10px;align-items:center;font-size:12px;margin-top:8px}
+  .dx-curso em{font-style:normal;color:var(--gris-3);white-space:nowrap}
+  .dx-curso i{display:block;height:8px}
+  .dx-curso s{display:block;height:100%;background:var(--azul);border-radius:0 4px 4px 0}
+  @media (max-width:980px){
+    .dx-grid{grid-template-columns:minmax(0,1fr);gap:38px}
+  }
+  /* La navegación tiene un botón más ancho que antes: se aligera antes de desbordar */
+  .nav{gap:20px}
+  .nav-links{gap:18px}
+  .nav-acc{white-space:nowrap}
+  @media (max-width:1280px){
+    .nav-links a:nth-child(n+7){display:none}
+  }
+  @media (max-width:1100px){
+    .nav-links{display:none}
+    .nav-acc{margin-left:auto}
+  }
+  @media (max-width:640px){
+    .nav-acc .btn-g{display:inline-flex;padding:9px 12px}
+    .marca-sub{display:none}
+  }
+  @media (max-width:370px){
+    .nav-acc .btn-g{display:none}
+  }
+
   /* Red de seguridad: nada debería desbordar, pero si algo se cuela no
      queremos que el visitante pueda arrastrar la página entera de lado.
      Va en <body> y no en <html> para no romper el scroll pegajoso. */
@@ -665,6 +739,14 @@
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "El Plan Base son 0,7 UF por usuario al mes, y se cuentan solo docentes y administradores. Los estudiantes y apoderados usan la plataforma sin costo adicional, así que un colegio de 600 alumnos con 30 docentes paga sobre 30, no sobre 630. Si el valor no calza con la realidad del establecimiento, está el Plan Especial: conversamos la situación y nos adaptamos."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Puedo probar Recreo Edu antes de pagar?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sí. Creas tu cuenta en el sitio y tienes 30 días de prueba, sin tarjeta de crédito. Puedes subir el Excel de tu colegio o explorar con datos de ejemplo. Si al terminar no te suscribes, tus datos quedan en modo de solo lectura. Si prefieres que te lo mostremos, también puedes pedir una demo."
       }
     },
     {
@@ -761,7 +843,7 @@
     </nav>
     <div class="nav-acc">
       <a href="/login" class="btn btn-g">Ingresar</a>
-      <a href="#contacto" class="btn btn-p">Pedir demo</a>
+      <a href="/registro" class="btn btn-p">Prueba gratis</a>
     </div>
   </div>
 </header>
@@ -796,9 +878,10 @@
         colegios chilenos, también los pequeños, y la normativa del MINEDUC.
       </p>
       <div class="hero-ctas">
-        <a href="#contacto" class="btn btn-p btn-lg">Pedir una demo</a>
-        <a href="#modulos" class="btn btn-g btn-lg">Ver los módulos</a>
+        <a href="/registro" class="btn btn-p btn-lg">Prueba 30 días gratis</a>
+        <a href="#contacto" class="btn btn-g btn-lg">Pedir una demo</a>
       </div>
+      <p class="hero-nota">Sin tarjeta de crédito. Tu colegio funcionando con tu propio Excel.</p>
       <div class="cifras">
         <div class="cifra"><strong>10</strong><span>módulos integrados</span></div>
         <div class="cifra"><strong>44</strong><span>jornadas de la Tabla Legal</span></div>
@@ -845,6 +928,51 @@
         </div>
       </div>
     </div>
+    </div>
+  </div>
+</section>
+
+<section class="dx" id="desde-excel">
+  <div class="env dx-grid">
+    <div class="dx-txt rev">
+      <p class="dx-et">Empieza hoy, sin esperar a nadie</p>
+      <h2>De tu Excel a tu colegio <span class="deg">funcionando en minutos</span></h2>
+      <p class="dx-baj">La lista de cursos que ya tienes en una planilla es todo lo que
+         necesitas. Sin instalar nada y sin una reunión de por medio.</p>
+      <ol class="dx-pasos">
+        <li><b>Crea tu cuenta y tu colegio</b>
+            <span>Con tu correo o tu cuenta de Google, y el nombre del establecimiento.</span></li>
+        <li><b>Sube tu planilla como está</b>
+            <span>Reconocemos las columnas aunque se llamen distinto, y antes de guardar ves qué se va a cargar y qué filas revisar.</span></li>
+        <li><b>Entra y úsalo</b>
+            <span>Cursos, alumnos y apoderados quedan listos. Nadie recibe un correo hasta que tú lo decidas.</span></li>
+      </ol>
+      <div class="dx-ctas">
+        <a href="/registro" class="btn btn-p btn-lg">Prueba 30 días gratis</a>
+        <span>Sin tarjeta de crédito. ¿Sin planilla a mano? Explora con datos de ejemplo.</span>
+      </div>
+    </div>
+
+    <div class="dx-vis rev" aria-hidden="true">
+      <div class="dx-hoja">
+        <div class="dx-hoja-bar"><i></i>matricula.xlsx</div>
+        <div class="dx-cols">
+          <span>Curso</span><span>RUT alumno</span><span>Nombre</span><span>Mail apoderado</span>
+        </div>
+        <div class="dx-fila"><u style="width:62%"></u><u style="width:80%"></u><u style="width:88%"></u><u style="width:92%"></u></div>
+        <div class="dx-fila"><u style="width:62%"></u><u style="width:76%"></u><u style="width:70%"></u><u style="width:84%"></u></div>
+        <div class="dx-fila"><u style="width:62%"></u><u style="width:80%"></u><u style="width:92%"></u><u style="width:74%"></u></div>
+        <div class="dx-fila"><u style="width:70%"></u><u style="width:72%"></u><u style="width:64%"></u><u style="width:88%"></u></div>
+      </div>
+      <div class="dx-flecha"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>
+      <div class="dx-listo">
+        <p class="dx-listo-t"><svg width="19" height="19"><use href="#tic"/></svg>Columnas reconocidas</p>
+        <div class="dx-chips"><span>Curso</span><span>RUT</span><span>Nombres</span><span>Apoderado</span></div>
+        <div class="dx-curso"><em>1° Básico A</em><i><s style="width:82%"></s></i></div>
+        <div class="dx-curso"><em>4° Básico A</em><i><s style="width:100%"></s></i></div>
+        <div class="dx-curso"><em>8° Básico A</em><i><s style="width:71%"></s></i></div>
+        <div class="dx-curso"><em>II° Medio A</em><i><s style="width:90%"></s></i></div>
+      </div>
     </div>
   </div>
 </section>
@@ -1273,7 +1401,8 @@
           <li><svg width="19" height="19"><use href="#tic"/></svg>Acompañamiento en la carga inicial de datos</li>
           <li><svg width="19" height="19"><use href="#tic"/></svg>Actualizaciones y soporte incluidos</li>
         </ul>
-        <a href="#contacto" class="btn btn-p" style="width:100%;margin-top:22px">Pedir una demo</a>
+        <a href="/registro" class="btn btn-p" style="width:100%;margin-top:22px">Prueba 30 días gratis</a>
+        <a href="#contacto" class="btn btn-g" style="width:100%;margin-top:10px">Pedir una demo</a>
 
         <div class="calc">
           <p class="calc-t">Calcula lo que pagaría tu colegio</p>
@@ -1315,7 +1444,8 @@
       </div>
     </div>
     <p class="precio-pie">Los valores se expresan en UF y se facturan en pesos según el
-       valor del día. No hay costo de instalación.</p>
+       valor del día. No hay costo de instalación, y puedes probar 30 días gratis sin
+       tarjeta de crédito.</p>
   </div>
 </section>
 
@@ -1370,6 +1500,10 @@
       <details class="faq">
         <summary>¿Cuánto cuesta y qué se cuenta como usuario?</summary>
         <div class="resp"><p>El Plan Base son 0,7 UF por usuario al mes, y se cuentan solo docentes y administradores. Los estudiantes y apoderados usan la plataforma sin costo adicional, así que un colegio de 600 alumnos con 30 docentes paga sobre 30, no sobre 630.</p><p>Si el valor no calza con la realidad del establecimiento, está el Plan Especial: conversamos la situación y nos adaptamos.</p></div>
+      </details>
+      <details class="faq">
+        <summary>¿Puedo probar Recreo Edu antes de pagar?</summary>
+        <div class="resp"><p>Sí. <a href="/registro" style="color:var(--azul);font-weight:600">Creas tu cuenta en el sitio</a> y tienes 30 días de prueba, sin tarjeta de crédito. Puedes subir el Excel de tu colegio o explorar con datos de ejemplo. Si al terminar no te suscribes, tus datos quedan en modo de solo lectura.</p><p>Si prefieres que te lo mostremos, también puedes pedir una demo.</p></div>
       </details>
       <details class="faq">
         <summary>¿Hay una opción gratis o más económica para colegios pequeños?</summary>
@@ -1486,6 +1620,7 @@
         <ul>
           <li><a href="#nosotros">Quiénes somos</a></li>
           <li><a href="#colegios">Colegios</a></li>
+          <li><a href="/registro">Prueba 30 días gratis</a></li>
           <li><a href="#contacto">Pedir demo</a></li>
         </ul>
       </div>

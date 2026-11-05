@@ -1,10 +1,11 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
-from models import db, Grade, CourseSubject, Enrollment, User
+from models import db, Grade, CourseSubject, Enrollment, User, Period
 from sqlalchemy import func
 from datetime import datetime
 from routes.access import (current_claims, allowed_student_ids, can_view_student, only_published, forbidden,
-                           ensure_course_subject_open, ensure_course_open)
+                           ensure_course_subject_open, ensure_course_open,
+                           ensure_del_colegio, ensure_course_subject_del_colegio)
 
 grades_bp = Blueprint('grades', __name__)
 
@@ -47,6 +48,10 @@ def create_grade():
         return jsonify({'error': 'Sin permisos'}), 403
     data = request.get_json()
     creator_id = int(claims['sub'])
+    sid = claims.get('school_id')
+    ensure_del_colegio(User, data.get('student_id'), sid)
+    ensure_course_subject_del_colegio(data.get('course_subject_id'), sid)
+    ensure_del_colegio(Period, data.get('period_id'), sid)
     ensure_course_subject_open(data.get('course_subject_id'))
 
     grade = Grade(
@@ -72,6 +77,11 @@ def create_bulk_grades():
     data = request.get_json()
     creator_id = int(claims['sub'])
     grades_list = data.get('grades', [])
+    sid = claims.get('school_id')
+    ensure_course_subject_del_colegio(data.get('course_subject_id'), sid)
+    ensure_del_colegio(Period, data.get('period_id'), sid)
+    for g in grades_list:
+        ensure_del_colegio(User, g.get('student_id'), sid)
     ensure_course_subject_open(data.get('course_subject_id'))
     created = []
     for g in grades_list:
@@ -93,13 +103,18 @@ def create_bulk_grades():
     db.session.commit()
     return jsonify({'created': len(created), 'grades': [g.to_dict() for g in created]}), 201
 
+def _nota_del_colegio(grade_id, school_id):
+    return Grade.query.join(User, Grade.student_id == User.id).filter(
+        Grade.id == grade_id, User.school_id == school_id).first_or_404()
+
+
 @grades_bp.route('/<int:grade_id>', methods=['PUT'])
 @jwt_required()
 def update_grade(grade_id):
     claims = get_jwt()
     if claims.get('role') not in ['admin', 'directivo', 'profesor']:
         return jsonify({'error': 'Sin permisos'}), 403
-    grade = Grade.query.get_or_404(grade_id)
+    grade = _nota_del_colegio(grade_id, claims.get('school_id'))
     ensure_course_open(grade.course_subject.course if grade.course_subject else None)
     data = request.get_json()
     if 'value' in data:
@@ -118,7 +133,7 @@ def delete_grade(grade_id):
     claims = get_jwt()
     if claims.get('role') not in ['admin', 'directivo', 'profesor']:
         return jsonify({'error': 'Sin permisos'}), 403
-    grade = Grade.query.get_or_404(grade_id)
+    grade = _nota_del_colegio(grade_id, claims.get('school_id'))
     ensure_course_open(grade.course_subject.course if grade.course_subject else None)
     db.session.delete(grade)
     db.session.commit()
@@ -131,6 +146,8 @@ def student_grade_summary(student_id):
     me = current_claims()
     if not can_view_student(me, student_id):
         return forbidden()
+    if me['school_id']:
+        ensure_del_colegio(User, student_id, me['school_id'])
     period_id = request.args.get('period_id', type=int)
     query = Grade.query.filter_by(student_id=student_id)
     if only_published(me):

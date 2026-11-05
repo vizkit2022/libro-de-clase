@@ -148,15 +148,33 @@ def definir_plan(school_id):
         return jsonify({'error': 'La frecuencia debe ser mensual o anual'}), 400
     fin = None
     if d.get('trial_ends_at'):
-        try:
-            fin = date.fromisoformat(str(d['trial_ends_at'])[:10])
-        except ValueError:
-            return jsonify({'error': 'Fecha de fin de prueba no válida'}), 400
-        if (fin - date.today()).days + 1 > mp.MAX_PRUEBA_DIAS:
-            return jsonify({'error': 'Mercado Pago permite hasta 365 días de prueba'}), 400
+        fin, error = leer_fin_prueba(d['trial_ends_at'])
+        if error:
+            return jsonify({'error': error}), 400
 
+    avisos = guardar_plan(school, d.get('nombre'), monto, frecuencia, fin)
+    db.session.commit()
+    data = plan_payload(school, True)
+    data['avisos'] = avisos
+    return jsonify(data), 200
+
+
+def leer_fin_prueba(valor):
+    """Devuelve (fecha, error) para un último día de prueba."""
+    try:
+        fin = date.fromisoformat(str(valor)[:10])
+    except ValueError:
+        return None, 'Fecha de fin de prueba no válida'
+    if (fin - date.today()).days + 1 > mp.MAX_PRUEBA_DIAS:
+        return None, 'Mercado Pago permite hasta 365 días de prueba'
+    return fin, None
+
+
+def guardar_plan(school, nombre, monto, frecuencia, fin):
+    """Deja el plan en el colegio y lo sincroniza con Mercado Pago. Devuelve los
+    avisos para el super admin. No hace commit."""
     prueba_cambio = fin != school.trial_ends_at
-    school.plan_nombre = (str(d.get('nombre') or '').strip() or 'Plan')[:100]
+    school.plan_nombre = (str(nombre or '').strip() or 'Plan')[:100]
     school.plan_monto = monto
     school.plan_frecuencia = frecuencia
     school.trial_ends_at = fin
@@ -176,10 +194,18 @@ def definir_plan(school_id):
     else:
         avisos.append('Mercado Pago no está configurado: el plan quedó guardado y se '
                       'publicará cuando se configure MP_ACCESS_TOKEN.')
-    db.session.commit()
-    data = plan_payload(school, True)
-    data['avisos'] = avisos
-    return jsonify(data), 200
+    return avisos
+
+
+def cambiar_fin_prueba(school, fin):
+    """Prórroga: mismo flujo de definir_plan, conservando el plan. Un colegio sin
+    monto todavía no existe en Mercado Pago: solo se mueve la fecha."""
+    if school.plan_monto:
+        return guardar_plan(school, school.plan_nombre, school.plan_monto,
+                            school.plan_frecuencia or 'mensual', fin)
+    school.trial_ends_at = fin
+    return ['El colegio aún no tiene un plan con monto: no hay nada que actualizar '
+            'en Mercado Pago.']
 
 
 @payments_bp.route('/schools/<int:school_id>/plan/refrescar', methods=['POST'])

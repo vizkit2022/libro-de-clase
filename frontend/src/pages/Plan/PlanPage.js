@@ -37,7 +37,7 @@ export function EstadoPlan({ estado, dias }) {
 
 // Lo que ve el colegio: su plan, la prueba y el botón para suscribirse.
 export default function PlanPage() {
-  const { user } = useAuth();
+  const { user, refrescarSesion } = useAuth();
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState('');
   const [yendo, setYendo] = useState(false);
@@ -58,6 +58,8 @@ export default function PlanPage() {
           ? '¡Listo! La suscripción quedó activa. El primer cobro llegará al terminar la prueba.'
           : 'Recibimos tu suscripción. Mercado Pago puede tardar unos minutos en confirmarla.');
         window.history.replaceState({}, '', window.location.pathname);
+        // La franja de prueba del marco debe enterarse de la suscripción
+        refrescarSesion?.();
       }
     }).catch(e => setError(msgError(e, 'No se pudo cargar el plan')));
   }, []);
@@ -108,7 +110,9 @@ export default function PlanPage() {
           <div className="pl-resumen-cab">
             <div>
               <span className="pl-nombre">{plan.nombre || 'Plan'}</span>
-              <div className="pl-precio">{clp(plan.monto)} <small>{porPeriodo}</small></div>
+              {plan.monto
+                ? <div className="pl-precio">{clp(plan.monto)} <small>{porPeriodo}</small></div>
+                : <div className="pl-precio pl-precio-pend">Valor por confirmar</div>}
             </div>
             <EstadoPlan estado={estado} dias={plan.dias_prueba} />
           </div>
@@ -158,6 +162,9 @@ export default function PlanPage() {
           )}
           {!esAdmin && ['prueba', 'vencido'].includes(estado) && (
             <p className="pl-nota">La suscripción la activa el administrador del colegio.</p>
+          )}
+          {esAdmin && !plan.monto && (
+            <p className="pl-nota">Tu plan aún no tiene un valor definido. Escríbenos y lo dejamos listo para suscribirte.</p>
           )}
           {esAdmin && !datos.mp_configurado && (
             <p className="pl-nota">El pago en línea aún no está habilitado. Escríbenos para activarlo.</p>

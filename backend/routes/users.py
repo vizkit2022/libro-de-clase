@@ -5,13 +5,17 @@ from sqlalchemy import or_
 from functools import wraps
 import base64
 import re
-from routes.access import current_claims, allowed_student_ids, can_view_student, forbidden
+from routes.access import current_claims, allowed_student_ids, can_view_student, forbidden, ensure_del_colegio
 
 users_bp = Blueprint('users', __name__)
 
 # Deliberadamente laxa: valida la forma, no la existencia. Una regla estricta
 # rechaza correos institucionales perfectamente válidos.
 EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+
+# Lo que un colegio puede asignar. super_admin queda fuera a propósito: da acceso
+# a todos los colegios y solo se crea desde el panel del super admin.
+ROLES_DEL_COLEGIO = ('admin', 'directivo', 'profesor', 'apoderado', 'alumno')
 
 def require_roles(*roles):
     def decorator(f):
@@ -59,6 +63,9 @@ def create_user():
     claims = get_jwt()
     school_id = claims.get('school_id')
     data = request.get_json()
+
+    if data.get('role', 'alumno') not in ROLES_DEL_COLEGIO:
+        return jsonify({'error': 'Rol no válido'}), 400
 
     correo = (data.get('email') or '').strip().lower()
     if not correo:
@@ -133,11 +140,16 @@ def update_user(user_id):
                 return jsonify({'error': f'El correo {nuevo} ya está en uso '
                                          'por otra persona'}), 400
             user.email = nuevo
+            # El correo nuevo no está comprobado: si su dueño entra con Google, la
+            # clave de esta cuenta no debe sobrevivir (ver routes/registro.py)
+            user.email_verificado = False
 
     if 'birth_date' in data and data['birth_date'] and claims.get('role') in ('admin', 'directivo', 'profesor'):
         from datetime import date
         user.birth_date = date.fromisoformat(data['birth_date'])
     if 'role' in data and claims.get('role') in ['admin', 'directivo']:
+        if data['role'] not in ROLES_DEL_COLEGIO:
+            return jsonify({'error': 'Rol no válido'}), 400
         user.role = data['role']
     if 'is_active' in data and claims.get('role') in ['admin', 'directivo']:
         user.is_active = data['is_active']
@@ -211,6 +223,7 @@ def set_head_teacher(user_id):
     is_head = data.get('is_head_teacher', True)
 
     course = Course.query.filter_by(id=course_id, school_id=school_id).first_or_404()
+    ensure_del_colegio(User, user_id, school_id)
     if is_head:
         course.head_teacher_id = user_id
     else:

@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from models import db, Annotation, User, Course
 from datetime import date
-from routes.access import current_claims, allowed_student_ids, forbidden, ensure_course_open
+from routes.access import (current_claims, allowed_student_ids, forbidden, ensure_course_open,
+                           ensure_del_colegio)
 
 annotations_bp = Blueprint('annotations', __name__)
 
@@ -43,7 +44,8 @@ def create_annotation():
         return jsonify({'error': 'Sin permisos'}), 403
     creator_id = int(claims['sub'])
     data = request.get_json()
-    ensure_course_open(Course.query.get(data.get('course_id')) if data.get('course_id') else None)
+    ensure_del_colegio(User, data.get('student_id'), claims.get('school_id'))
+    ensure_course_open(ensure_del_colegio(Course, data.get('course_id'), claims.get('school_id')))
 
     annotation = Annotation(
         student_id=data['student_id'],
@@ -58,13 +60,18 @@ def create_annotation():
     db.session.commit()
     return jsonify(annotation.to_dict()), 201
 
+def _anotacion_del_colegio(annotation_id, school_id):
+    return Annotation.query.join(User, Annotation.student_id == User.id).filter(
+        Annotation.id == annotation_id, User.school_id == school_id).first_or_404()
+
+
 @annotations_bp.route('/<int:annotation_id>', methods=['PUT'])
 @jwt_required()
 def update_annotation(annotation_id):
     claims = get_jwt()
     if claims.get('role') not in ['admin', 'directivo', 'profesor']:
         return forbidden()
-    annotation = Annotation.query.get_or_404(annotation_id)
+    annotation = _anotacion_del_colegio(annotation_id, claims.get('school_id'))
     ensure_course_open(annotation.course)
     data = request.get_json()
     for field in ['annotation_type', 'title', 'description']:
@@ -81,7 +88,7 @@ def delete_annotation(annotation_id):
     claims = get_jwt()
     if claims.get('role') not in ['admin', 'directivo', 'profesor']:
         return jsonify({'error': 'Sin permisos'}), 403
-    annotation = Annotation.query.get_or_404(annotation_id)
+    annotation = _anotacion_del_colegio(annotation_id, claims.get('school_id'))
     ensure_course_open(annotation.course)
     db.session.delete(annotation)
     db.session.commit()
