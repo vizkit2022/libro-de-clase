@@ -2,15 +2,15 @@
    para que el salto del sitio a la plataforma no se note. */
 
 .kv-login {
-  --azul: #3b4fd8;
-  --azul-cl: #6b8ef5;
-  --azul-os: #2a2eb0;
-  --noche: #0e102e;
-  --gris: #1f2937;
-  --txt: #111827;
-  --txt-2: #4b5563;
-  --txt-3: #6b7280;
-  --bor: #e5e7eb;
+  --azul: #2B1B14;
+  --azul-cl: #5C463A;
+  --azul-os: #3D2A21;
+  --noche: #2B1B14;
+  --gris: #2B1B14;
+  --txt: #2B1B14;
+  --txt-2: #5C463A;
+  --txt-3: #6B5446;
+  --bor: #ECE8E3;
 
   display: grid;
   grid-template-columns: 1.04fr 1fr;
@@ -18,8 +18,7 @@
   min-height: 100dvh;
   background: #fff;
   color: var(--txt);
-  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-               "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
 }
 
 /* ── Panel de marca ─────────────────────────────────────────────── */
@@ -40,9 +39,9 @@
 .kv-velo {
   position: absolute; inset: 0;
   background:
-    linear-gradient(135deg, rgba(14, 16, 46, .94) 0%, rgba(14, 16, 46, .82) 52%,
-                    rgba(26, 26, 110, .68) 100%),
-    linear-gradient(to top, rgba(14, 16, 46, .55), transparent 45%);
+    linear-gradient(135deg, rgba(43, 27, 20, .95) 0%, rgba(43, 27, 20, .86) 55%,
+                    rgba(43, 27, 20, .62) 100%),
+    linear-gradient(to top, rgba(43, 27, 20, .6), transparent 45%);
 }
 
 .kv-marca-cont {
@@ -69,13 +68,11 @@
 
 .kv-pitch { margin: auto 0; padding: 40px 0; }
 .kv-pitch h1 {
-  font-size: clamp(32px, 3.4vw, 44px); line-height: 1.12;
-  letter-spacing: -.032em; font-weight: 800; margin: 0 0 18px;
+  font-size: clamp(34px, 3.6vw, 48px); line-height: 1.1;
+  letter-spacing: -.015em; font-weight: 600; margin: 0 0 18px;
 }
 .kv-pitch h1 em {
-  font-style: normal;
-  background: linear-gradient(100deg, #a9bdf9 5%, #9ad9b4 95%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-style: normal; color: var(--sol);
 }
 .kv-pitch p {
   font-size: 16px; line-height: 1.6; color: rgba(255, 255, 255, .78);
@@ -90,17 +87,16 @@
 .kv-pitch li::before {
   content: ""; position: absolute; left: 0; top: 6px;
   width: 16px; height: 16px; border-radius: 50%;
-  background: rgba(154, 217, 180, .22);
-  box-shadow: inset 0 0 0 1.5px rgba(154, 217, 180, .75);
+  background: var(--sol);
 }
 .kv-pitch li::after {
   content: ""; position: absolute; left: 5px; top: 10.5px;
-  width: 6px; height: 3.5px; border: 1.6px solid #9ad9b4;
+  width: 6px; height: 3.5px; border: 1.8px solid var(--cacao);
   border-top: 0; border-right: 0; transform: rotate(-45deg);
 }
 
 .kv-pie { font-size: 13.5px; color: rgba(255, 255, 255, .62); margin: 0; }
-.kv-pie a { color: #a9bdf9; font-weight: 600; text-decoration: none; }
+.kv-pie a { color: var(--sol); font-weight: 600; text-decoration: none; }
 .kv-pie a:hover { color: #fff; text-decoration: underline; }
 
 /* ── Panel del formulario ───────────────────────────────────────── */
@@ -113,13 +109,13 @@
 .kv-logo-movil { display: none; margin-bottom: 26px; color: var(--txt); }
 
 .kv-caja h2 {
-  font-size: 26px; font-weight: 800; letter-spacing: -.026em; margin: 0 0 6px;
+  font-size: 30px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 6px;
 }
 .kv-sub { font-size: 14.5px; color: var(--txt-3); margin: 0 0 26px; }
 
 .kv-error {
   display: flex; align-items: flex-start; gap: 9px;
-  background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+  background: #FEF1EB; border: 1px solid #F8C4AE; color: #9A3412;
   padding: 11px 14px; border-radius: 10px; font-size: 14px;
   margin-bottom: 18px; line-height: 1.45;
   animation: kvEntra .3s cubic-bezier(.2, .7, .3, 1);
@@ -138,14 +134,14 @@
 .kv-campo input {
   width: 100%; padding: 12px 14px; font-size: 15px; font-family: inherit;
   color: var(--txt); background: #fff;
-  border: 1px solid var(--bor); border-radius: 10px;
+  border: 1.5px solid var(--bor); border-radius: 12px; min-height: 48px;
   transition: border-color .15s, box-shadow .15s;
   box-sizing: border-box;
 }
-.kv-campo input::placeholder { color: #9ca3af; }
+.kv-campo input::placeholder { color: #9C8A7E; }
 .kv-campo input:focus {
   outline: none; border-color: var(--azul);
-  box-shadow: 0 0 0 3px rgba(59, 79, 216, .14);
+  box-shadow: 0 0 0 3px rgba(255, 201, 74, .45);
 }
 
 .kv-clave { position: relative; }
@@ -153,23 +149,19 @@
 .kv-clave button {
   position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
   width: 34px; height: 34px; display: grid; place-items: center;
-  background: none; border: none; cursor: pointer; color: #9ca3af;
+  background: none; border: none; cursor: pointer; color: #9C8A7E;
   border-radius: 8px; transition: color .15s, background .15s;
 }
-.kv-clave button:hover { color: var(--gris); background: #f3f4f6; }
+.kv-clave button:hover { color: var(--gris); background: #F3F0EC; }
 
 .kv-entrar {
   width: 100%; margin-top: 8px; padding: 13px 20px;
   font-size: 15px; font-weight: 700; font-family: inherit; color: #fff;
-  background: var(--azul); border: none; border-radius: 10px; cursor: pointer;
+  background: var(--azul); border: none; border-radius: 999px; cursor: pointer;
   display: flex; align-items: center; justify-content: center; min-height: 48px;
-  transition: background .18s, transform .18s, box-shadow .18s;
-  box-shadow: 0 1px 2px rgba(59, 79, 216, .3);
+  transition: background .18s, transform .18s;
 }
-.kv-entrar:hover:not(:disabled) {
-  background: var(--azul-os); transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(59, 79, 216, .28);
-}
+.kv-entrar:hover:not(:disabled) { background: var(--azul-os); transform: translateY(-1px); }
 .kv-entrar:disabled { opacity: .7; cursor: default; transform: none; }
 
 .kv-girando {
@@ -184,7 +176,7 @@
   text-align: center; line-height: 1.5;
 }
 
-.kv-ayuda a { color: var(--azul); font-weight: 600; text-decoration: none; }
+.kv-ayuda a { color: var(--ladrillo); font-weight: 600; text-decoration: none; }
 .kv-ayuda a:hover { text-decoration: underline; }
 
 /* Recuperar clave: solo el formulario, sin el panel de marca */
@@ -211,26 +203,26 @@
 }
 .kv-google-nota { margin: 0; font-size: 13px; color: var(--txt-3); text-align: center; line-height: 1.5; }
 .kv-nuevo { margin: 20px 0 0; text-align: center; font-size: 14.5px; color: var(--txt-2); line-height: 1.5; }
-.kv-nuevo a { color: var(--azul); font-weight: 700; text-decoration: none; }
+.kv-nuevo a { color: var(--ladrillo); font-weight: 700; text-decoration: none; }
 .kv-nuevo a:hover { color: var(--azul-os); text-decoration: underline; }
 
 /* Foco visible con teclado en lo que antes solo se veía con ratón */
 .kv-login a:focus-visible, .kv-clave button:focus-visible, .kv-entrar:focus-visible {
   outline: 2px solid var(--azul); outline-offset: 2px; border-radius: 6px;
 }
-.kv-marca a:focus-visible { outline-color: #a9bdf9; }
+.kv-marca a:focus-visible { outline-color: var(--sol); }
 
 /* ── Registro ───────────────────────────────────────────────────── */
 .kv-fila2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
-.kv-campo input[aria-invalid="true"] { border-color: #dc2626; }
+.kv-campo input[aria-invalid="true"] { border-color: #B8321B; }
 .kv-campo input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, .14); }
-.kv-campo-error { display: block; margin-top: 6px; font-size: 12.5px; color: #b91c1c; line-height: 1.4; }
+.kv-campo-error { display: block; margin-top: 6px; font-size: 12.5px; color: #9A3412; line-height: 1.4; }
 .kv-campo-nota { display: block; margin-top: 6px; font-size: 12.5px; color: var(--txt-3); }
 .kv-sin-tarjeta {
   display: flex; align-items: center; justify-content: center; gap: 7px;
   margin: 14px 0 0; font-size: 13px; color: var(--txt-2); text-align: center;
 }
-.kv-sin-tarjeta svg { color: #2f9e62; flex-shrink: 0; }
+.kv-sin-tarjeta svg { color: #2F7D5B; flex-shrink: 0; }
 .kv-error a { color: inherit; font-weight: 700; }
 
 /* ── Responsive ─────────────────────────────────────────────────── */

@@ -22,7 +22,7 @@ function getSubjectEmoji(name) {
 export default function ProfesorPage() {
   const { user, school } = useAuth();
   const navigate = useNavigate();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
 
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,10 +79,10 @@ export default function ProfesorPage() {
       {/* Resumen rápido */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, marginBottom: 28 }}>
         {[
-          { icon: '📚', label: 'Mis cursos', value: courses.length, bg: '#ede9fe', color: '#7c3aed' },
-          { icon: '⭐', label: 'Profesor jefe', value: headCourses, bg: '#fef3c7', color: '#92400e' },
-          { icon: '🎓', label: 'Total alumnos', value: totalStudents, bg: '#d1fae5', color: '#065f46' },
-          { icon: '📖', label: 'Asignaturas', value: courses.reduce((s, c) => s + (c.my_subjects?.length || 0), 0), bg: '#dbeafe', color: '#1d4ed8' },
+          { icon: '📚', label: 'Mis cursos', value: courses.length, bg: '#FCE4EC', color: '#8A2846' },
+          { icon: '⭐', label: 'Profesor jefe', value: headCourses, bg: '#FFF0C7', color: '#7A4B00' },
+          { icon: '🎓', label: 'Total alumnos', value: totalStudents, bg: '#DDF0E6', color: '#1F5E43' },
+          { icon: '📖', label: 'Asignaturas', value: courses.reduce((s, c) => s + (c.my_subjects?.length || 0), 0), bg: '#FFF0C7', color: '#9A3412' },
         ].map((stat, i) => (
           <div key={i} className="card" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: stat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
@@ -90,7 +90,7 @@ export default function ProfesorPage() {
             </div>
             <div>
               <p style={{ fontSize: 24, fontWeight: 800, color: stat.color, margin: 0, lineHeight: 1 }}>{stat.value}</p>
-              <p style={{ fontSize: 12, color: '#64748b', margin: '3px 0 0' }}>{stat.label}</p>
+              <p style={{ fontSize: 12, color: '#6B5446', margin: '3px 0 0' }}>{stat.label}</p>
             </div>
           </div>
         ))}
@@ -99,8 +99,8 @@ export default function ProfesorPage() {
       {/* Mis cursos */}
       <div className="page-header" style={{ marginBottom: 16 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a' }}>📚 Mis cursos</h2>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>Año {new Date().getFullYear()}</p>
+          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#2B1B14' }}>📚 Mis cursos</h2>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6B5446' }}>Año {new Date().getFullYear()}</p>
         </div>
         <Link to="/courses" style={{
           padding: '8px 18px', background: primary, color: '#fff',
@@ -152,26 +152,26 @@ export default function ProfesorPage() {
                   {/* Info principal */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <h3 style={{ fontWeight: 700, fontSize: 17, color: '#0f172a', margin: 0 }}>
+                      <h3 style={{ fontWeight: 700, fontSize: 17, color: '#2B1B14', margin: 0 }}>
                         {course.name}
                       </h3>
                       {course.is_head_teacher && (
                         <span style={{
                           fontSize: 11, fontWeight: 700,
-                          background: '#fef3c7', color: '#92400e',
+                          background: '#FFF0C7', color: '#7A4B00',
                           padding: '2px 10px', borderRadius: 20,
-                          border: '1px solid #fde68a'
+                          border: '1px solid #FFE29A'
                         }}>
                           ⭐ Profesor Jefe
                         </span>
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 13, color: '#64748b' }}>
+                      <span style={{ fontSize: 13, color: '#6B5446' }}>
                         🎓 {course.students?.length || 0} alumno{course.students?.length !== 1 ? 's' : ''}
                       </span>
                       {course.my_subjects?.length > 0 && (
-                        <span style={{ fontSize: 13, color: '#64748b' }}>
+                        <span style={{ fontSize: 13, color: '#6B5446' }}>
                           📖 {course.my_subjects.map(s => s.subject?.name).filter(Boolean).join(', ')}
                         </span>
                       )}
@@ -203,7 +203,7 @@ export default function ProfesorPage() {
                   </div>
 
                   {/* Chevron */}
-                  <span style={{ color: '#94a3b8', fontSize: 14, transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'none', flexShrink: 0 }}>
+                  <span style={{ color: '#9C8A7E', fontSize: 14, transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'none', flexShrink: 0 }}>
                     ▼
                   </span>
                 </div>
@@ -215,7 +215,7 @@ export default function ProfesorPage() {
 
                       {/* Mis asignaturas en este curso */}
                       <div>
-                        <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 12px' }}>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: '#9C8A7E', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 12px' }}>
                           Mis asignaturas
                         </p>
                         {course.my_subjects?.length > 0 ? (
@@ -224,16 +224,16 @@ export default function ProfesorPage() {
                               <div key={cs.id} style={{
                                 display: 'flex', alignItems: 'center', gap: 10,
                                 padding: '10px 14px', borderRadius: 10,
-                                background: cs.subject?.color ? `${cs.subject.color}15` : '#f8fafc',
-                                border: `1px solid ${cs.subject?.color || '#e2e8f0'}30`
+                                background: cs.subject?.color ? `${cs.subject.color}15` : '#F7F6F4',
+                                border: `1px solid ${cs.subject?.color || '#ECE8E3'}30`
                               }}>
                                 <span style={{ fontSize: 18 }}>{getSubjectEmoji(cs.subject?.name)}</span>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <p style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', margin: 0 }}>
+                                  <p style={{ fontWeight: 600, fontSize: 13, color: '#2B1B14', margin: 0 }}>
                                     {cs.subject?.name || 'Sin nombre'}
                                   </p>
                                   {cs.hours_per_week && (
-                                    <p style={{ fontSize: 11, color: '#94a3b8', margin: '2px 0 0' }}>
+                                    <p style={{ fontSize: 11, color: '#9C8A7E', margin: '2px 0 0' }}>
                                       {cs.hours_per_week}h/semana
                                     </p>
                                   )}
@@ -243,10 +243,10 @@ export default function ProfesorPage() {
                           </div>
                         ) : (
                           <div style={{
-                            padding: '14px', borderRadius: 10, background: '#f8fafc',
+                            padding: '14px', borderRadius: 10, background: '#F7F6F4',
                             textAlign: 'center'
                           }}>
-                            <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
+                            <p style={{ fontSize: 13, color: '#9C8A7E', margin: 0 }}>
                               Eres Profesor Jefe de este curso sin asignaturas específicas asignadas.
                             </p>
                           </div>
@@ -255,7 +255,7 @@ export default function ProfesorPage() {
 
                       {/* Lista de alumnos */}
                       <div>
-                        <p style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 12px' }}>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: '#9C8A7E', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 12px' }}>
                           Alumnos ({course.students?.length || 0})
                         </p>
                         {course.students?.length > 0 ? (
@@ -277,12 +277,12 @@ export default function ProfesorPage() {
                                   <div style={{
                                     display: 'flex', alignItems: 'center', gap: 10,
                                     padding: '8px 12px', borderRadius: 8,
-                                    background: '#f8fafc', cursor: 'pointer',
+                                    background: '#F7F6F4', cursor: 'pointer',
                                     border: '1px solid transparent',
                                     transition: 'all 0.15s'
                                   }}
                                     onMouseEnter={e => { e.currentTarget.style.background = `${primary}10`; e.currentTarget.style.borderColor = `${primary}30`; }}
-                                    onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = 'transparent'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = '#F7F6F4'; e.currentTarget.style.borderColor = 'transparent'; }}
                                   >
                                     <UserAvatar
                                       userId={s.id}
@@ -293,7 +293,7 @@ export default function ProfesorPage() {
                                       color={avatarColor(s.id)}
                                     />
                                     <div style={{ minWidth: 0 }}>
-                                      <p style={{ fontWeight: 600, fontSize: 12, color: '#0f172a', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      <p style={{ fontWeight: 600, fontSize: 12, color: '#2B1B14', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {s.last_name}, {s.first_name}
                                       </p>
                                     </div>
@@ -303,7 +303,7 @@ export default function ProfesorPage() {
                             })}
                           </div>
                         ) : (
-                          <p style={{ fontSize: 13, color: '#94a3b8', padding: '14px 0' }}>
+                          <p style={{ fontSize: 13, color: '#9C8A7E', padding: '14px 0' }}>
                             No hay alumnos matriculados en este curso.
                           </p>
                         )}

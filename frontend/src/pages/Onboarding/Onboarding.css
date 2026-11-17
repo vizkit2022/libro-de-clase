@@ -2,20 +2,20 @@
    Prefijo ob- para no chocar con las clases compartidas de Layout.css. */
 
 .ob {
-  --ob-azul: #3b4fd8;
-  --ob-azul-cl: #6b8ef5;
-  --ob-azul-os: #2a2eb0;
-  --ob-txt: #111827;
-  --ob-txt-2: #4b5563;
-  --ob-txt-3: #6b7280;
-  --ob-txt-4: #9ca3af;
-  --ob-bor: #e5e7eb;
-  --ob-bor-2: #f1f3f7;
-  --ob-sup: #f7f8fc;
-  --ob-sup-2: #eef1f8;
-  --ob-ok: #15803d; --ob-ok-bg: #dcfce7; --ob-ok-bor: #bbf7d0;
-  --ob-al: #b45309; --ob-al-bg: #fef3c7; --ob-al-bor: #fde68a;
-  --ob-mal: #b91c1c; --ob-mal-bg: #fee2e2;
+  --ob-azul: #2B1B14;
+  --ob-azul-cl: #5C463A;
+  --ob-azul-os: #3D2A21;
+  --ob-txt: #2B1B14;
+  --ob-txt-2: #5C463A;
+  --ob-txt-3: #6B5446;
+  --ob-txt-4: #9C8A7E;
+  --ob-bor: #ECE8E3;
+  --ob-bor-2: #F3F0EC;
+  --ob-sup: #F7F6F4;
+  --ob-sup-2: #F3F0EC;
+  --ob-ok: #1F5E43; --ob-ok-bg: #DDF0E6; --ob-ok-bor: #B8E0CB;
+  --ob-al: #7A4B00; --ob-al-bg: #FFF0C7; --ob-al-bor: #FFE29A;
+  --ob-mal: #9A3412; --ob-mal-bg: #FDE2D7;
   --ob-r: 12px;
   --ob-sombra: 0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.06);
   color: var(--ob-txt);
@@ -59,13 +59,13 @@
 }
 .ob-paso.es-completo .ob-num { background: var(--ob-ok-bg); border-color: var(--ob-ok-bor); color: var(--ob-ok); }
 .ob-paso.es-parcial .ob-num { background: var(--ob-al-bg); border-color: var(--ob-al-bor); color: var(--ob-al); }
-.ob-paso.activo .ob-num { background: var(--ob-azul); border-color: var(--ob-azul); color: #fff; box-shadow: 0 0 0 4px rgba(59,79,216,.14); }
+.ob-paso.activo .ob-num { background: var(--ob-azul); border-color: var(--ob-azul); color: #fff; box-shadow: 0 0 0 4px rgba(255, 116, 23,.14); }
 .ob-paso .ob-tit { display: block; font-size: 13.2px; font-weight: 650; color: var(--ob-txt-2); line-height: 1.35; }
 .ob-paso.activo .ob-tit { color: var(--ob-txt); font-weight: 750; }
 .ob-paso .ob-sub { display: block; font-size: 11.5px; color: var(--ob-txt-4); margin-top: 1px; }
 .ob-paso.es-completo .ob-sub { color: var(--ob-ok); }
 .ob-paso.activo { background: #fff; box-shadow: var(--ob-sombra); }
-.ob-paso:hover:not(.activo) { background: rgba(59,79,216,.05); }
+.ob-paso:hover:not(.activo) { background: rgba(255, 116, 23,.05); }
 .ob-paso.es-bloqueado { cursor: not-allowed; }
 .ob-paso.es-bloqueado .ob-tit, .ob-paso.es-bloqueado .ob-sub { color: var(--ob-txt-4); }
 
@@ -128,10 +128,10 @@
 .ob-pie .ob-der { margin-left: auto; display: flex; gap: 9px; }
 
 .ob-aviso { border-radius: 10px; padding: 12px 15px; font-size: 12.8px; line-height: 1.55; display: flex; gap: 10px; align-items: flex-start; margin-top: 15px; }
-.ob-aviso.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+.ob-aviso.info { background: #FFF8E6; border: 1px solid #FFE29A; color: #2B1B14; }
 .ob-aviso.al { background: var(--ob-al-bg); border: 1px solid var(--ob-al-bor); color: var(--ob-al); }
 .ob-aviso.ok { background: var(--ob-ok-bg); border: 1px solid var(--ob-ok-bor); color: var(--ob-ok); }
-.ob-aviso.mal { background: var(--ob-mal-bg); border: 1px solid #fecaca; color: var(--ob-mal); }
+.ob-aviso.mal { background: var(--ob-mal-bg); border: 1px solid #F8C4AE; color: var(--ob-mal); }
 .ob-aviso ul { margin: 6px 0 0 16px; }
 
 .ob-malla { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 9px; }
@@ -140,7 +140,7 @@
 .ob-cur span { font-size: 11.5px; color: var(--ob-txt-4); }
 
 .ob-zona { border: 2px dashed var(--ob-bor); border-radius: var(--ob-r); padding: 26px; text-align: center; background: var(--ob-sup); cursor: pointer; }
-.ob-zona:hover, .ob-zona.encima { border-color: var(--ob-azul-cl); background: #f5f7ff; }
+.ob-zona:hover, .ob-zona.encima { border-color: var(--ob-azul-cl); background: #F7F6F4; }
 .ob-zona b { display: block; font-size: 14px; margin-top: 9px; }
 .ob-zona span { font-size: 12.5px; color: var(--ob-txt-3); }
 

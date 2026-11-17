@@ -6,23 +6,23 @@ import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 // ── Helpers ──────────────────────────────────────────────────────────
 
 const CRITICALITY_STYLE = {
-  alta:  { bg: '#fef2f2', color: '#dc2626', dot: '#dc2626' },
-  media: { bg: '#fef3c7', color: '#d97706', dot: '#f59e0b' },
-  baja:  { bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
+  alta:  { bg: '#FEF1EB', color: '#B8321B', dot: '#B8321B' },
+  media: { bg: '#FFF0C7', color: '#B26B00', dot: '#E8A317' },
+  baja:  { bg: '#F3F0EC', color: '#6B5446', dot: '#9C8A7E' },
 };
 
 const STATUS_STYLE = {
-  abierto: { bg: '#fef3c7', color: '#92400e' },
-  cerrado: { bg: '#d1fae5', color: '#065f46' },
+  abierto: { bg: '#FFF0C7', color: '#7A4B00' },
+  cerrado: { bg: '#DDF0E6', color: '#1F5E43' },
 };
 
 const ESTADO_STYLE = {
-  recepcion:           { bg: '#fef9c3', color: '#854d0e',  label: 'Recepción' },
-  entrevista:          { bg: '#dbeafe', color: '#1d4ed8',  label: 'Entrevista' },
-  seguimiento:         { bg: '#ede9fe', color: '#6d28d9',  label: 'Seguimiento' },
-  intervencion_grupal: { bg: '#d1fae5', color: '#065f46',  label: 'Intervención' },
-  apelacion:           { bg: '#fee2e2', color: '#991b1b',  label: 'Apelación' },
-  cerrado:             { bg: '#f1f5f9', color: '#475569',  label: 'Cerrado' },
+  recepcion:           { bg: '#FFF0C7', color: '#7A4B00',  label: 'Recepción' },
+  entrevista:          { bg: '#FFF0C7', color: '#9A3412',  label: 'Entrevista' },
+  seguimiento:         { bg: '#FCE4EC', color: '#8A2846',  label: 'Seguimiento' },
+  intervencion_grupal: { bg: '#DDF0E6', color: '#1F5E43',  label: 'Intervención' },
+  apelacion:           { bg: '#FDE2D7', color: '#9A3412',  label: 'Apelación' },
+  cerrado:             { bg: '#F3F0EC', color: '#5C463A',  label: 'Cerrado' },
 };
 
 function CritDot({ level }) {
@@ -37,10 +37,10 @@ function CritDot({ level }) {
 
 function ProtocolProgress({ done, total }) {
   const pct = total ? (done / total) * 100 : 0;
-  const color = pct === 100 ? '#10b981' : pct > 50 ? '#3b82f6' : '#f59e0b';
+  const color = pct === 100 ? '#2F7D5B' : pct > 50 ? '#2B1B14' : '#E8A317';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{ flex: 1, height: 5, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden', minWidth: 60 }}>
+      <div style={{ flex: 1, height: 5, background: '#ECE8E3', borderRadius: 3, overflow: 'hidden', minWidth: 60 }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 3, transition: 'width 0.3s' }} />
       </div>
       <span style={{ fontSize: 11, color, fontWeight: 700, whiteSpace: 'nowrap' }}>{done}/{total}</span>
@@ -52,7 +52,7 @@ function ProtocolProgress({ done, total }) {
 
 export default function ConvivenciaCasosPage() {
   const { school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const navigate = useNavigate();
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,7 +86,7 @@ export default function ConvivenciaCasosPage() {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <Link to="/convivencia" style={{
-            padding: '9px 18px', background: '#f1f5f9', color: '#475569',
+            padding: '9px 18px', background: '#F3F0EC', color: '#5C463A',
             borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none'
           }}>
             📊 Dashboard
@@ -162,20 +162,20 @@ export default function ConvivenciaCasosPage() {
                         #{String(c.case_number).padStart(2, '0')}
                       </td>
                       <td style={{ maxWidth: 220 }}>
-                        <p style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', margin: 0,
+                        <p style={{ fontWeight: 600, fontSize: 13, color: '#2B1B14', margin: 0,
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {c.title}
                         </p>
                         {c.typification && (
-                          <p style={{ fontSize: 11, color: '#64748b', margin: '2px 0 0' }}>{c.typification}</p>
+                          <p style={{ fontSize: 11, color: '#6B5446', margin: '2px 0 0' }}>{c.typification}</p>
                         )}
                       </td>
-                      <td style={{ fontSize: 12, color: '#475569' }}>{c.procedure || '—'}</td>
-                      <td style={{ fontSize: 12, color: '#475569' }}>
+                      <td style={{ fontSize: 12, color: '#5C463A' }}>{c.procedure || '—'}</td>
+                      <td style={{ fontSize: 12, color: '#5C463A' }}>
                         {c.student ? `${c.student.first_name} ${c.student.last_name}` : '—'}
-                        {c.course_name && <span style={{ color: '#94a3b8', marginLeft: 4 }}>({c.course_name})</span>}
+                        {c.course_name && <span style={{ color: '#9C8A7E', marginLeft: 4 }}>({c.course_name})</span>}
                       </td>
-                      <td style={{ fontSize: 12, color: '#475569' }}>
+                      <td style={{ fontSize: 12, color: '#5C463A' }}>
                         {c.professional ? `${c.professional.first_name} ${c.professional.last_name}` : '—'}
                       </td>
                       <td style={{ minWidth: 110 }}>
@@ -196,7 +196,7 @@ export default function ConvivenciaCasosPage() {
                           {c.status}
                         </span>
                       </td>
-                      <td style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
+                      <td style={{ fontSize: 12, color: '#6B5446', whiteSpace: 'nowrap' }}>
                         {c.date ? new Date(c.date + 'T00:00:00').toLocaleDateString('es-CL') : '—'}
                       </td>
                     </tr>
@@ -215,7 +215,7 @@ export default function ConvivenciaCasosPage() {
 
 export function ConvivenciaCasoForm() {
   const { school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
@@ -302,28 +302,28 @@ export function ConvivenciaCasoForm() {
           <p className="page-subtitle">Convivencia Escolar</p>
         </div>
         <button onClick={() => navigate(-1)} style={{
-          padding: '9px 18px', background: '#f1f5f9', color: '#475569',
+          padding: '9px 18px', background: '#F3F0EC', color: '#5C463A',
           border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer'
         }}>← Volver</button>
       </div>
 
       {prefill.title && (
-        <div style={{ background: '#f3e8ff', border: '1px solid #c4b5fd', borderRadius: 8,
-          padding: '10px 16px', marginBottom: 16, color: '#6d28d9', fontSize: 13, fontWeight: 500 }}>
+        <div style={{ background: '#FCE4EC', border: '1px solid #F6C4D4', borderRadius: 8,
+          padding: '10px 16px', marginBottom: 16, color: '#8A2846', fontSize: 13, fontWeight: 500 }}>
           ✨ Datos pre-rellenados por IA — revisa y completa antes de guardar
         </div>
       )}
 
       {error && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8,
-          padding: '12px 16px', marginBottom: 16, color: '#dc2626', fontSize: 13 }}>
+        <div style={{ background: '#FEF1EB', border: '1px solid #F8C4AE', borderRadius: 8,
+          padding: '12px 16px', marginBottom: 16, color: '#B8321B', fontSize: 13 }}>
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
         <div className="card" style={{ marginBottom: 20 }}>
-          <h3 style={{ fontWeight: 700, fontSize: 14, color: '#64748b', margin: '0 0 16px',
+          <h3 style={{ fontWeight: 700, fontSize: 14, color: '#6B5446', margin: '0 0 16px',
             textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Información del caso
           </h3>
@@ -370,7 +370,7 @@ export function ConvivenciaCasoForm() {
         </div>
 
         <div className="card" style={{ marginBottom: 20 }}>
-          <h3 style={{ fontWeight: 700, fontSize: 14, color: '#64748b', margin: '0 0 16px',
+          <h3 style={{ fontWeight: 700, fontSize: 14, color: '#6B5446', margin: '0 0 16px',
             textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Involucrados
           </h3>
@@ -406,7 +406,7 @@ export function ConvivenciaCasoForm() {
         </div>
 
         <div className="card" style={{ marginBottom: 24 }}>
-          <h3 style={{ fontWeight: 700, fontSize: 14, color: '#64748b', margin: '0 0 16px',
+          <h3 style={{ fontWeight: 700, fontSize: 14, color: '#6B5446', margin: '0 0 16px',
             textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Descripción y acuerdos
           </h3>
@@ -428,7 +428,7 @@ export function ConvivenciaCasoForm() {
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
           <button type="button" onClick={() => navigate(-1)} style={{
-            padding: '10px 24px', background: '#f1f5f9', color: '#475569',
+            padding: '10px 24px', background: '#F3F0EC', color: '#5C463A',
             border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer'
           }}>Cancelar</button>
           <button type="submit" disabled={saving} style={{

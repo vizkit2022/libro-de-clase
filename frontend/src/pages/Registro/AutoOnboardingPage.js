@@ -13,7 +13,7 @@ const MAX_MB = 5;
 const MAX_ERRORES = 12;
 // La foto la sirve el backend (/inicio/img): va aquí para que el build no la busque en src
 const FONDO_BANDA = {
-  backgroundImage: 'linear-gradient(135deg, rgba(14, 16, 46, .95) 0%, rgba(14, 16, 46, .86) 55%, rgba(26, 26, 110, .76) 100%), url(/inicio/img/aula-2.jpg)',
+  backgroundImage: 'linear-gradient(135deg, rgba(43, 27, 20, .95) 0%, rgba(43, 27, 20, .86) 55%, rgba(43, 27, 20, .62) 100%), url(/inicio/img/aula-2.jpg)',
 };
 
 const ETIQUETAS = {

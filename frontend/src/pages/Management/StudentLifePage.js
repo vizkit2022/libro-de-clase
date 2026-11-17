@@ -5,10 +5,10 @@ import { useAuth } from '../../context/AuthContext';
 import UserAvatar, { avatarColor } from '../../components/UserAvatar/UserAvatar';
 
 const ANN_COLORS = {
-  positiva: { bg: '#d1fae5', color: '#065f46', icon: '⭐' },
-  negativa:  { bg: '#fee2e2', color: '#991b1b', icon: '⚠️' },
-  neutral:   { bg: '#f1f5f9', color: '#475569', icon: '📝' },
-  academica: { bg: '#dbeafe', color: '#1d4ed8', icon: '📚' },
+  positiva: { bg: '#DDF0E6', color: '#1F5E43', icon: '⭐' },
+  negativa:  { bg: '#FDE2D7', color: '#9A3412', icon: '⚠️' },
+  neutral:   { bg: '#F3F0EC', color: '#5C463A', icon: '📝' },
+  academica: { bg: '#FFF0C7', color: '#9A3412', icon: '📚' },
 };
 
 const gradeClass = (v) => v >= 6 ? 'nota-alta' : v >= 4 ? 'nota-media' : 'nota-baja';
@@ -25,19 +25,19 @@ const GRADE_TYPES = [
 
 // Colour helper for grade value (1–7)
 const colorNota = (v) => {
-  if (v === null || v === undefined || v === '') return '#94a3b8';
+  if (v === null || v === undefined || v === '') return '#9C8A7E';
   const n = parseFloat(v);
-  if (n >= 6.0) return '#10b981';
-  if (n >= 5.0) return '#3b82f6';
-  if (n >= 4.0) return '#f59e0b';
-  return '#ef4444';
+  if (n >= 6.0) return '#2F7D5B';
+  if (n >= 5.0) return '#2B1B14';
+  if (n >= 4.0) return '#E8A317';
+  return '#B8321B';
 };
 
 export default function StudentLifePage() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const { school, user } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const [report, setReport] = useState(null);
   const [courses, setCourses] = useState([]);
   const [tab, setTab] = useState(searchParams.get('tab') || 'grades');
@@ -201,8 +201,8 @@ export default function StudentLifePage() {
       <Link to={backTo} style={{ color: primary, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>← Volver</Link>
 
       {readOnly && (
-        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, background: '#fffbeb', border: '1px solid #fcd34d',
-          color: '#92400e', borderRadius: 10, padding: '10px 14px', fontSize: 13 }}>
+        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, background: '#FFF8E1', border: '1px solid #FFE29A',
+          color: '#7A4B00', borderRadius: 10, padding: '10px 14px', fontSize: 13 }}>
           👁️ <span><strong>{isApoderado ? 'Modo apoderado' : 'Modo alumno'} · solo lectura.</strong> Se muestran únicamente las calificaciones que el profesor ya publicó. Nada de lo que ves aquí se puede editar.</span>
         </div>
       )}
@@ -220,8 +220,8 @@ export default function StudentLifePage() {
             style={{ borderRadius: 16, flexShrink: 0 }}
           />
           <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>{student.first_name} {student.last_name}</h1>
-            <p style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#2B1B14', margin: 0 }}>{student.first_name} {student.last_name}</h1>
+            <p style={{ color: '#6B5446', fontSize: 14, marginTop: 4 }}>
               {student.rut && `RUT: ${student.rut} · `}
               {student.email}
               {student.birth_date && ` · Nac: ${new Date(student.birth_date + 'T12:00').toLocaleDateString('es-CL')}`}
@@ -233,9 +233,9 @@ export default function StudentLifePage() {
           {/* Resumen anotaciones */}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {[
-              ['⭐', annotations_summary.positive, '#d1fae5', '#065f46', 'Positivas'],
-              ['⚠️', annotations_summary.negative, '#fee2e2', '#991b1b', 'Negativas'],
-              ['📝', annotations_summary.neutral, '#f1f5f9', '#475569', 'Neutras'],
+              ['⭐', annotations_summary.positive, '#DDF0E6', '#1F5E43', 'Positivas'],
+              ['⚠️', annotations_summary.negative, '#FDE2D7', '#9A3412', 'Negativas'],
+              ['📝', annotations_summary.neutral, '#F3F0EC', '#5C463A', 'Neutras'],
             ].map(([ic, cnt, bg, col, lbl]) => (
               <div key={lbl} style={{ textAlign: 'center', background: bg, borderRadius: 10, padding: '8px 14px' }}>
                 <p style={{ fontSize: 18 }}>{ic}</p>
@@ -280,7 +280,7 @@ export default function StudentLifePage() {
               background: `linear-gradient(135deg, ${primary}08, #fff)`,
               padding: 24,
             }}>
-              <h3 style={{ fontWeight: 700, color: '#0f172a', marginBottom: 20, fontSize: 16 }}>
+              <h3 style={{ fontWeight: 700, color: '#2B1B14', marginBottom: 20, fontSize: 16 }}>
                 ✏️ Ingresar calificaciones
               </h3>
               <form onSubmit={handleSaveGrades}>
@@ -289,7 +289,7 @@ export default function StudentLifePage() {
                   <div className="form-group" style={{ gridColumn: '1 / span 2' }}>
                     <label>Asignatura *</label>
                     {courseSubjects.length === 0 ? (
-                      <p style={{ fontSize: 13, color: '#94a3b8' }}>El alumno no tiene asignaturas asignadas en su curso</p>
+                      <p style={{ fontSize: 13, color: '#9C8A7E' }}>El alumno no tiene asignaturas asignadas en su curso</p>
                     ) : (
                       <select
                         value={gradeForm.course_subject_id}
@@ -311,7 +311,7 @@ export default function StudentLifePage() {
                   <div className="form-group">
                     <label>Período *</label>
                     {periods.length === 0 ? (
-                      <p style={{ fontSize: 13, color: '#94a3b8' }}>Sin períodos configurados</p>
+                      <p style={{ fontSize: 13, color: '#9C8A7E' }}>Sin períodos configurados</p>
                     ) : (
                       <select
                         value={gradeForm.period_id}
@@ -347,10 +347,10 @@ export default function StudentLifePage() {
                 {/* Notas */}
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <label style={{ fontWeight: 600, fontSize: 13, color: '#374151', margin: 0 }}>
+                    <label style={{ fontWeight: 600, fontSize: 13, color: '#5C463A', margin: 0 }}>
                       Nota{gradeForm.values.length > 1 ? 's' : ''} *
                       {selectedSubjectName && (
-                        <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6 }}>· {selectedSubjectName}</span>
+                        <span style={{ fontWeight: 400, color: '#9C8A7E', marginLeft: 6 }}>· {selectedSubjectName}</span>
                       )}
                     </label>
                     <button
@@ -371,7 +371,7 @@ export default function StudentLifePage() {
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <div style={{
                           display: 'flex', alignItems: 'center',
-                          border: `2px solid ${val !== '' && !isNaN(parseFloat(val)) ? colorNota(val) : '#e2e8f0'}`,
+                          border: `2px solid ${val !== '' && !isNaN(parseFloat(val)) ? colorNota(val) : '#ECE8E3'}`,
                           borderRadius: 10, overflow: 'hidden', background: '#fff',
                           boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                           transition: 'border-color 0.2s',
@@ -386,7 +386,7 @@ export default function StudentLifePage() {
                             style={{
                               width: 90, border: 'none', outline: 'none',
                               padding: '10px 12px', fontSize: 18, fontWeight: 700,
-                              color: val !== '' && !isNaN(parseFloat(val)) ? colorNota(val) : '#374151',
+                              color: val !== '' && !isNaN(parseFloat(val)) ? colorNota(val) : '#5C463A',
                               textAlign: 'center',
                             }}
                           />
@@ -403,7 +403,7 @@ export default function StudentLifePage() {
                             type="button"
                             onClick={() => removeGradeInput(i)}
                             style={{
-                              background: '#fee2e2', color: '#991b1b', border: 'none',
+                              background: '#FDE2D7', color: '#9A3412', border: 'none',
                               borderRadius: 6, width: 26, height: 26, cursor: 'pointer',
                               fontSize: 13, fontWeight: 700,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -413,7 +413,7 @@ export default function StudentLifePage() {
                       </div>
                     ))}
                   </div>
-                  <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
+                  <p style={{ fontSize: 11, color: '#9C8A7E', marginTop: 8 }}>
                     Escala 1.0 – 7.0 · La nota mínima de aprobación es 4.0
                   </p>
                 </div>
@@ -455,22 +455,22 @@ export default function StudentLifePage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     {!readOnly && pending.length > 0 && (
                       <>
-                        <span style={{ fontSize: 11, fontWeight: 700, background: '#fef3c7', color: '#92400e', borderRadius: 6, padding: '3px 8px' }}
+                        <span style={{ fontSize: 11, fontWeight: 700, background: '#FFF0C7', color: '#7A4B00', borderRadius: 6, padding: '3px 8px' }}
                           title="Estas notas aún no las ven apoderados ni alumnos">⏳ {pending.length} sin publicar</span>
                         <button onClick={() => handlePublishSubject(subject, pending.map(g => g.id), true)} disabled={publishingSubject === subject}
-                          style={{ fontSize: 11, fontWeight: 700, background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ fontSize: 11, fontWeight: 700, background: '#E8A317', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
                           📢 Publicar
                         </button>
                       </>
                     )}
                     {!readOnly && pending.length === 0 && published.length > 0 && (
                       <button onClick={() => handlePublishSubject(subject, published.map(g => g.id), false)} disabled={publishingSubject === subject}
-                        style={{ fontSize: 11, fontWeight: 600, background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                        style={{ fontSize: 11, fontWeight: 600, background: '#fff', color: '#6B5446', border: '1px solid #ECE8E3', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
                         title="Retirar la publicación de estas notas">
                         ✓ Publicadas · 🔒 retirar
                       </button>
                     )}
-                    <span style={{ fontSize: 12, color: '#64748b' }}>Promedio:</span>
+                    <span style={{ fontSize: 12, color: '#6B5446' }}>Promedio:</span>
                     <span className={`nota-chip ${gradeClass(avg)}`} style={{ fontWeight: 800 }}>{avg.toFixed(1)}</span>
                   </div>
                 </div>
@@ -478,12 +478,12 @@ export default function StudentLifePage() {
                   {gs.map(g => (
                     <div key={g.id} style={{ textAlign: 'center' }} title={!readOnly && !g.is_published ? 'Pendiente de publicar (no visible para apoderados)' : undefined}>
                       <span className={`nota-chip ${gradeClass(g.value)}`}
-                        style={!readOnly && !g.is_published ? { outline: '2px dashed #f59e0b', outlineOffset: 1, opacity: 0.8 } : undefined}>{g.value}</span>
-                      <p style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
+                        style={!readOnly && !g.is_published ? { outline: '2px dashed #E8A317', outlineOffset: 1, opacity: 0.8 } : undefined}>{g.value}</span>
+                      <p style={{ fontSize: 10, color: '#9C8A7E', marginTop: 2 }}>
                         {g.period_name?.split(' ')[0]}
                       </p>
                       {g.description && (
-                        <p style={{ fontSize: 10, color: '#cbd5e1', marginTop: 1, maxWidth: 60, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <p style={{ fontSize: 10, color: '#D9D2CA', marginTop: 1, maxWidth: 60, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {g.description}
                         </p>
                       )}
@@ -518,10 +518,10 @@ export default function StudentLifePage() {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <h4 style={{ fontWeight: 700, color: ann.color, fontSize: 14 }}>{a.title}</h4>
-                        <span style={{ fontSize: 12, color: '#94a3b8' }}>{new Date(a.date + 'T12:00').toLocaleDateString('es-CL')}</span>
+                        <span style={{ fontSize: 12, color: '#9C8A7E' }}>{new Date(a.date + 'T12:00').toLocaleDateString('es-CL')}</span>
                       </div>
                       <p style={{ fontSize: 13, color: ann.color, marginTop: 4, opacity: 0.85 }}>{a.description}</p>
-                      {a.creator_name && <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>Por: {a.creator_name}</p>}
+                      {a.creator_name && <p style={{ fontSize: 11, color: '#9C8A7E', marginTop: 4 }}>Por: {a.creator_name}</p>}
                     </div>
                   </div>
                 );
@@ -535,7 +535,7 @@ export default function StudentLifePage() {
       {tab === 'info' && (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Resumen de datos básicos. La ficha completa incluye familia, antecedentes médicos, permisos y documentos.</p>
+            <p style={{ fontSize: 13, color: '#6B5446', margin: 0 }}>Resumen de datos básicos. La ficha completa incluye familia, antecedentes médicos, permisos y documentos.</p>
             <Link to={`/students/${id}/ficha`} className="btn btn-primary btn-sm" style={{ background: primary, textDecoration: 'none' }}>
               🗂️ Ficha completa
             </Link>
@@ -551,8 +551,8 @@ export default function StudentLifePage() {
               ['Dirección', student.address || '—'],
             ].map(([label, val]) => (
               <div key={label}>
-                <p style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 4 }}>{label}</p>
-                <p style={{ fontSize: 14, fontWeight: 500, color: '#1e293b' }}>{val}</p>
+                <p style={{ fontSize: 12, fontWeight: 600, color: '#9C8A7E', marginBottom: 4 }}>{label}</p>
+                <p style={{ fontSize: 14, fontWeight: 500, color: '#2B1B14' }}>{val}</p>
               </div>
             ))}
           </div>

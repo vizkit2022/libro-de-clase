@@ -7,7 +7,7 @@ const gradeClass = (v) => v >= 6 ? 'nota-alta' : v >= 4 ? 'nota-media' : 'nota-b
 
 export default function ReportsPage() {
   const { school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const [tab, setTab] = useState('course');
   const [courses, setCourses] = useState([]);
   const [periods, setPeriods] = useState([]);
@@ -61,11 +61,11 @@ export default function ReportsPage() {
       {summary && (
         <div className="stats-grid" style={{ marginBottom: 24 }}>
           {[
-            { icon: '🎓', label: 'Estudiantes', value: summary.total_students, bg: '#ede9fe', col: '#7c3aed' },
-            { icon: '👨‍🏫', label: 'Profesores', value: summary.total_teachers, bg: '#dbeafe', col: '#1d4ed8' },
-            { icon: '📚', label: 'Cursos activos', value: summary.total_courses, bg: '#d1fae5', col: '#065f46' },
-            { icon: '⭐', label: 'Anotaciones positivas', value: summary.annotations_positive, bg: '#fef3c7', col: '#92400e' },
-            { icon: '⚠️', label: 'Anotaciones negativas', value: summary.annotations_negative, bg: '#fee2e2', col: '#dc2626' },
+            { icon: '🎓', label: 'Estudiantes', value: summary.total_students, bg: '#FCE4EC', col: '#8A2846' },
+            { icon: '👨‍🏫', label: 'Profesores', value: summary.total_teachers, bg: '#FFF0C7', col: '#3D2A21' },
+            { icon: '📚', label: 'Cursos activos', value: summary.total_courses, bg: '#DDF0E6', col: '#1F5E43' },
+            { icon: '⭐', label: 'Anotaciones positivas', value: summary.annotations_positive, bg: '#FFF0C7', col: '#7A4B00' },
+            { icon: '⚠️', label: 'Anotaciones negativas', value: summary.annotations_negative, bg: '#FDE2D7', col: '#B8321B' },
           ].map((s, i) => (
             <div key={i} className="stat-card">
               <div className="stat-icon" style={{ background: s.bg, color: s.col }}>{s.icon}</div>
@@ -111,12 +111,12 @@ export default function ReportsPage() {
           {report && !loading && (
             <div className="card" id="report-print">
               {/* Header del informe */}
-              <div style={{ textAlign: 'center', marginBottom: 24, paddingBottom: 16, borderBottom: '2px solid #e2e8f0' }}>
-                <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>
+              <div style={{ textAlign: 'center', marginBottom: 24, paddingBottom: 16, borderBottom: '2px solid #ECE8E3' }}>
+                <h2 style={{ fontSize: 20, fontWeight: 800, color: '#2B1B14' }}>
                   Informe de Calificaciones
                 </h2>
-                <p style={{ fontSize: 16, fontWeight: 600, color: '#475569', marginTop: 4 }}>{report.course?.name}</p>
-                <p style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>
+                <p style={{ fontSize: 16, fontWeight: 600, color: '#5C463A', marginTop: 4 }}>{report.course?.name}</p>
+                <p style={{ fontSize: 13, color: '#9C8A7E', marginTop: 4 }}>
                   {school?.name} · {periods.find(p => String(p.id) === selectedPeriod)?.name || 'Todos los períodos'}
                 </p>
               </div>
@@ -138,7 +138,7 @@ export default function ReportsPage() {
                   <tbody>
                     {report.students?.map((s, i) => (
                       <tr key={i}>
-                        <td style={{ color: '#94a3b8', fontWeight: 600 }}>{i+1}</td>
+                        <td style={{ color: '#9C8A7E', fontWeight: 600 }}>{i+1}</td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div className="avatar-sm" style={{ background: primary }}>{s.student?.first_name?.[0]}{s.student?.last_name?.[0]}</div>
@@ -153,13 +153,13 @@ export default function ReportsPage() {
                           <td key={j} style={{ textAlign: 'center' }}>
                             {subj.average > 0
                               ? <span className={`nota-chip ${gradeClass(subj.average)}`}>{subj.average}</span>
-                              : <span style={{ color: '#d1d5db' }}>—</span>}
+                              : <span style={{ color: '#D9D2CA' }}>—</span>}
                           </td>
                         ))}
                         <td style={{ textAlign: 'center' }}>
                           {s.general_average > 0
                             ? <span className={`nota-chip ${gradeClass(s.general_average)}`} style={{ fontWeight: 800 }}>{s.general_average}</span>
-                            : <span style={{ color: '#d1d5db' }}>—</span>}
+                            : <span style={{ color: '#D9D2CA' }}>—</span>}
                         </td>
                         <td>
                           <Link to={`/students/${s.student?.id}/life`} className="btn btn-secondary btn-sm">📋</Link>
@@ -180,15 +180,15 @@ export default function ReportsPage() {
                   const mean = (avgs.reduce((a,b) => a+b, 0) / avgs.length).toFixed(1);
                   const approved = avgs.filter(a => a >= 4).length;
                   return [
-                    ['🏆', 'Mejor promedio', best.toFixed(1), '#d1fae5'],
-                    ['📈', 'Promedio del curso', mean, '#dbeafe'],
-                    ['✅', 'Aprobados', `${approved}/${avgs.length}`, '#d1fae5'],
-                    ['❌', 'En riesgo', `${avgs.length - approved}/${avgs.length}`, '#fee2e2'],
+                    ['🏆', 'Mejor promedio', best.toFixed(1), '#DDF0E6'],
+                    ['📈', 'Promedio del curso', mean, '#FFF0C7'],
+                    ['✅', 'Aprobados', `${approved}/${avgs.length}`, '#DDF0E6'],
+                    ['❌', 'En riesgo', `${avgs.length - approved}/${avgs.length}`, '#FDE2D7'],
                   ].map(([ic, lbl, val, bg], i) => (
                     <div key={i} style={{ background: bg, borderRadius: 12, padding: '12px 16px', textAlign: 'center' }}>
                       <div style={{ fontSize: 22 }}>{ic}</div>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>{val}</div>
-                      <div style={{ fontSize: 11, color: '#64748b', fontWeight: 500 }}>{lbl}</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: '#2B1B14' }}>{val}</div>
+                      <div style={{ fontSize: 11, color: '#6B5446', fontWeight: 500 }}>{lbl}</div>
                     </div>
                   ));
                 })()}
@@ -211,8 +211,8 @@ export default function ReportsPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
                     {/* Placeholder: aquí vendría la lista de alumnos del curso */}
                     <Link to={`/courses/${course.id}`} style={{ textDecoration: 'none' }}>
-                      <div style={{ padding: '10px 14px', borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0',
-                        display: 'flex', alignItems: 'center', gap: 10, color: '#374151', fontSize: 13, fontWeight: 500 }}>
+                      <div style={{ padding: '10px 14px', borderRadius: 10, background: '#F7F6F4', border: '1px solid #ECE8E3',
+                        display: 'flex', alignItems: 'center', gap: 10, color: '#5C463A', fontSize: 13, fontWeight: 500 }}>
                         <span>📋</span> Ver alumnos de {course.name}
                       </div>
                     </Link>

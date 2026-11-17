@@ -12,11 +12,11 @@ import './MatriculaPage.css';
 
 // Estados de cada fila de la planilla de importación
 const ESTADOS = {
-  nuevo:        { et: 'Nuevo',            col: '#15803d', bg: '#dcfce7', aplica: true },
-  rematricula:  { et: 'Se rematricula',   col: '#1d4ed8', bg: '#dbeafe', aplica: true },
-  cambio_curso: { et: 'Cambia de curso',  col: '#b45309', bg: '#fef3c7', aplica: true },
-  sin_cambio:   { et: 'Ya está en el curso', col: '#64748b', bg: '#f1f5f9', aplica: false },
-  error:        { et: 'No se puede cargar', col: '#b91c1c', bg: '#fee2e2', aplica: false },
+  nuevo:        { et: 'Nuevo',            col: '#1F5E43', bg: '#DDF0E6', aplica: true },
+  rematricula:  { et: 'Se rematricula',   col: '#3D2A21', bg: '#FFF0C7', aplica: true },
+  cambio_curso: { et: 'Cambia de curso',  col: '#7A4B00', bg: '#FFF0C7', aplica: true },
+  sin_cambio:   { et: 'Ya está en el curso', col: '#6B5446', bg: '#F3F0EC', aplica: false },
+  error:        { et: 'No se puede cargar', col: '#9A3412', bg: '#FDE2D7', aplica: false },
 };
 
 const VIGENTES = ['activo', 'por_confirmar'];
@@ -26,7 +26,7 @@ const MOTIVOS_RETIRO = ['Cambio de colegio', 'Cambio de domicilio', 'Cambio de c
   'Motivos económicos', 'Motivos de salud', 'Decisión de la familia'];
 
 const inp = {
-  width: '100%', padding: '8px 11px', border: '1px solid #e2e8f0',
+  width: '100%', padding: '8px 11px', border: '1px solid #ECE8E3',
   borderRadius: 8, fontSize: 14, boxSizing: 'border-box', fontFamily: 'inherit',
 };
 
@@ -242,7 +242,7 @@ function ModalAccion({ accion, curso, cursos, year, onClose, onHecho }) {
 
 export default function MatriculaPage() {
   const { school, user, anio: anioCtx, anioCerrado } = useAuth();
-  const primary = school?.primary_color || '#3b4fd8';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const year = anioCtx || new Date().getFullYear();
   const puedeEditar = ['admin', 'directivo'].includes(user?.role);
 
@@ -421,7 +421,7 @@ export default function MatriculaPage() {
           <h1 className="mt-h1">
             Matrícula {year}
             {cerrado && (
-              <span className="ui-chip" style={{ color: '#92400e', background: '#fef3c7', marginLeft: 10, verticalAlign: 'middle' }}>
+              <span className="ui-chip" style={{ color: '#7A4B00', background: '#FFF0C7', marginLeft: 10, verticalAlign: 'middle' }}>
                 <Icono nombre="candado" tam={11} /> Año cerrado
               </span>
             )}
@@ -429,7 +429,7 @@ export default function MatriculaPage() {
           <p className="mt-sub">
             {totalAlumnos} {totalAlumnos === 1 ? 'alumno activo' : 'alumnos activos'}
             {' '}en {cursos.length} {cursos.length === 1 ? 'curso' : 'cursos'}
-            {totalPorConfirmar > 0 && <> · <b style={{ color: '#b45309' }}>{totalPorConfirmar} por confirmar</b></>}
+            {totalPorConfirmar > 0 && <> · <b style={{ color: '#7A4B00' }}>{totalPorConfirmar} por confirmar</b></>}
           </p>
         </div>
         {!soloLectura && (
@@ -457,10 +457,10 @@ export default function MatriculaPage() {
 
       {cursos.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 46 }}>
-          <p style={{ fontSize: 15, fontWeight: 600, color: '#475569', margin: '0 0 6px' }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: '#5C463A', margin: '0 0 6px' }}>
             Todavía no hay cursos para {year}
           </p>
-          <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
+          <p style={{ fontSize: 13, color: '#9C8A7E', margin: 0 }}>
             Crea los cursos del año (o crea el año copiando el anterior desde “Años académicos”)
             antes de matricular alumnos.
           </p>
@@ -483,7 +483,7 @@ export default function MatriculaPage() {
                   {c.por_confirmar > 0 && (
                     <span className="mt-curso-pc" title={`${c.por_confirmar} por confirmar`}>{c.por_confirmar}</span>
                   )}
-                  <span className="mt-curso-n" style={{ color: c.alumnos ? primary : '#cbd5e1' }}
+                  <span className="mt-curso-n" style={{ color: c.alumnos ? primary : '#D9D2CA' }}
                     title={`${c.alumnos} activos`}>{c.alumnos}</span>
                 </button>
               ))}
@@ -640,7 +640,7 @@ export default function MatriculaPage() {
         <div style={capa} onClick={() => setNuevo(null)}>
           <div style={{ ...caja, width: 440 }} onClick={e => e.stopPropagation()}>
             <h2 style={{ fontSize: 17, fontWeight: 800, margin: '0 0 4px' }}>Agregar alumno</h2>
-            <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>
+            <p style={{ fontSize: 13, color: '#6B5446', margin: '0 0 20px' }}>
               Se matricula en {detalle?.curso?.nombre}. Si el alumno ya existe en otro
               curso, se mueve a este.
             </p>
@@ -675,15 +675,15 @@ export default function MatriculaPage() {
             display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}>
 
-            <div style={{ padding: '18px 22px', borderBottom: '1px solid #e2e8f0' }}>
+            <div style={{ padding: '18px 22px', borderBottom: '1px solid #ECE8E3' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <h2 style={{ fontSize: 17, fontWeight: 800, margin: 0, flex: 1 }}>
                   Revisar antes de cargar
                 </h2>
                 <button onClick={() => setPrevia(null)} style={{ background: 'none',
-                  border: 'none', fontSize: 22, cursor: 'pointer', color: '#94a3b8' }}>×</button>
+                  border: 'none', fontSize: 22, cursor: 'pointer', color: '#9C8A7E' }}>×</button>
               </div>
-              <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 12px' }}>
+              <p style={{ fontSize: 13, color: '#6B5446', margin: '4px 0 12px' }}>
                 {previa.total} filas leídas. Todavía no se cargó nada.
               </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -702,11 +702,11 @@ export default function MatriculaPage() {
             <div style={{ overflow: 'auto', flex: 1 }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead style={{ position: 'sticky', top: 0 }}>
-                  <tr style={{ background: '#f8fafc' }}>
+                  <tr style={{ background: '#F7F6F4' }}>
                     {['', 'Fila', 'Alumno', 'Curso', 'Qué va a pasar'].map((h, i) => (
                       <th key={i} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11,
-                        textTransform: 'uppercase', color: '#64748b', fontWeight: 700,
-                        borderBottom: '1px solid #e2e8f0' }}>{h}</th>
+                        textTransform: 'uppercase', color: '#6B5446', fontWeight: 700,
+                        borderBottom: '1px solid #ECE8E3' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -715,26 +715,26 @@ export default function MatriculaPage() {
                     const e = ESTADOS[it.estado] || ESTADOS.error;
                     const marcada = e.aplica && !omitidas[it.fila];
                     return (
-                      <tr key={it.fila} style={{ borderTop: '1px solid #f1f5f9',
+                      <tr key={it.fila} style={{ borderTop: '1px solid #F3F0EC',
                         opacity: e.aplica ? 1 : .62 }}>
                         <td style={{ padding: '7px 12px', width: 34 }}>
                           <input type="checkbox" checked={marcada} disabled={!e.aplica}
                             onChange={() => setOmitidas(o => ({ ...o, [it.fila]: !o[it.fila] }))} />
                         </td>
-                        <td style={{ padding: '7px 12px', color: '#cbd5e1' }}>{it.fila}</td>
-                        <td style={{ padding: '7px 12px', fontWeight: 600, color: '#0f172a' }}>
+                        <td style={{ padding: '7px 12px', color: '#D9D2CA' }}>{it.fila}</td>
+                        <td style={{ padding: '7px 12px', fontWeight: 600, color: '#2B1B14' }}>
                           {it.nombre} {it.apellido}
-                          {it.rut && <span style={{ color: '#94a3b8', fontWeight: 400,
+                          {it.rut && <span style={{ color: '#9C8A7E', fontWeight: 400,
                             marginLeft: 7, fontSize: 12 }}>{it.rut}</span>}
                         </td>
-                        <td style={{ padding: '7px 12px', color: '#64748b' }}>
+                        <td style={{ padding: '7px 12px', color: '#6B5446' }}>
                           {it.curso_nombre || it.curso_texto || '—'}
                         </td>
                         <td style={{ padding: '7px 12px' }}>
                           <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px',
                             borderRadius: 999, background: e.bg, color: e.col,
                             marginRight: 8, whiteSpace: 'nowrap' }}>{e.et}</span>
-                          <span style={{ color: '#64748b', fontSize: 12.5 }}>{it.detalle}</span>
+                          <span style={{ color: '#6B5446', fontSize: 12.5 }}>{it.detalle}</span>
                         </td>
                       </tr>
                     );
@@ -743,15 +743,15 @@ export default function MatriculaPage() {
               </table>
             </div>
 
-            <div style={{ padding: '14px 22px', borderTop: '1px solid #e2e8f0',
+            <div style={{ padding: '14px 22px', borderTop: '1px solid #ECE8E3',
               display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <p style={{ fontSize: 13, color: '#64748b', margin: 0, flex: 1, minWidth: 220 }}>
+              <p style={{ fontSize: 13, color: '#6B5446', margin: 0, flex: 1, minWidth: 220 }}>
                 Las filas con problemas no se pueden cargar; corrígelas en la planilla
                 y vuelve a subirla.
               </p>
               <button onClick={() => setPrevia(null)} style={btnSec}>Cancelar</button>
               <button onClick={aplicar} disabled={aplicando || !aAplicar}
-                style={{ ...btnPri('#16a34a'), opacity: aplicando || !aAplicar ? .55 : 1 }}>
+                style={{ ...btnPri('#2F7D5B'), opacity: aplicando || !aAplicar ? .55 : 1 }}>
                 {aplicando ? 'Cargando…' : `Cargar ${aAplicar} ${aAplicar === 1 ? 'fila' : 'filas'}`}
               </button>
             </div>
@@ -761,7 +761,7 @@ export default function MatriculaPage() {
 
       {toast && (
         <div role="status" style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 3000,
-          background: toast.tipo === 'err' ? '#dc2626' : '#16a34a', color: '#fff',
+          background: toast.tipo === 'err' ? '#B8321B' : '#2F7D5B', color: '#fff',
           padding: '11px 18px', borderRadius: 10, fontWeight: 600, fontSize: 14,
           maxWidth: 420, boxShadow: '0 8px 24px rgba(0,0,0,.2)' }}>
           {toast.msg}
@@ -772,13 +772,13 @@ export default function MatriculaPage() {
 }
 
 const lbl = {
-  display: 'block', fontSize: 12, fontWeight: 700, color: '#374151',
+  display: 'block', fontSize: 12, fontWeight: 700, color: '#5C463A',
   textTransform: 'uppercase', marginBottom: 5, letterSpacing: '.02em',
 };
 const btnSec = {
-  padding: '8px 15px', background: '#fff', border: '1px solid #e2e8f0',
+  padding: '8px 15px', background: '#fff', border: '1px solid #ECE8E3',
   borderRadius: 9, fontSize: 13.5, fontWeight: 650, cursor: 'pointer',
-  color: '#475569', fontFamily: 'inherit',
+  color: '#5C463A', fontFamily: 'inherit',
 };
 const btnPri = (c) => ({
   display: 'inline-flex', alignItems: 'center', padding: '8px 16px', background: c,
@@ -786,7 +786,7 @@ const btnPri = (c) => ({
   cursor: 'pointer', fontFamily: 'inherit',
 });
 const capa = {
-  position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 2000,
+  position: 'fixed', inset: 0, background: 'rgba(43, 27, 20,.45)', zIndex: 2000,
   display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
 };
 const caja = {

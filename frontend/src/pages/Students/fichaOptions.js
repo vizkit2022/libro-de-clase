@@ -92,16 +92,16 @@ export const DOC_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'doc'
 export const DOC_MAX_BYTES = 10 * 1024 * 1024;
 
 export const AUTH_STATUSES = [
-  { value: 'pendiente', label: 'Pendiente', bg: '#fef3c7', color: '#92400e', icon: '⏳' },
-  { value: 'autorizado', label: 'Autorizado', bg: '#dcfce7', color: '#166534', icon: '✓' },
-  { value: 'rechazado', label: 'Rechazado', bg: '#fee2e2', color: '#991b1b', icon: '✕' },
+  { value: 'pendiente', label: 'Pendiente', bg: '#FFF0C7', color: '#7A4B00', icon: '⏳' },
+  { value: 'autorizado', label: 'Autorizado', bg: '#DDF0E6', color: '#1F5E43', icon: '✓' },
+  { value: 'rechazado', label: 'Rechazado', bg: '#FDE2D7', color: '#9A3412', icon: '✕' },
 ];
 
 export const STATUS_CHIP = {
-  matriculado: { label: 'Matriculado', color: '#16a34a', bg: '#f0fdf4', border: '#86efac' },
-  prematriculado: { label: 'Prematriculado', color: '#b45309', bg: '#fffbeb', border: '#fcd34d' },
-  retirado: { label: 'Retirado', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
-  egresado: { label: 'Egresado', color: '#475569', bg: '#f8fafc', border: '#cbd5e1' },
+  matriculado: { label: 'Matriculado', color: '#2F7D5B', bg: '#DDF0E6', border: '#B8E0CB' },
+  prematriculado: { label: 'Prematriculado', color: '#7A4B00', bg: '#FFF8E1', border: '#FFE29A' },
+  retirado: { label: 'Retirado', color: '#B8321B', bg: '#FEF1EB', border: '#F8C4AE' },
+  egresado: { label: 'Egresado', color: '#5C463A', bg: '#F7F6F4', border: '#D9D2CA' },
 };
 
 export const FICHA_SECTIONS = [

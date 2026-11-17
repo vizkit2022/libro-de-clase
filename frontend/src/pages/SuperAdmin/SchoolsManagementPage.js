@@ -34,13 +34,13 @@ export default function SchoolsManagementPage() {
     <div style={{ padding: 32 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0 }}>🏫 Gestión de Colegios</h1>
-          <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: 14 }}>{schools.length} colegios registrados</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2B1B14', margin: 0 }}>🏫 Gestión de Colegios</h1>
+          <p style={{ color: '#6B5446', margin: '4px 0 0', fontSize: 14 }}>{schools.length} colegios registrados</p>
         </div>
         <button
           onClick={() => navigate('/super-admin/schools/new')}
           style={{
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            background: 'linear-gradient(135deg, #2B1B14, #8A2846)',
             color: '#fff', border: 'none', borderRadius: 12,
             padding: '11px 20px', fontWeight: 600, fontSize: 14, cursor: 'pointer',
           }}
@@ -52,32 +52,32 @@ export default function SchoolsManagementPage() {
           type="text" placeholder="🔍 Buscar por nombre, RUT o email..."
           value={search} onChange={e => setSearch(e.target.value)}
           style={{
-            width: '100%', padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0',
+            width: '100%', padding: '10px 16px', borderRadius: 10, border: '1px solid #ECE8E3',
             fontSize: 14, marginBottom: 20, boxSizing: 'border-box', outline: 'none',
           }}
         />
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>Cargando...</div>
+          <div style={{ textAlign: 'center', padding: 40, color: '#9C8A7E' }}>Cargando...</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
+              <tr style={{ borderBottom: '2px solid #F3F0EC' }}>
                 {['Colegio', 'RUT', 'Plan', 'Vence', 'Estado', 'Usuarios', 'Acciones'].map(h => (
-                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: 12 }}>{h}</th>
+                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: '#6B5446', fontWeight: 600, fontSize: 12 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.map(s => (
-                <tr key={s.id} style={{ borderBottom: '1px solid #f8fafc' }}>
+                <tr key={s.id} style={{ borderBottom: '1px solid #F7F6F4' }}>
                   <td style={{ padding: '13px 12px' }}>
-                    <div style={{ fontWeight: 600, color: '#0f172a' }}>{s.name}</div>
-                    <div style={{ fontSize: 12, color: '#94a3b8' }}>{s.email}</div>
+                    <div style={{ fontWeight: 600, color: '#2B1B14' }}>{s.name}</div>
+                    <div style={{ fontSize: 12, color: '#9C8A7E' }}>{s.email}</div>
                   </td>
-                  <td style={{ padding: '13px 12px', color: '#64748b', fontSize: 12 }}>{s.rut || '-'}</td>
+                  <td style={{ padding: '13px 12px', color: '#6B5446', fontSize: 12 }}>{s.rut || '-'}</td>
                   <td style={{ padding: '13px 12px' }}><PlanBadge plan={s.plan} /></td>
-                  <td style={{ padding: '13px 12px', fontSize: 12, color: '#64748b' }}>
+                  <td style={{ padding: '13px 12px', fontSize: 12, color: '#6B5446' }}>
                     {s.subscription_expires_at
                       ? new Date(s.subscription_expires_at).toLocaleDateString('es-CL')
                       : s.plan === 'free' ? '∞' : '-'}
@@ -85,23 +85,23 @@ export default function SchoolsManagementPage() {
                   <td style={{ padding: '13px 12px' }}>
                     <span style={{
                       padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
-                      background: s.is_active ? '#dcfce7' : '#fee2e2',
-                      color: s.is_active ? '#166534' : '#991b1b',
+                      background: s.is_active ? '#DDF0E6' : '#FDE2D7',
+                      color: s.is_active ? '#1F5E43' : '#9A3412',
                     }}>{s.is_active ? 'Activo' : 'Inactivo'}</span>
                   </td>
-                  <td style={{ padding: '13px 12px', color: '#64748b' }}>{s.user_count || 0}</td>
+                  <td style={{ padding: '13px 12px', color: '#6B5446' }}>{s.user_count || 0}</td>
                   <td style={{ padding: '13px 12px' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button
                         onClick={() => navigate(`/super-admin/schools/${s.id}`)}
-                        style={{ padding: '5px 12px', background: '#eff6ff', color: '#1d4ed8', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                        style={{ padding: '5px 12px', background: '#FFF8E6', color: '#9A3412', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
                       >Ver</button>
                       <button
                         onClick={() => handleToggle(s.id)}
                         style={{
                           padding: '5px 12px', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                          background: s.is_active ? '#fee2e2' : '#dcfce7',
-                          color: s.is_active ? '#dc2626' : '#16a34a',
+                          background: s.is_active ? '#FDE2D7' : '#DDF0E6',
+                          color: s.is_active ? '#B8321B' : '#2F7D5B',
                         }}
                       >{s.is_active ? 'Desactivar' : 'Activar'}</button>
                     </div>
@@ -109,7 +109,7 @@ export default function SchoolsManagementPage() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>No hay colegios que coincidan</td></tr>
+                <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#9C8A7E' }}>No hay colegios que coincidan</td></tr>
               )}
             </tbody>
           </table>
@@ -123,11 +123,11 @@ export default function SchoolsManagementPage() {
 function Field({ label, field, type = 'text', placeholder = '', value, onChange }) {
   return (
     <div style={{ marginBottom: 16 }}>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>{label}</label>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#5C463A', marginBottom: 5 }}>{label}</label>
       <input
         type={type} value={value || ''} placeholder={placeholder}
         onChange={e => onChange(field, e.target.value)}
-        style={{ width: '100%', padding: '9px 14px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 14, boxSizing: 'border-box', outline: 'none' }}
+        style={{ width: '100%', padding: '9px 14px', border: '1px solid #ECE8E3', borderRadius: 10, fontSize: 14, boxSizing: 'border-box', outline: 'none' }}
       />
     </div>
   );
@@ -143,7 +143,7 @@ export function SchoolFormPage() {
   const [form, setForm] = useState({
     name: '', rut: '', address: '', phone: '', email: '', website: '',
     rector: '', subtitulo: '', plan: 'free',
-    primary_color: '#2563EB', secondary_color: '#1E40AF', accent_color: '#3B82F6',
+    primary_color: '#C2410C', secondary_color: '#2B1B14', accent_color: '#C2410C',
     admin_email: '', admin_first_name: '', admin_last_name: '', admin_password: 'colegio123', admin_role: 'admin',
   });
 
@@ -179,16 +179,16 @@ export function SchoolFormPage() {
     <div style={{ padding: 32, maxWidth: 800 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
         <button onClick={() => navigate('/super-admin/schools')}
-          style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 10, padding: '7px 14px', cursor: 'pointer', color: '#64748b', fontSize: 13 }}>
+          style={{ background: 'none', border: '1px solid #ECE8E3', borderRadius: 10, padding: '7px 14px', cursor: 'pointer', color: '#6B5446', fontSize: 13 }}>
           ← Volver
         </button>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#2B1B14', margin: 0 }}>
           {isNew ? '+ Nuevo Colegio' : `✏️ Editar: ${form.name}`}
         </h1>
       </div>
 
       {error && (
-        <div style={{ background: '#fee2e2', color: '#dc2626', padding: '12px 16px', borderRadius: 12, marginBottom: 20, fontSize: 14 }}>
+        <div style={{ background: '#FDE2D7', color: '#B8321B', padding: '12px 16px', borderRadius: 12, marginBottom: 20, fontSize: 14 }}>
           ⚠️ {error}
         </div>
       )}
@@ -196,7 +196,7 @@ export function SchoolFormPage() {
       <form onSubmit={handleSubmit}>
         {/* Info del colegio */}
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 20px' }}>🏫 Información del Colegio</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2B1B14', margin: '0 0 20px' }}>🏫 Información del Colegio</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
             <div style={{ gridColumn: '1/-1' }}>
               <Field label="Nombre *" field="name" placeholder="Colegio San Patricio"
@@ -218,22 +218,22 @@ export function SchoolFormPage() {
 
           {/* Plan */}
           <div style={{ marginTop: 8 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Plan del Colegio</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#5C463A', marginBottom: 8 }}>Plan del Colegio</label>
             <div style={{ display: 'flex', gap: 12 }}>
               {[
-                { value: 'free', label: '🆓 Gratuito', desc: 'Sin costo', bg: '#eff6ff', border: '#3b82f6', color: '#1e40af' },
-                { value: 'paid', label: '💎 De Pago', desc: '$29.990 / mes', bg: '#fffbeb', border: '#f59e0b', color: '#92400e' },
+                { value: 'free', label: '🆓 Gratuito', desc: 'Sin costo', bg: '#FFF8E6', border: '#2B1B14', color: '#2B1B14' },
+                { value: 'paid', label: '💎 De Pago', desc: '$29.990 / mes', bg: '#FFF8E1', border: '#E8A317', color: '#7A4B00' },
               ].map(opt => (
                 <label key={opt.value} style={{
                   flex: 1, padding: '14px 18px', borderRadius: 12, cursor: 'pointer',
-                  border: `2px solid ${form.plan === opt.value ? opt.border : '#e2e8f0'}`,
+                  border: `2px solid ${form.plan === opt.value ? opt.border : '#ECE8E3'}`,
                   background: form.plan === opt.value ? opt.bg : '#fff',
                   transition: 'all 0.15s',
                 }}>
                   <input type="radio" name="plan" value={opt.value} checked={form.plan === opt.value}
                     onChange={() => handleChange('plan', opt.value)} style={{ display: 'none' }} />
-                  <div style={{ fontWeight: 700, color: form.plan === opt.value ? opt.color : '#374151', fontSize: 15 }}>{opt.label}</div>
-                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{opt.desc}</div>
+                  <div style={{ fontWeight: 700, color: form.plan === opt.value ? opt.color : '#5C463A', fontSize: 15 }}>{opt.label}</div>
+                  <div style={{ fontSize: 12, color: '#6B5446', marginTop: 2 }}>{opt.desc}</div>
                 </label>
               ))}
             </div>
@@ -242,10 +242,10 @@ export function SchoolFormPage() {
 
         {/* Crear usuario admin — disponible al crear Y al editar */}
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>
-            👤 {isNew ? 'Administrador Inicial' : 'Crear Usuario para este Colegio'} <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: 13 }}>(opcional)</span>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2B1B14', margin: '0 0 6px' }}>
+            👤 {isNew ? 'Administrador Inicial' : 'Crear Usuario para este Colegio'} <span style={{ fontWeight: 400, color: '#9C8A7E', fontSize: 13 }}>(opcional)</span>
           </h3>
-          <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>
+          <p style={{ fontSize: 13, color: '#6B5446', margin: '0 0 20px' }}>
             {isNew ? 'Crea el primer usuario admin del colegio.' : 'Si dejas el email en blanco, no se crea ningún usuario.'}
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
@@ -257,11 +257,11 @@ export function SchoolFormPage() {
             <Field label="Apellido" field="admin_last_name" placeholder="González" value={form.admin_last_name} onChange={handleChange} />
             <Field label="Contraseña inicial" field="admin_password" placeholder="colegio123" value={form.admin_password} onChange={handleChange} />
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#64748b', textTransform:'uppercase', marginBottom:6 }}>Rol</label>
+              <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#6B5446', textTransform:'uppercase', marginBottom:6 }}>Rol</label>
               <select
                 value={form.admin_role || 'admin'}
                 onChange={e => handleChange({ target: { name: 'admin_role', value: e.target.value } })}
-                style={{ width:'100%', padding:'9px 12px', border:'1px solid #e2e8f0', borderRadius:8, fontSize:14 }}>
+                style={{ width:'100%', padding:'9px 12px', border:'1px solid #ECE8E3', borderRadius:8, fontSize:14 }}>
                 <option value="admin">Admin</option>
                 <option value="directivo">Directivo</option>
                 <option value="profesor">Profesor</option>
@@ -272,7 +272,7 @@ export function SchoolFormPage() {
 
         {/* Colores */}
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, marginBottom: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 20px' }}>🎨 Colores del Colegio</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2B1B14', margin: '0 0 20px' }}>🎨 Colores del Colegio</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             {[
               { label: 'Color Principal', field: 'primary_color' },
@@ -280,12 +280,12 @@ export function SchoolFormPage() {
               { label: 'Color Acento', field: 'accent_color' },
             ].map(c => (
               <div key={c.field}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>{c.label}</label>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#5C463A', marginBottom: 6 }}>{c.label}</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input type="color" value={form[c.field] || '#2563EB'}
+                  <input type="color" value={form[c.field] || '#2B1B14'}
                     onChange={e => handleChange(c.field, e.target.value)}
                     style={{ width: 40, height: 40, border: 'none', borderRadius: 8, cursor: 'pointer' }} />
-                  <span style={{ fontSize: 13, color: '#64748b' }}>{form[c.field]}</span>
+                  <span style={{ fontSize: 13, color: '#6B5446' }}>{form[c.field]}</span>
                 </div>
               </div>
             ))}
@@ -293,7 +293,7 @@ export function SchoolFormPage() {
         </div>
 
         <button type="submit" disabled={saving} style={{
-          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+          background: 'linear-gradient(135deg, #2B1B14, #8A2846)',
           color: '#fff', border: 'none', borderRadius: 12,
           padding: '13px 28px', fontWeight: 700, fontSize: 15, cursor: 'pointer',
           opacity: saving ? 0.7 : 1, width: '100%',
@@ -329,22 +329,22 @@ export function SchoolDetailPage() {
     setTimeout(() => setMessage(''), 3000);
   };
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Cargando...</div>;
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#9C8A7E' }}>Cargando...</div>;
   if (!school) return null;
 
   return (
     <div style={{ padding: 32, maxWidth: 900 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
         <button onClick={() => navigate('/super-admin/schools')}
-          style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 10, padding: '7px 14px', cursor: 'pointer', color: '#64748b', fontSize: 13 }}>
+          style={{ background: 'none', border: '1px solid #ECE8E3', borderRadius: 10, padding: '7px 14px', cursor: 'pointer', color: '#6B5446', fontSize: 13 }}>
           ← Volver
         </button>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0 }}>🏫 {school.name}</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#2B1B14', margin: 0 }}>🏫 {school.name}</h1>
         <PlanBadge plan={school.plan} />
       </div>
 
       {message && (
-        <div style={{ background: message.startsWith('✅') ? '#dcfce7' : '#fee2e2', color: message.startsWith('✅') ? '#166534' : '#dc2626', padding: '12px 16px', borderRadius: 12, marginBottom: 20, fontSize: 14 }}>
+        <div style={{ background: message.startsWith('✅') ? '#DDF0E6' : '#FDE2D7', color: message.startsWith('✅') ? '#1F5E43' : '#B8321B', padding: '12px 16px', borderRadius: 12, marginBottom: 20, fontSize: 14 }}>
           {message}
         </div>
       )}
@@ -352,23 +352,23 @@ export function SchoolDetailPage() {
       {/* Info básica */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#64748b', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1 }}>Información</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#6B5446', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1 }}>Información</h3>
           {[['RUT', school.rut], ['Email', school.email], ['Teléfono', school.phone], ['Rector/a', school.rector], ['Bajada', school.subtitulo], ['Dirección', school.address]].map(([k, v]) => (
             v ? <div key={k} style={{ display: 'flex', gap: 8, marginBottom: 10, fontSize: 14 }}>
-              <span style={{ color: '#94a3b8', minWidth: 80 }}>{k}:</span>
-              <span style={{ color: '#374151', fontWeight: 500 }}>{v}</span>
+              <span style={{ color: '#9C8A7E', minWidth: 80 }}>{k}:</span>
+              <span style={{ color: '#5C463A', fontWeight: 500 }}>{v}</span>
             </div> : null
           ))}
           <div style={{ display: 'flex', gap: 8, marginBottom: 4, fontSize: 14 }}>
-            <span style={{ color: '#94a3b8', minWidth: 80 }}>Usuarios:</span>
-            <span style={{ color: '#374151', fontWeight: 600 }}>
+            <span style={{ color: '#9C8A7E', minWidth: 80 }}>Usuarios:</span>
+            <span style={{ color: '#5C463A', fontWeight: 600 }}>
               {school.user_count || 0}
-              <span style={{ color: '#94a3b8', fontWeight: 400, marginLeft: 6, fontSize: 13 }}>
+              <span style={{ color: '#9C8A7E', fontWeight: 400, marginLeft: 6, fontSize: 13 }}>
                 facturables
               </span>
             </span>
           </div>
-          <p style={{ fontSize: 12.5, color: '#94a3b8', margin: '0 0 0 88px', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 12.5, color: '#9C8A7E', margin: '0 0 0 88px', lineHeight: 1.5 }}>
             Docentes y administradores. No se cobran
             {' '}{school.otros_usuarios?.alumnos ?? 0} alumnos
             {school.otros_usuarios?.apoderados
@@ -378,13 +378,13 @@ export function SchoolDetailPage() {
 
         {/* Estado del plan */}
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#64748b', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1 }}>Plan & Suscripción</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#6B5446', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1 }}>Plan & Suscripción</h3>
           <div style={{ marginBottom: 12 }}><PlanBadge plan={school.plan} /></div>
-          <div style={{ fontSize: 13, color: '#64748b', marginBottom: 8 }}>
-            Estado: <strong style={{ color: school.plan_status === 'active' ? '#16a34a' : '#dc2626' }}>{school.plan_status}</strong>
+          <div style={{ fontSize: 13, color: '#6B5446', marginBottom: 8 }}>
+            Estado: <strong style={{ color: school.plan_status === 'active' ? '#2F7D5B' : '#B8321B' }}>{school.plan_status}</strong>
           </div>
           {school.subscription_expires_at && (
-            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
+            <div style={{ fontSize: 13, color: '#6B5446', marginBottom: 16 }}>
               Vence: <strong>{new Date(school.subscription_expires_at).toLocaleDateString('es-CL')}</strong>
             </div>
           )}
@@ -392,15 +392,15 @@ export function SchoolDetailPage() {
           {/* Botones cambio de plan */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={() => handleSetPlan('free')} disabled={school.plan === 'free'}
-              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #3b82f6', background: school.plan === 'free' ? '#eff6ff' : '#fff', color: '#1d4ed8', cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: school.plan === 'free' ? 0.6 : 1 }}>
+              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #2B1B14', background: school.plan === 'free' ? '#FFF8E6' : '#fff', color: '#9A3412', cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: school.plan === 'free' ? 0.6 : 1 }}>
               🆓 Cambiar a Gratuito
             </button>
             <button onClick={() => handleSetPlan('paid')} disabled={school.plan === 'paid'}
-              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #f59e0b', background: school.plan === 'paid' ? '#fffbeb' : '#fff', color: '#92400e', cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: school.plan === 'paid' ? 0.6 : 1 }}>
+              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #E8A317', background: school.plan === 'paid' ? '#FFF8E1' : '#fff', color: '#7A4B00', cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: school.plan === 'paid' ? 0.6 : 1 }}>
               💎 Cambiar a De Pago
             </button>
             <button onClick={() => navigate(`/super-admin/schools/${id}/edit`)}
-              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#374151', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #ECE8E3', background: '#fff', color: '#5C463A', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
               ✏️ Editar
             </button>
           </div>
@@ -411,11 +411,11 @@ export function SchoolDetailPage() {
       <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
         marginBottom: 20, overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 24px',
-          borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+          borderBottom: '1px solid #F3F0EC', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 220 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#64748b', margin: 0,
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#6B5446', margin: 0,
               textTransform: 'uppercase', letterSpacing: 1 }}>Usuarios del colegio</h3>
-            <p style={{ fontSize: 12.5, color: '#94a3b8', margin: '3px 0 0' }}>
+            <p style={{ fontSize: 12.5, color: '#9C8A7E', margin: '3px 0 0' }}>
               Los que determinan el valor del plan
             </p>
           </div>
@@ -423,45 +423,45 @@ export function SchoolDetailPage() {
             .filter(([r]) => ['admin', 'directivo', 'profesor'].includes(r))
             .map(([rol, n]) => (
               <span key={rol} style={{ fontSize: 11.5, fontWeight: 700, padding: '3px 10px',
-                borderRadius: 999, background: '#e0e5fb', color: '#2a2eb0' }}>
+                borderRadius: 999, background: '#ECE8E3', color: '#9A3412' }}>
                 {n} {rol === 'profesor' ? (n === 1 ? 'docente' : 'docentes') : rol}
               </span>
             ))}
         </div>
 
         {!school.usuarios?.length ? (
-          <p style={{ padding: 32, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
+          <p style={{ padding: 32, textAlign: 'center', color: '#9C8A7E', fontSize: 14 }}>
             Este colegio todavía no tiene docentes ni administradores cargados.
           </p>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5 }}>
             <thead>
-              <tr style={{ background: '#f8fafc' }}>
+              <tr style={{ background: '#F7F6F4' }}>
                 {['Nombre', 'Correo', 'Rol', 'Estado', 'Último ingreso'].map(h => (
                   <th key={h} style={{ padding: '9px 24px', textAlign: 'left', fontSize: 11,
-                    textTransform: 'uppercase', color: '#64748b', fontWeight: 700 }}>{h}</th>
+                    textTransform: 'uppercase', color: '#6B5446', fontWeight: 700 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {school.usuarios.map(u => (
-                <tr key={u.id} style={{ borderTop: '1px solid #f1f5f9',
+                <tr key={u.id} style={{ borderTop: '1px solid #F3F0EC',
                   opacity: u.is_active ? 1 : 0.62 }}>
-                  <td style={{ padding: '10px 24px', fontWeight: 600, color: '#0f172a' }}>
+                  <td style={{ padding: '10px 24px', fontWeight: 600, color: '#2B1B14' }}>
                     {u.nombre}
                   </td>
-                  <td style={{ padding: '10px 24px', color: '#64748b' }}>{u.email}</td>
-                  <td style={{ padding: '10px 24px', color: '#475569',
+                  <td style={{ padding: '10px 24px', color: '#6B5446' }}>{u.email}</td>
+                  <td style={{ padding: '10px 24px', color: '#5C463A',
                     textTransform: 'capitalize' }}>{u.role}</td>
                   <td style={{ padding: '10px 24px' }}>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px',
                       borderRadius: 999,
-                      background: u.is_active ? '#dcfce7' : '#f1f5f9',
-                      color: u.is_active ? '#166534' : '#64748b' }}>
+                      background: u.is_active ? '#DDF0E6' : '#F3F0EC',
+                      color: u.is_active ? '#1F5E43' : '#6B5446' }}>
                       {u.is_active ? 'activo' : 'sin acceso'}
                     </span>
                   </td>
-                  <td style={{ padding: '10px 24px', color: '#94a3b8', fontSize: 12.5 }}>
+                  <td style={{ padding: '10px 24px', color: '#9C8A7E', fontSize: 12.5 }}>
                     {u.last_login
                       ? new Date(u.last_login).toLocaleDateString('es-CL',
                           { day: '2-digit', month: 'short', year: 'numeric' })
@@ -480,25 +480,25 @@ export function SchoolDetailPage() {
       {/* Historial de suscripciones */}
       {school.subscriptions && school.subscriptions.length > 0 && (
         <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 16px' }}>📋 Historial de Suscripciones</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2B1B14', margin: '0 0 16px' }}>📋 Historial de Suscripciones</h3>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
+              <tr style={{ borderBottom: '2px solid #F3F0EC' }}>
                 {['Fecha', 'Tipo', 'Monto', 'Estado', 'ID MP'].map(h => (
-                  <th key={h} style={{ padding: '6px 10px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: 12 }}>{h}</th>
+                  <th key={h} style={{ padding: '6px 10px', textAlign: 'left', color: '#6B5446', fontWeight: 600, fontSize: 12 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {school.subscriptions.map(s => (
-                <tr key={s.id} style={{ borderBottom: '1px solid #f8fafc' }}>
+                <tr key={s.id} style={{ borderBottom: '1px solid #F7F6F4' }}>
                   <td style={{ padding: '10px' }}>{new Date(s.created_at).toLocaleDateString('es-CL')}</td>
                   <td style={{ padding: '10px' }}>{s.plan_type === 'monthly' ? 'Mensual' : s.plan_type}</td>
                   <td style={{ padding: '10px' }}>${s.amount?.toLocaleString('es-CL')}</td>
                   <td style={{ padding: '10px' }}>
                     <StatusBadge status={s.status} />
                   </td>
-                  <td style={{ padding: '10px', color: '#94a3b8', fontFamily: 'monospace', fontSize: 11 }}>{s.mp_subscription_id || '-'}</td>
+                  <td style={{ padding: '10px', color: '#9C8A7E', fontFamily: 'monospace', fontSize: 11 }}>{s.mp_subscription_id || '-'}</td>
                 </tr>
               ))}
             </tbody>
@@ -511,14 +511,14 @@ export function SchoolDetailPage() {
 
 function StatusBadge({ status }) {
   const config = {
-    authorized: { bg: '#dcfce7', color: '#166534', label: '✅ Autorizada' },
-    active: { bg: '#dcfce7', color: '#166534', label: '✅ Activa' },
-    pending: { bg: '#fef3c7', color: '#92400e', label: '⏳ Pendiente' },
-    cancelled: { bg: '#fee2e2', color: '#991b1b', label: '❌ Cancelada' },
-    paused: { bg: '#f1f5f9', color: '#475569', label: '⏸ Pausada' },
-    expired: { bg: '#fee2e2', color: '#991b1b', label: '⌛ Expirada' },
+    authorized: { bg: '#DDF0E6', color: '#1F5E43', label: '✅ Autorizada' },
+    active: { bg: '#DDF0E6', color: '#1F5E43', label: '✅ Activa' },
+    pending: { bg: '#FFF0C7', color: '#7A4B00', label: '⏳ Pendiente' },
+    cancelled: { bg: '#FDE2D7', color: '#9A3412', label: '❌ Cancelada' },
+    paused: { bg: '#F3F0EC', color: '#5C463A', label: '⏸ Pausada' },
+    expired: { bg: '#FDE2D7', color: '#9A3412', label: '⌛ Expirada' },
   };
-  const c = config[status] || { bg: '#f1f5f9', color: '#475569', label: status };
+  const c = config[status] || { bg: '#F3F0EC', color: '#5C463A', label: status };
   return (
     <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: c.bg, color: c.color }}>
       {c.label}

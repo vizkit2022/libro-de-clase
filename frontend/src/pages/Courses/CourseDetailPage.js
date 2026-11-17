@@ -24,7 +24,7 @@ function getSubjectEmoji(name) {
 export default function CourseDetailPage() {
   const { id } = useParams();
   const { school, user } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const [course, setCourse] = useState(null);
   const [tab, setTab] = useState('students');
   const [allStudents, setAllStudents] = useState([]);
@@ -152,7 +152,7 @@ export default function CourseDetailPage() {
                   </select>
                   <button onClick={() => setEditandoJefe(false)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer',
-                      color: '#94a3b8', fontSize: 16 }}>×</button>
+                      color: '#9C8A7E', fontSize: 16 }}>×</button>
                 </span>
               ) : (
                 <button onClick={() => canEdit && setEditandoJefe(true)}
@@ -162,7 +162,7 @@ export default function CourseDetailPage() {
                     gap: 6, cursor: canEdit ? 'pointer' : 'default' }}>
                   {course.head_teacher
                     ? `Prof. jefe: ${course.head_teacher.first_name} ${course.head_teacher.last_name}`
-                    : <span style={{ color: '#b45309', fontWeight: 600 }}>Sin profesor jefe</span>}
+                    : <span style={{ color: '#7A4B00', fontWeight: 600 }}>Sin profesor jefe</span>}
                   {canEdit && <span style={{ color: primary, fontSize: 12,
                     fontWeight: 700 }}>{course.head_teacher ? 'cambiar' : 'definir'}</span>}
                 </button>
@@ -198,7 +198,7 @@ export default function CourseDetailPage() {
       {tab === 'students' && (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontWeight: 700, color: '#0f172a' }}>Alumnos matriculados ({course.students?.length})</h3>
+            <h3 style={{ fontWeight: 700, color: '#2B1B14' }}>Alumnos matriculados ({course.students?.length})</h3>
             {canEdit && (
               <button className="btn btn-primary btn-sm" onClick={() => setShowEnroll(true)} style={{ background: primary }}>
                 ➕ Matricular
@@ -214,7 +214,7 @@ export default function CourseDetailPage() {
                 <tbody>
                   {course.students?.map((e, i) => (
                     <tr key={e.id}>
-                      <td style={{ color: '#94a3b8', fontWeight: 600 }}>{i + 1}</td>
+                      <td style={{ color: '#9C8A7E', fontWeight: 600 }}>{i + 1}</td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <UserAvatar
@@ -232,8 +232,8 @@ export default function CourseDetailPage() {
                           </Link>
                         </div>
                       </td>
-                      <td style={{ color: '#64748b' }}>{e.student?.rut || '—'}</td>
-                      <td style={{ color: '#64748b' }}>{e.student?.email}</td>
+                      <td style={{ color: '#6B5446' }}>{e.student?.rut || '—'}</td>
+                      <td style={{ color: '#6B5446' }}>{e.student?.email}</td>
                       <td>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <Link to={`/students/${e.student_id}/life`} className="btn btn-secondary btn-sm">📋 Hoja de vida</Link>
@@ -253,7 +253,7 @@ export default function CourseDetailPage() {
       {tab === 'subjects' && (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontWeight: 700, color: '#0f172a' }}>Asignaturas ({course.subjects?.length})</h3>
+            <h3 style={{ fontWeight: 700, color: '#2B1B14' }}>Asignaturas ({course.subjects?.length})</h3>
             {canEdit && (
               <button className="btn btn-primary btn-sm" onClick={() => setShowAddSubject(true)} style={{ background: primary }}>
                 ➕ Agregar asignatura
@@ -265,7 +265,7 @@ export default function CourseDetailPage() {
               const currInfo = buildCurriculumUrl(cs.subject?.name, course.level);
               return (
                 <div key={cs.id} style={{
-                  borderRadius: 12, border: `1.5px solid ${cs.subject?.color ? cs.subject.color + '40' : '#e2e8f0'}`,
+                  borderRadius: 12, border: `1.5px solid ${cs.subject?.color ? cs.subject.color + '40' : '#ECE8E3'}`,
                   background: '#fff', overflow: 'hidden',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
                   transition: 'box-shadow 0.2s, transform 0.2s',
@@ -280,7 +280,7 @@ export default function CourseDetailPage() {
                         {getSubjectEmoji(cs.subject?.name)}
                       </div>
                       <div>
-                        <p style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', margin: 0 }}>{cs.subject?.name}</p>
+                        <p style={{ fontWeight: 700, fontSize: 14, color: '#2B1B14', margin: 0 }}>{cs.subject?.name}</p>
                         {cs.subject?.code && (
                           <span style={{ fontSize: 10, fontWeight: 700, color: cs.subject?.color || primary }}>
                             {cs.subject.code}
@@ -295,9 +295,9 @@ export default function CourseDetailPage() {
                         <select value={cs.teacher_id || ''}
                           onChange={e => cambiarAsignatura(cs.id, 'teacher_id',
                             e.target.value ? parseInt(e.target.value) : null)}
-                          style={{ width: '100%', padding: '6px 9px', border: '1px solid #e2e8f0',
+                          style={{ width: '100%', padding: '6px 9px', border: '1px solid #ECE8E3',
                             borderRadius: 7, fontSize: 12.5, fontFamily: 'inherit',
-                            color: cs.teacher ? '#334155' : '#b45309' }}>
+                            color: cs.teacher ? '#5C463A' : '#7A4B00' }}>
                           <option value="">Sin profesor</option>
                           {allTeachers.map(t => (
                             <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
@@ -311,18 +311,18 @@ export default function CourseDetailPage() {
                                 cambiarAsignatura(cs.id, 'hours_per_week', n);
                               }
                             }}
-                            style={{ width: 58, padding: '6px 9px', border: '1px solid #e2e8f0',
+                            style={{ width: 58, padding: '6px 9px', border: '1px solid #ECE8E3',
                               borderRadius: 7, fontSize: 12.5, fontFamily: 'inherit',
                               textAlign: 'center' }} />
-                          <span style={{ fontSize: 12, color: '#64748b', flex: 1 }}>hrs/semana</span>
+                          <span style={{ fontSize: 12, color: '#6B5446', flex: 1 }}>hrs/semana</span>
                           <button onClick={() => quitarAsignatura(cs)} title="Quitar del curso"
-                            style={{ background: '#fef2f2', border: '1px solid #fecaca',
-                              borderRadius: 7, cursor: 'pointer', color: '#dc2626',
+                            style={{ background: '#FEF1EB', border: '1px solid #F8C4AE',
+                              borderRadius: 7, cursor: 'pointer', color: '#B8321B',
                               fontSize: 11, padding: '4px 9px', fontWeight: 650 }}>Quitar</button>
                         </div>
                       </div>
                     ) : (
-                      <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}>
+                      <p style={{ fontSize: 12, color: '#6B5446', margin: '0 0 12px' }}>
                         {cs.teacher ? `${cs.teacher.first_name} ${cs.teacher.last_name}` : 'Sin profesor'}<br />
                         {cs.hours_per_week} hrs/semana
                       </p>

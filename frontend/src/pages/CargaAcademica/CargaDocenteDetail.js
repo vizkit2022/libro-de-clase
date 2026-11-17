@@ -22,16 +22,16 @@ const fmtHM = (min) => {
 };
 
 const inp = {
-  width: '100%', padding: '6px 9px', border: '1px solid #e2e8f0',
+  width: '100%', padding: '6px 9px', border: '1px solid #ECE8E3',
   borderRadius: 6, fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit',
 };
 
 // Grilla del horario semanal
 const thHor = {
-  border: '1px solid #cbd5e1', background: '#e2e8f0', padding: '5px 4px',
-  fontSize: 10, fontWeight: 800, color: '#334155', textAlign: 'center',
+  border: '1px solid #D9D2CA', background: '#ECE8E3', padding: '5px 4px',
+  fontSize: 10, fontWeight: 800, color: '#5C463A', textAlign: 'center',
 };
-const tdHor = { border: '1px solid #e2e8f0', verticalAlign: 'middle' };
+const tdHor = { border: '1px solid #ECE8E3', verticalAlign: 'middle' };
 
 // Líneas libres del pie del informe: no entran en ningún total
 const ADICIONALES_SUGERIDOS = [
@@ -42,13 +42,13 @@ const ADICIONALES_SUGERIDOS = [
 function StatCard({ label, value, sub, color }) {
   return (
     <div style={{
-      border: `1px solid ${color ? color + '40' : '#e2e8f0'}`, borderRadius: 10,
+      border: `1px solid ${color ? color + '40' : '#ECE8E3'}`, borderRadius: 10,
       padding: '12px 16px', background: color ? `${color}0A` : '#fff', flex: 1, minWidth: 130,
     }}>
-      <p style={{ fontSize: 10, fontWeight: 700, color: color || '#94a3b8', margin: '0 0 4px',
+      <p style={{ fontSize: 10, fontWeight: 700, color: color || '#9C8A7E', margin: '0 0 4px',
         textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
-      <p style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1.1 }}>{value}</p>
-      {sub && <p style={{ fontSize: 11, color: '#94a3b8', margin: '3px 0 0' }}>{sub}</p>}
+      <p style={{ fontSize: 24, fontWeight: 900, color: '#2B1B14', margin: 0, lineHeight: 1.1 }}>{value}</p>
+      {sub && <p style={{ fontSize: 11, color: '#9C8A7E', margin: '3px 0 0' }}>{sub}</p>}
     </div>
   );
 }
@@ -57,7 +57,7 @@ export default function CargaDocenteDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
 
   const [doc, setDoc] = useState(null);
   const [demanda, setDemanda] = useState([]);
@@ -308,13 +308,13 @@ export default function CargaDocenteDetail() {
       .logo{height:52px;width:auto}
       .cajas{width:auto;margin-bottom:12px}
       .cajas td{border:1px solid #999;padding:4px 10px;font-size:10pt}
-      .caja{background:#8EA9DB;font-weight:700;white-space:nowrap}
+      .caja{background:#FFE29A;font-weight:700;white-space:nowrap}
       .dep{font-weight:700;min-width:90px}
       table{width:100%;border-collapse:collapse;margin-bottom:14px}
       td,th{border:1px solid #999;padding:5px 8px;font-size:10pt}
-      th{background:#8EA9DB;font-weight:700;text-align:center}
-      .lbl{background:#D9D9D9;font-weight:700;width:42%}
-      .tot{background:#D9D9D9;font-weight:700}
+      th{background:#FFE29A;font-weight:700;text-align:center}
+      .lbl{background:#D9D2CA;font-weight:700;width:42%}
+      .tot{background:#D9D2CA;font-weight:700}
       @media print{body{padding:10px}}
       </style></head><body>
       <div class="cab">
@@ -363,27 +363,27 @@ export default function CargaDocenteDetail() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
         <button onClick={() => navigate('/carga-academica')} style={{
-          padding: '7px 14px', background: '#f1f5f9', border: 'none', borderRadius: 8,
-          cursor: 'pointer', fontSize: 13, color: '#475569', fontWeight: 600 }}>← Volver</button>
+          padding: '7px 14px', background: '#F3F0EC', border: 'none', borderRadius: 8,
+          cursor: 'pointer', fontSize: 13, color: '#5C463A', fontWeight: 600 }}>← Volver</button>
         <div style={{ flex: 1, minWidth: 200 }}>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a' }}>{doc.nombre}</h1>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '3px 0 0' }}>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#2B1B14' }}>{doc.nombre}</h1>
+          <p style={{ fontSize: 12, color: '#6B5446', margin: '3px 0 0' }}>
             {doc.departamento} · {doc.nivel} · Carga {doc.year}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={imprimir} style={{ padding: '8px 14px', background: '#f1f5f9',
-            border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, cursor: 'pointer',
-            fontWeight: 600, color: '#374151' }}>🖨️ Imprimir</button>
+          <button onClick={imprimir} style={{ padding: '8px 14px', background: '#F3F0EC',
+            border: '1px solid #ECE8E3', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+            fontWeight: 600, color: '#5C463A' }}>🖨️ Imprimir</button>
           <button onClick={descargarWord} style={{ padding: '8px 14px', background: `${primary}15`,
             border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer',
             fontWeight: 600, color: primary }}>📄 Word</button>
-          <button onClick={descargarCargaPdf} style={{ padding: '8px 14px', background: '#fee2e2',
+          <button onClick={descargarCargaPdf} style={{ padding: '8px 14px', background: '#FDE2D7',
             border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer',
-            fontWeight: 600, color: '#991b1b' }}>📕 PDF</button>
-          <button onClick={descargarHorarioPdf} style={{ padding: '8px 14px', background: '#fef3c7',
+            fontWeight: 600, color: '#9A3412' }}>📕 PDF</button>
+          <button onClick={descargarHorarioPdf} style={{ padding: '8px 14px', background: '#FFF0C7',
             border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer',
-            fontWeight: 600, color: '#92400e' }}>🗓 Horario PDF</button>
+            fontWeight: 600, color: '#7A4B00' }}>🗓 Horario PDF</button>
         </div>
       </div>
 
@@ -398,31 +398,31 @@ export default function CargaDocenteDetail() {
       {vista === 'carga' && (<>
       {/* Resumen de jornada */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
-        <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 16px',
+        <div style={{ border: '1px solid #ECE8E3', borderRadius: 10, padding: '12px 16px',
           background: '#fff', flex: 1, minWidth: 150 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', margin: '0 0 4px',
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#9C8A7E', margin: '0 0 4px',
             textTransform: 'uppercase', letterSpacing: '0.05em' }}>Horas contrato</p>
           <select value={doc.horas_contrato} onChange={e => setJornada(e.target.value)}
             style={{ fontSize: 22, fontWeight: 900, border: 'none', background: 'transparent',
-              color: '#0f172a', cursor: 'pointer', padding: 0, outline: 'none' }}>
+              color: '#2B1B14', cursor: 'pointer', padding: 0, outline: 'none' }}>
             {jornadas.map(j => <option key={j} value={j}>{j}</option>)}
           </select>
-          <p style={{ fontSize: 11, color: '#94a3b8', margin: '2px 0 0' }}>jornada semanal</p>
+          <p style={{ fontSize: 11, color: '#9C8A7E', margin: '2px 0 0' }}>jornada semanal</p>
         </div>
         <StatCard label="En aula (lectivas)" value={doc.horas_pedagogicas}
           sub={`${fmtHM(doc.lectivas_cronologicas_min)} cronológicas`} color={primary} />
         <StatCard label="No lectivas" value={fmtHM(doc.no_lectivas_min)}
-          sub="trabajo administrativo" color="#8b5cf6" />
-        <StatCard label="Recreo" value={fmtHM(doc.recreo_min)} sub="según Tabla Legal" color="#f59e0b" />
+          sub="trabajo administrativo" color="#8A2846" />
+        <StatCard label="Recreo" value={fmtHM(doc.recreo_min)} sub="según Tabla Legal" color="#E8A317" />
       </div>
 
       {/* Barra de reparto contrato */}
       <div style={{ display: 'flex', height: 26, borderRadius: 8, overflow: 'hidden',
-        marginBottom: 20, border: '1px solid #e2e8f0' }}>
+        marginBottom: 20, border: '1px solid #ECE8E3' }}>
         {[
           { v: doc.lectivas_cronologicas_min, c: primary,   t: 'Aula' },
-          { v: doc.recreo_min,                c: '#f59e0b', t: 'Recreo' },
-          { v: doc.no_lectivas_min,           c: '#8b5cf6', t: 'No lectivas' },
+          { v: doc.recreo_min,                c: '#E8A317', t: 'Recreo' },
+          { v: doc.no_lectivas_min,           c: '#8A2846', t: 'No lectivas' },
         ].map(({ v, c, t }) => {
           const total = doc.horas_contrato * 60 || 1;
           return (
@@ -438,16 +438,16 @@ export default function CargaDocenteDetail() {
 
       {/* Alertas */}
       {(doc.excede_disponibilidad || !okDif || doc.excede_no_lectivas) && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10,
+        <div style={{ background: '#FEF1EB', border: '1px solid #F8C4AE', borderRadius: 10,
           padding: '10px 14px', marginBottom: 16 }}>
-          {!okDif && <p style={{ fontSize: 13, color: '#991b1b', margin: '2px 0' }}>
+          {!okDif && <p style={{ fontSize: 13, color: '#9A3412', margin: '2px 0' }}>
             ⚠️ {doc.diferencia > 0 ? 'Sobran' : 'Faltan'} <b>{Math.abs(doc.diferencia)} h</b> respecto
             de las {doc.horas_pedagogicas} horas pedagógicas de su jornada.
           </p>}
-          {doc.excede_disponibilidad && <p style={{ fontSize: 13, color: '#991b1b', margin: '2px 0' }}>
+          {doc.excede_disponibilidad && <p style={{ fontSize: 13, color: '#9A3412', margin: '2px 0' }}>
             ⚠️ Disponibilidad en <b>{doc.disponibilidad} h</b> — el máximo permitido es {cat?.max_disponibilidad || 3} h semanales.
           </p>}
-          {doc.excede_no_lectivas && <p style={{ fontSize: 13, color: '#991b1b', margin: '2px 0' }}>
+          {doc.excede_no_lectivas && <p style={{ fontSize: 13, color: '#9A3412', margin: '2px 0' }}>
             ⚠️ Las actividades no lectivas ({fmtHM(doc.total_actividades_min)}) superan
             las {fmtHM(doc.no_lectivas_min)} disponibles.
           </p>}
@@ -456,37 +456,37 @@ export default function CargaDocenteDetail() {
 
       {/* Referencia del año anterior */}
       {ref?.encontrado && (
-        <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, marginBottom: 18,
-          overflow: 'hidden', background: '#fafafa' }}>
+        <div style={{ border: '1px solid #ECE8E3', borderRadius: 12, marginBottom: 18,
+          overflow: 'hidden', background: '#F7F6F4' }}>
           <div onClick={() => setShowRef(v => !v)} style={{ display: 'flex', alignItems: 'center',
             gap: 10, padding: '10px 16px', cursor: 'pointer', userSelect: 'none' }}>
-            <span style={{ fontSize: 10, background: '#64748b', color: '#fff', padding: '2px 8px',
+            <span style={{ fontSize: 10, background: '#6B5446', color: '#fff', padding: '2px 8px',
               borderRadius: 4, fontWeight: 800 }}>{ref.year_origen}</span>
-            <span style={{ fontWeight: 700, fontSize: 13, color: '#334155', flex: 1 }}>
+            <span style={{ fontWeight: 700, fontSize: 13, color: '#5C463A', flex: 1 }}>
               Carga del año anterior
             </span>
-            <span style={{ fontSize: 12, color: '#64748b' }}>
+            <span style={{ fontSize: 12, color: '#6B5446' }}>
               jornada {ref.horas_contrato} h · {ref.total_lectivas} hrs repartidas
               {ref.disponibilidad > 0 && ` · ${ref.disponibilidad} disponibilidad`}
             </span>
             {ref.cambio_jornada && (
               <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
-                background: '#fef3c7', color: '#92400e' }}>jornada cambió</span>
+                background: '#FFF0C7', color: '#7A4B00' }}>jornada cambió</span>
             )}
-            <span style={{ color: '#94a3b8', fontSize: 15 }}>{showRef ? '▲' : '▼'}</span>
+            <span style={{ color: '#9C8A7E', fontSize: 15 }}>{showRef ? '▲' : '▼'}</span>
           </div>
           {showRef && (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5,
-              background: '#fff', borderTop: '1px solid #e2e8f0' }}>
+              background: '#fff', borderTop: '1px solid #ECE8E3' }}>
               <tbody>
                 {ref.asignaciones.map(a => (
-                  <tr key={a.id} style={{ borderTop: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '6px 16px', color: '#475569' }}>
+                  <tr key={a.id} style={{ borderTop: '1px solid #F3F0EC' }}>
+                    <td style={{ padding: '6px 16px', color: '#5C463A' }}>
                       {a.asignatura || TIPO_LABEL[a.tipo] || a.tipo}
                     </td>
-                    <td style={{ padding: '6px 10px', color: '#94a3b8', width: 170 }}>{a.cursos_texto || ''}</td>
+                    <td style={{ padding: '6px 10px', color: '#9C8A7E', width: 170 }}>{a.cursos_texto || ''}</td>
                     <td style={{ padding: '6px 16px', textAlign: 'center', width: 70,
-                      fontWeight: 700, color: '#475569' }}>{a.horas}</td>
+                      fontWeight: 700, color: '#5C463A' }}>{a.horas}</td>
                   </tr>
                 ))}
               </tbody>
@@ -497,19 +497,19 @@ export default function CargaDocenteDetail() {
 
       {/* HORAS LECTIVAS */}
       <div className="card" style={{ marginBottom: 18, padding: 0, overflow: 'hidden' }}>
-        <div style={{ background: '#8EA9DB', padding: '9px 16px' }}>
+        <div style={{ background: '#FFE29A', padding: '9px 16px' }}>
           <h3 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#fff',
             letterSpacing: '0.06em' }}>HORAS LECTIVAS</h3>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: '#f1f5f9' }}>
+            <tr style={{ background: '#F3F0EC' }}>
               <th style={{ padding: '7px 10px', textAlign: 'left', fontSize: 11,
-                textTransform: 'uppercase', color: '#64748b' }}>Asignatura</th>
+                textTransform: 'uppercase', color: '#6B5446' }}>Asignatura</th>
               <th style={{ padding: '7px 10px', textAlign: 'left', fontSize: 11,
-                textTransform: 'uppercase', color: '#64748b', width: 170 }}>Cursos</th>
+                textTransform: 'uppercase', color: '#6B5446', width: 170 }}>Cursos</th>
               <th style={{ padding: '7px 10px', textAlign: 'center', fontSize: 11,
-                textTransform: 'uppercase', color: '#64748b', width: 80 }}>Horas</th>
+                textTransform: 'uppercase', color: '#6B5446', width: 80 }}>Horas</th>
               <th style={{ width: 38 }} />
             </tr>
           </thead>
@@ -517,7 +517,7 @@ export default function CargaDocenteDetail() {
             {(doc.asignaciones || []).map(a => {
               const d = demanda.find(x => x.id === a.demanda_id);
               return (
-                <tr key={a.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                <tr key={a.id} style={{ borderTop: '1px solid #F3F0EC' }}>
                   <td style={{ padding: '5px 8px' }}>
                     {a.tipo === 'asignatura' ? (
                       <select style={inp} value={a.demanda_id || ''}
@@ -570,9 +570,9 @@ export default function CargaDocenteDetail() {
                           const otros = ((cob?.por_letra_detalle || {})[L] || [])
                             .filter(x => x.docente_id !== doc.id);
                           const ocupada = otros.length > 0;
-                          const bg = sel ? primary : ocupada ? '#fde68a' : '#fff';
-                          const bd = sel ? primary : ocupada ? '#f59e0b' : '#e2e8f0';
-                          const fg = sel ? '#fff' : ocupada ? '#92400e' : '#94a3b8';
+                          const bg = sel ? primary : ocupada ? '#FFE29A' : '#fff';
+                          const bd = sel ? primary : ocupada ? '#E8A317' : '#ECE8E3';
+                          const fg = sel ? '#fff' : ocupada ? '#7A4B00' : '#9C8A7E';
                           return (
                             <button key={L}
                               title={ocupada
@@ -620,10 +620,10 @@ export default function CargaDocenteDetail() {
                             : 'Ver quién tiene esta asignatura'}
                           onClick={() => setDetalleAbierto(a.id)}
                           style={{
-                            background: grave ? '#dc2626' : falta ? '#fef3c7' : '#f1f5f9',
-                            border: grave ? 'none' : `1px solid ${falta ? '#fcd34d' : '#e2e8f0'}`,
+                            background: grave ? '#B8321B' : falta ? '#FFF0C7' : '#F3F0EC',
+                            border: grave ? 'none' : `1px solid ${falta ? '#FFE29A' : '#ECE8E3'}`,
                             borderRadius: 5, cursor: 'pointer',
-                            color: grave ? '#fff' : falta ? '#92400e' : '#475569',
+                            color: grave ? '#fff' : falta ? '#7A4B00' : '#5C463A',
                             fontSize: 11, fontWeight: 700,
                             padding: '4px 7px', marginRight: 4,
                           }}>
@@ -631,26 +631,26 @@ export default function CargaDocenteDetail() {
                         </button>
                       );
                     })()}
-                    <button onClick={() => delFila(a.id)} style={{ background: '#fee2e2', border: 'none',
-                      borderRadius: 5, cursor: 'pointer', color: '#dc2626', fontSize: 11,
+                    <button onClick={() => delFila(a.id)} style={{ background: '#FDE2D7', border: 'none',
+                      borderRadius: 5, cursor: 'pointer', color: '#B8321B', fontSize: 11,
                       padding: '4px 7px' }}>✕</button>
                   </td>
                 </tr>
               );
             })}
             {/* Totales */}
-            <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
-              <td colSpan={2} style={{ padding: '8px 10px', fontWeight: 800, color: '#0f172a' }}>Total de horas</td>
+            <tr style={{ background: '#F7F6F4', borderTop: '2px solid #ECE8E3' }}>
+              <td colSpan={2} style={{ padding: '8px 10px', fontWeight: 800, color: '#2B1B14' }}>Total de horas</td>
               <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 900, fontSize: 15 }}>{doc.total_lectivas}</td>
               <td />
             </tr>
-            <tr style={{ background: okDif ? '#f0fdf4' : '#fef2f2' }}>
+            <tr style={{ background: okDif ? '#DDF0E6' : '#FEF1EB' }}>
               <td colSpan={2} style={{ padding: '8px 10px', fontWeight: 700,
-                color: okDif ? '#15803d' : '#991b1b', fontSize: 12 }}>
+                color: okDif ? '#1F5E43' : '#9A3412', fontSize: 12 }}>
                 Diferencia vs. horas pedagógicas en aula ({doc.horas_pedagogicas})
               </td>
               <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 900,
-                color: okDif ? '#15803d' : '#991b1b', fontSize: 15 }}>
+                color: okDif ? '#1F5E43' : '#9A3412', fontSize: 15 }}>
                 {okDif ? '✓ 0' : doc.diferencia}
               </td>
               <td />
@@ -658,13 +658,13 @@ export default function CargaDocenteDetail() {
           </tbody>
         </table>
         <div style={{ padding: '10px 14px', display: 'flex', gap: 10, flexWrap: 'wrap',
-          alignItems: 'center', borderTop: '1px solid #f1f5f9' }}>
+          alignItems: 'center', borderTop: '1px solid #F3F0EC' }}>
           <button onClick={() => addFila('asignatura')} style={{
             background: `${primary}15`, color: primary, border: `1px solid ${primary}40`,
             padding: '5px 13px', borderRadius: 6, fontSize: 12, cursor: 'pointer',
             fontWeight: 700 }}>+ Asignatura</button>
-          <span style={{ color: '#cbd5e1' }}>|</span>
-          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Actividad lectiva:</span>
+          <span style={{ color: '#D9D2CA' }}>|</span>
+          <span style={{ fontSize: 12, color: '#6B5446', fontWeight: 600 }}>Actividad lectiva:</span>
           <select value="" style={{ ...inp, maxWidth: 260, cursor: 'pointer' }}
             onChange={async e => {
               const v = e.target.value;
@@ -699,25 +699,25 @@ export default function CargaDocenteDetail() {
 
       {/* HORAS NO LECTIVAS */}
       <div className="card" style={{ marginBottom: 24, padding: 0, overflow: 'hidden' }}>
-        <div style={{ background: '#8b5cf6', padding: '9px 16px' }}>
+        <div style={{ background: '#8A2846', padding: '9px 16px' }}>
           <h3 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#fff',
             letterSpacing: '0.06em' }}>HORAS NO LECTIVAS</h3>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: '#f1f5f9' }}>
+            <tr style={{ background: '#F3F0EC' }}>
               <th style={{ padding: '7px 10px', textAlign: 'left', fontSize: 11,
-                textTransform: 'uppercase', color: '#64748b' }}>Actividad</th>
+                textTransform: 'uppercase', color: '#6B5446' }}>Actividad</th>
               <th style={{ padding: '7px 10px', textAlign: 'center', fontSize: 11,
-                textTransform: 'uppercase', color: '#64748b', width: 120 }}>Minutos</th>
+                textTransform: 'uppercase', color: '#6B5446', width: 120 }}>Minutos</th>
               <th style={{ padding: '7px 10px', textAlign: 'center', fontSize: 11,
-                textTransform: 'uppercase', color: '#64748b', width: 80 }}>h:mm</th>
+                textTransform: 'uppercase', color: '#6B5446', width: 80 }}>h:mm</th>
               <th style={{ width: 38 }} />
             </tr>
           </thead>
           <tbody>
             {(doc.no_lectivas || []).map((act, i) => (
-              <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
+              <tr key={i} style={{ borderTop: '1px solid #F3F0EC' }}>
                 <td style={{ padding: '5px 8px' }}>
                   <input style={inp} value={act.actividad || ''}
                     onChange={e => setActividad(i, 'actividad', e.target.value)}
@@ -729,36 +729,36 @@ export default function CargaDocenteDetail() {
                     onChange={e => setActividad(i, 'minutos', e.target.value)}
                     onBlur={() => saveNoLectivas(doc.no_lectivas)} />
                 </td>
-                <td style={{ padding: '5px 8px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
+                <td style={{ padding: '5px 8px', textAlign: 'center', color: '#6B5446', fontWeight: 600 }}>
                   {fmtHM(act.minutos)}
                 </td>
                 <td style={{ padding: '5px 4px', textAlign: 'center' }}>
                   <button onClick={() => saveNoLectivas(doc.no_lectivas.filter((_, j) => j !== i))}
-                    style={{ background: '#fee2e2', border: 'none', borderRadius: 5, cursor: 'pointer',
-                      color: '#dc2626', fontSize: 11, padding: '4px 7px' }}>✕</button>
+                    style={{ background: '#FDE2D7', border: 'none', borderRadius: 5, cursor: 'pointer',
+                      color: '#B8321B', fontSize: 11, padding: '4px 7px' }}>✕</button>
                 </td>
               </tr>
             ))}
-            <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
+            <tr style={{ background: '#F7F6F4', borderTop: '2px solid #ECE8E3' }}>
               <td style={{ padding: '8px 10px', fontWeight: 800 }}>Total actividades registradas</td>
               <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700 }}>{doc.total_actividades_min}</td>
               <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 900 }}>{fmtHM(doc.total_actividades_min)}</td>
               <td />
             </tr>
             <tr>
-              <td style={{ padding: '7px 10px', color: '#64748b' }}>Horas no Lectivas (según Tabla Legal)</td>
-              <td style={{ padding: '7px 10px', textAlign: 'center', color: '#64748b' }}>{doc.no_lectivas_min}</td>
+              <td style={{ padding: '7px 10px', color: '#6B5446' }}>Horas no Lectivas (según Tabla Legal)</td>
+              <td style={{ padding: '7px 10px', textAlign: 'center', color: '#6B5446' }}>{doc.no_lectivas_min}</td>
               <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 700 }}>{fmtHM(doc.no_lectivas_min)}</td>
               <td />
             </tr>
-            <tr style={{ background: doc.permanencia_min >= 0 ? '#f0fdf4' : '#fef2f2' }}>
+            <tr style={{ background: doc.permanencia_min >= 0 ? '#DDF0E6' : '#FEF1EB' }}>
               <td style={{ padding: '8px 10px', fontWeight: 800,
-                color: doc.permanencia_min >= 0 ? '#15803d' : '#991b1b' }}>
+                color: doc.permanencia_min >= 0 ? '#1F5E43' : '#9A3412' }}>
                 Permanencia en horas cronológicas
               </td>
               <td style={{ padding: '8px 10px', textAlign: 'center' }} />
               <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 900, fontSize: 15,
-                color: doc.permanencia_min >= 0 ? '#15803d' : '#991b1b' }}>
+                color: doc.permanencia_min >= 0 ? '#1F5E43' : '#9A3412' }}>
                 {fmtHM(doc.permanencia_min)}
               </td>
               <td />
@@ -766,14 +766,14 @@ export default function CargaDocenteDetail() {
 
             {/* Líneas libres al pie: texto a mano, fuera de todo cálculo */}
             {(doc.adicionales || []).map((ad, i) => (
-              <tr key={`ad${i}`} style={{ borderTop: '1px solid #f1f5f9' }}>
+              <tr key={`ad${i}`} style={{ borderTop: '1px solid #F3F0EC' }}>
                 <td style={{ padding: '5px 8px' }}>
                   <input style={inp} value={ad.etiqueta || ''}
                     onChange={e => setAdicional(i, 'etiqueta', e.target.value)}
                     onBlur={() => saveAdicionales(doc.adicionales)} />
                 </td>
                 <td style={{ padding: '5px 8px', textAlign: 'center', fontSize: 11,
-                  color: '#94a3b8' }}>no suma</td>
+                  color: '#9C8A7E' }}>no suma</td>
                 <td style={{ padding: '5px 8px' }}>
                   <input style={{ ...inp, textAlign: 'center', fontWeight: 700 }}
                     placeholder="20 min" value={ad.valor || ''}
@@ -782,16 +782,16 @@ export default function CargaDocenteDetail() {
                 </td>
                 <td style={{ padding: '5px 4px', textAlign: 'center' }}>
                   <button onClick={() => saveAdicionales(doc.adicionales.filter((_, j) => j !== i))}
-                    style={{ background: '#fee2e2', border: 'none', borderRadius: 5,
-                      cursor: 'pointer', color: '#dc2626', fontSize: 11, padding: '4px 7px' }}>✕</button>
+                    style={{ background: '#FDE2D7', border: 'none', borderRadius: 5,
+                      cursor: 'pointer', color: '#B8321B', fontSize: 11, padding: '4px 7px' }}>✕</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <div style={{ padding: '10px 14px', borderTop: '1px solid #f1f5f9',
+        <div style={{ padding: '10px 14px', borderTop: '1px solid #F3F0EC',
           display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Agregar:</span>
+          <span style={{ fontSize: 12, color: '#6B5446', fontWeight: 600 }}>Agregar:</span>
           <select value="" onChange={e => agregarActividad(e.target.value)}
             style={{ ...inp, maxWidth: 300, cursor: 'pointer' }}>
             <option value="">— elegir del catálogo —</option>
@@ -803,8 +803,8 @@ export default function CargaDocenteDetail() {
             <option value="__nueva__">+ Crear nueva actividad…</option>
           </select>
 
-          <span style={{ color: '#cbd5e1' }}>|</span>
-          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}
+          <span style={{ color: '#D9D2CA' }}>|</span>
+          <span style={{ fontSize: 12, color: '#6B5446', fontWeight: 600 }}
             title="Líneas informativas al pie del informe. No entran en ningún total.">
             Línea al pie:
           </span>
@@ -827,12 +827,12 @@ export default function CargaDocenteDetail() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
               flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
-                <span style={{ fontSize: 13, color: '#475569' }}>
+                <span style={{ fontSize: 13, color: '#5C463A' }}>
                   <b>{hor.bloques_puestos}</b> bloques puestos de <b>{doc.horas_pedagogicas}</b> horas en aula
                 </span>
                 {hor.bloques_faltantes !== 0 && (
                   <span style={{ fontSize: 12, fontWeight: 700, marginLeft: 10,
-                    color: hor.bloques_faltantes > 0 ? '#dc2626' : '#f59e0b' }}>
+                    color: hor.bloques_faltantes > 0 ? '#B8321B' : '#E8A317' }}>
                     {hor.bloques_faltantes > 0
                       ? `faltan ${hor.bloques_faltantes}`
                       : `sobran ${-hor.bloques_faltantes}`}
@@ -856,15 +856,15 @@ export default function CargaDocenteDetail() {
                 <tbody>
                   {hor.bloques.map(b => {
                     const noClase = b.tipo === 'recreo' || b.tipo === 'almuerzo';
-                    const bg = { recreo: '#e2e8f0', almuerzo: '#f1f5f9',
-                      contacto: '#fef9c3' }[b.tipo] || '#fff';
+                    const bg = { recreo: '#ECE8E3', almuerzo: '#F3F0EC',
+                      contacto: '#FFF0C7' }[b.tipo] || '#fff';
                     return (
                       <tr key={b.id}>
-                        <td style={{ ...tdHor, background: bg === '#fff' ? '#f8fafc' : bg,
+                        <td style={{ ...tdHor, background: bg === '#fff' ? '#F7F6F4' : bg,
                           fontWeight: 700, textAlign: 'center', fontSize: 10 }}>
                           {noClase
                             ? <>{b.tipo === 'recreo' ? 'RECREO' : 'ALMUERZO'}<br />{b.inicio}–{b.fin}</>
-                            : <>{b.etiqueta}<br /><span style={{ fontWeight: 400, color: '#94a3b8' }}>
+                            : <>{b.etiqueta}<br /><span style={{ fontWeight: 400, color: '#9C8A7E' }}>
                                 {b.inicio}–{b.fin}</span></>}
                         </td>
                         {hor.dias.map((_, dia) => {
@@ -905,7 +905,7 @@ export default function CargaDocenteDetail() {
                               ) : (
                                 <div onClick={() => setSel({ bloque_id: b.id, dia })}
                                   style={{ minHeight: 30, padding: '4px 5px', cursor: 'pointer',
-                                    fontSize: 9.5, lineHeight: 1.25, color: '#334155' }}>
+                                    fontSize: 9.5, lineHeight: 1.25, color: '#5C463A' }}>
                                   {celda?.texto || ''}
                                 </div>
                               )}
@@ -918,7 +918,7 @@ export default function CargaDocenteDetail() {
                 </tbody>
               </table>
             </div>
-            <p style={{ fontSize: 12, color: '#94a3b8', margin: '12px 0 0' }}>
+            <p style={{ fontSize: 12, color: '#9C8A7E', margin: '12px 0 0' }}>
               Hacé clic en cualquier celda para asignarla. El PDF sale con el botón 🗓 Horario PDF.
             </p>
           </div>
@@ -930,11 +930,11 @@ export default function CargaDocenteDetail() {
         const fila = (doc.asignaciones || []).find(a => a.id === detalleAbierto);
         const c = fila && estadoCobertura(fila.demanda_id);
         if (!c) return null;
-        const color = c.grave ? '#dc2626' : c.incompleta ? '#d97706' : '#16a34a';
-        const fondo = c.grave ? '#fef2f2' : c.incompleta ? '#fffbeb' : '#f0fdf4';
+        const color = c.grave ? '#B8321B' : c.incompleta ? '#B26B00' : '#2F7D5B';
+        const fondo = c.grave ? '#FEF1EB' : c.incompleta ? '#FFF8E1' : '#DDF0E6';
         return (
           <div onClick={() => setDetalleAbierto(null)} style={{
-            position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 2000,
+            position: 'fixed', inset: 0, background: 'rgba(43, 27, 20,.45)', zIndex: 2000,
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
             <div onClick={e => e.stopPropagation()} style={{
               background: '#fff', borderRadius: 16, width: 560, maxWidth: '95vw',
@@ -949,14 +949,14 @@ export default function CargaDocenteDetail() {
                     {c.grave ? '⚠️' : c.incompleta ? '⏳' : '✅'}
                   </span>
                   <div style={{ flex: 1 }}>
-                    <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0f172a' }}>
+                    <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#2B1B14' }}>
                       {c.asignatura}
                     </h2>
-                    <p style={{ margin: '2px 0 0', fontSize: 13, color: '#64748b' }}>{c.nivel}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 13, color: '#6B5446' }}>{c.nivel}</p>
                   </div>
                   <button onClick={() => setDetalleAbierto(null)} style={{
                     background: 'none', border: 'none', fontSize: 20, cursor: 'pointer',
-                    color: '#94a3b8', lineHeight: 1 }}>×</button>
+                    color: '#9C8A7E', lineHeight: 1 }}>×</button>
                 </div>
 
                 <p style={{ margin: '12px 0 0', fontSize: 14, fontWeight: 700, color }}>
@@ -967,22 +967,22 @@ export default function CargaDocenteDetail() {
                 </p>
 
                 {c.conflicto && (
-                  <p style={{ margin: '8px 0 0', fontSize: 13, color: '#991b1b',
-                    background: '#fee2e2', padding: '8px 12px', borderRadius: 8 }}>
+                  <p style={{ margin: '8px 0 0', fontSize: 13, color: '#9A3412',
+                    background: '#FDE2D7', padding: '8px 12px', borderRadius: 8 }}>
                     Hay <b>dos docentes</b> en {c.nivel}{' '}
                     <b>{c.letras_en_conflicto.join(', ')}</b>. Sacá el curso a uno de los dos.
                   </p>
                 )}
                 {!c.conflicto && c.excedida && (
-                  <p style={{ margin: '8px 0 0', fontSize: 13, color: '#991b1b',
-                    background: '#fee2e2', padding: '8px 12px', borderRadius: 8 }}>
+                  <p style={{ margin: '8px 0 0', fontSize: 13, color: '#9A3412',
+                    background: '#FDE2D7', padding: '8px 12px', borderRadius: 8 }}>
                     Se repartieron más horas de las que pide el plan.
                     Revisá las horas de cada docente más abajo.
                   </p>
                 )}
                 {c.por_letra && (c.letras_libres || []).length > 0 && (
-                  <p style={{ margin: '8px 0 0', fontSize: 13, color: '#15803d',
-                    background: '#dcfce7', padding: '8px 12px', borderRadius: 8 }}>
+                  <p style={{ margin: '8px 0 0', fontSize: 13, color: '#1F5E43',
+                    background: '#DDF0E6', padding: '8px 12px', borderRadius: 8 }}>
                     Sin docente todavía: {c.nivel}{' '}
                     <b>{c.letras_libres.join(', ')}</b>
                   </p>
@@ -991,12 +991,12 @@ export default function CargaDocenteDetail() {
 
               {/* Reparto actual */}
               <div style={{ padding: '18px 22px' }}>
-                <p style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8',
+                <p style={{ fontSize: 11, fontWeight: 800, color: '#9C8A7E',
                   textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 0 10px' }}>
                   Quién la tiene
                 </p>
                 {c.asignados.length === 0 ? (
-                  <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
+                  <p style={{ fontSize: 13, color: '#9C8A7E', margin: 0 }}>
                     Todavía no la tiene nadie.
                   </p>
                 ) : (
@@ -1007,27 +1007,27 @@ export default function CargaDocenteDetail() {
                         const letras = (x.letras || '').split(',').filter(Boolean);
                         const choca = letras.some(L => (c.letras_en_conflicto || []).includes(L));
                         return (
-                          <tr key={x.asignacion_id} style={{ borderTop: '1px solid #f1f5f9',
-                            background: suyo ? '#eff6ff' : 'transparent' }}>
+                          <tr key={x.asignacion_id} style={{ borderTop: '1px solid #F3F0EC',
+                            background: suyo ? '#FFF8E6' : 'transparent' }}>
                             <td style={{ padding: '8px 10px', fontWeight: suyo ? 700 : 500,
-                              color: '#0f172a' }}>
+                              color: '#2B1B14' }}>
                               {x.docente}
                               {suyo && <span style={{ fontSize: 11, color: primary,
                                 fontWeight: 700, marginLeft: 6 }}>este docente</span>}
                             </td>
-                            <td style={{ padding: '8px 10px', color: choca ? '#dc2626' : '#64748b',
+                            <td style={{ padding: '8px 10px', color: choca ? '#B8321B' : '#6B5446',
                               fontWeight: choca ? 700 : 400 }}>
                               {x.letras ? `${c.nivel} ${x.letras.replace(/,/g, ', ')}` : 'grupo único'}
                               {choca && ' ⚠'}
                             </td>
                             <td style={{ padding: '8px 10px', textAlign: 'right',
-                              fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                              fontWeight: 800, color: '#2B1B14', whiteSpace: 'nowrap' }}>
                               {x.horas} h
                             </td>
                           </tr>
                         );
                       })}
-                      <tr style={{ borderTop: '2px solid #e2e8f0', background: '#f8fafc' }}>
+                      <tr style={{ borderTop: '2px solid #ECE8E3', background: '#F7F6F4' }}>
                         <td colSpan={2} style={{ padding: '8px 10px', fontWeight: 800 }}>
                           Total repartido
                         </td>
@@ -1037,11 +1037,11 @@ export default function CargaDocenteDetail() {
                         </td>
                       </tr>
                       <tr>
-                        <td colSpan={2} style={{ padding: '6px 10px', color: '#64748b' }}>
+                        <td colSpan={2} style={{ padding: '6px 10px', color: '#6B5446' }}>
                           Lo que pide el plan
                         </td>
                         <td style={{ padding: '6px 10px', textAlign: 'right',
-                          fontWeight: 700, color: '#64748b' }}>
+                          fontWeight: 700, color: '#6B5446' }}>
                           {c.horas_totales} h
                         </td>
                       </tr>
@@ -1051,7 +1051,7 @@ export default function CargaDocenteDetail() {
 
                 {c.por_letra && (
                   <>
-                    <p style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8',
+                    <p style={{ fontSize: 11, fontWeight: 800, color: '#9C8A7E',
                       textTransform: 'uppercase', letterSpacing: '.06em',
                       margin: '20px 0 10px' }}>
                       Curso por curso
@@ -1059,13 +1059,13 @@ export default function CargaDocenteDetail() {
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {(c.letras_demanda || []).map(L => {
                         const quienes = (c.por_letra_detalle || {})[L] || [];
-                        const col = quienes.length > 1 ? '#dc2626'
-                          : quienes.length === 1 ? '#16a34a' : '#94a3b8';
+                        const col = quienes.length > 1 ? '#B8321B'
+                          : quienes.length === 1 ? '#2F7D5B' : '#9C8A7E';
                         return (
                           <div key={L} style={{ border: `1px solid ${col}44`,
                             background: `${col}0D`, borderRadius: 8, padding: '8px 12px',
                             minWidth: 120 }}>
-                            <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: '#0f172a' }}>
+                            <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: '#2B1B14' }}>
                               {c.nivel} {L}
                             </p>
                             <p style={{ margin: '3px 0 0', fontSize: 11, color: col,
@@ -1083,9 +1083,9 @@ export default function CargaDocenteDetail() {
 
               <div style={{ padding: '0 22px 20px', textAlign: 'right' }}>
                 <button onClick={() => setDetalleAbierto(null)} style={{
-                  padding: '8px 20px', background: '#f1f5f9', border: 'none',
+                  padding: '8px 20px', background: '#F3F0EC', border: 'none',
                   borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                  color: '#475569' }}>Cerrar</button>
+                  color: '#5C463A' }}>Cerrar</button>
               </div>
             </div>
           </div>
@@ -1094,7 +1094,7 @@ export default function CargaDocenteDetail() {
 
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, right: 24,
-          background: toast.type === 'error' ? '#dc2626' : '#16a34a', color: '#fff',
+          background: toast.type === 'error' ? '#B8321B' : '#2F7D5B', color: '#fff',
           padding: '10px 18px', borderRadius: 10, fontWeight: 600, fontSize: 14, zIndex: 9999 }}>
           {toast.msg}
         </div>

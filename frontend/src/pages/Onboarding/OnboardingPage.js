@@ -313,11 +313,11 @@ function PasoColegio({ school, updateSchool, recargar }) {
           {school?.logo_url
             ? <img src={school.logo_url} alt="Logo del colegio"
                    style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 12 }} />
-            : <div style={{ width: 64, height: 64, borderRadius: 12, background: '#eef1f8',
-                            display: 'grid', placeItems: 'center', color: '#9ca3af', fontSize: 12 }}>
+            : <div style={{ width: 64, height: 64, borderRadius: 12, background: '#F3F0EC',
+                            display: 'grid', placeItems: 'center', color: '#9C8A7E', fontSize: 12 }}>
                 Sin logo
               </div>}
-          <div style={{ fontSize: 12.8, color: '#6b7280', lineHeight: 1.6 }}>
+          <div style={{ fontSize: 12.8, color: '#6B5446', lineHeight: 1.6 }}>
             PNG o JPG, idealmente cuadrado y sobre fondo claro. Hasta 2 MB.<br />
             Se usa en los informes, en el portal de apoderados y en la barra lateral.
           </div>
@@ -394,7 +394,7 @@ function PasoPeriodos({ year, estado, recargar, cambiarYear }) {
         </div>
         {periodos.length === 0 ? (
           <div className="ob-cajon-cuerpo" style={{ textAlign: 'center', padding: 28 }}>
-            <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 14 }}>
+            <p style={{ fontSize: 13, color: '#6B5446', marginBottom: 14 }}>
               {year} todavía no tiene períodos. Sin ellos las notas no tienen dónde guardarse.
             </p>
             <button className="ob-btn ob-btn-p" onClick={crearSemestres} disabled={creando}>
@@ -494,7 +494,7 @@ function PasoCursos({ year, estado, recargar, navegar }) {
             {otrosAnios.length > 0 && (
               <>
                 <select value={origenUsado ?? ''} onChange={e => setOrigen(Number(e.target.value))}
-                        style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '6px 9px', fontSize: 12 }}>
+                        style={{ border: '1px solid #ECE8E3', borderRadius: 8, padding: '6px 9px', fontSize: 12 }}>
                   {otrosAnios.map(a => <option key={a} value={a}>Desde {a}</option>)}
                 </select>
                 <button className="ob-btn ob-btn-g ob-btn-ch" onClick={copiar} disabled={ocupado}>
@@ -506,7 +506,7 @@ function PasoCursos({ year, estado, recargar, navegar }) {
         </div>
         <div className="ob-cajon-cuerpo">
           {cursos.length === 0
-            ? <p style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: 16 }}>
+            ? <p style={{ fontSize: 13, color: '#9C8A7E', textAlign: 'center', padding: 16 }}>
                 Todavía no hay cursos en {year}.
               </p>
             : <div className="ob-malla">
@@ -522,7 +522,7 @@ function PasoCursos({ year, estado, recargar, navegar }) {
           <form onSubmit={crear} style={{ display: 'flex', gap: 9, marginTop: 16 }}>
             <input value={nombre} onChange={e => setNombre(e.target.value)}
                    placeholder="Nombre del curso, por ejemplo 7° Básico A"
-                   style={{ flex: 1, border: '1px solid #e5e7eb', borderRadius: 9, padding: '9px 12px', fontSize: 13.5, fontFamily: 'inherit' }} />
+                   style={{ flex: 1, border: '1px solid #ECE8E3', borderRadius: 9, padding: '9px 12px', fontSize: 13.5, fontFamily: 'inherit' }} />
             <button className="ob-btn ob-btn-g" type="submit" disabled={ocupado || !nombre.trim()}>
               Agregar curso
             </button>
@@ -578,7 +578,7 @@ function PasoAsignaturas({ year, paso, recargar, navegar }) {
         </div>
         <div className="ob-cajon-cuerpo">
           {asignaturas.length === 0
-            ? <p style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: 12 }}>
+            ? <p style={{ fontSize: 13, color: '#9C8A7E', textAlign: 'center', padding: 12 }}>
                 El catálogo está vacío. Agrega las del currículum o crea las tuyas.
               </p>
             : <div className="ob-malla">
@@ -592,7 +592,7 @@ function PasoAsignaturas({ year, paso, recargar, navegar }) {
 
           {porAgregar.length > 0 && (
             <>
-              <p style={{ fontSize: 12, color: '#6b7280', margin: '18px 0 8px', fontWeight: 650 }}>
+              <p style={{ fontSize: 12, color: '#6B5446', margin: '18px 0 8px', fontWeight: 650 }}>
                 Del currículum nacional, un clic para agregarlas
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
@@ -610,7 +610,7 @@ function PasoAsignaturas({ year, paso, recargar, navegar }) {
                 onSubmit={e => { e.preventDefault(); if (nueva.trim()) { agregar(nueva.trim(), null); setNueva(''); } }}>
             <input value={nueva} onChange={e => setNueva(e.target.value)}
                    placeholder="O crea una propia: Taller de Lenguaje, Robótica…"
-                   style={{ flex: 1, border: '1px solid #e5e7eb', borderRadius: 9, padding: '9px 12px', fontSize: 13.5, fontFamily: 'inherit' }} />
+                   style={{ flex: 1, border: '1px solid #ECE8E3', borderRadius: 9, padding: '9px 12px', fontSize: 13.5, fontFamily: 'inherit' }} />
             <button className="ob-btn ob-btn-g" type="submit" disabled={ocupado || !nueva.trim()}>
               Crear
             </button>
@@ -804,7 +804,7 @@ function PasoEquipo({ year, recargar }) {
           <span className="ob-pill ne">{personas.length} personas</span>
         </div>
         {personas.length === 0
-          ? <div className="ob-cajon-cuerpo" style={{ textAlign: 'center', padding: 26, color: '#9ca3af', fontSize: 13 }}>
+          ? <div className="ob-cajon-cuerpo" style={{ textAlign: 'center', padding: 26, color: '#9C8A7E', fontSize: 13 }}>
               Todavía no hay nadie cargado. Sube la planilla o agrega a la primera persona.
             </div>
           : <div className="ob-tabla-scroll">
@@ -938,12 +938,12 @@ function PasoMatricula({ year, recargar }) {
             </table>
           </div>
           {previa.items.length > 60 && (
-            <div className="ob-cajon-cuerpo" style={{ fontSize: 12, color: '#6b7280', borderTop: '1px solid #f1f3f7' }}>
+            <div className="ob-cajon-cuerpo" style={{ fontSize: 12, color: '#6B5446', borderTop: '1px solid #F3F0EC' }}>
               Se muestran las primeras 60 filas de {previa.items.length}.
             </div>
           )}
           {malos > 0 && (
-            <div className="ob-cajon-cuerpo" style={{ borderTop: '1px solid #f1f3f7' }}>
+            <div className="ob-cajon-cuerpo" style={{ borderTop: '1px solid #F3F0EC' }}>
               <Aviso tipo="al">
                 <b>{malos} fila{malos === 1 ? '' : 's'} con problemas</b> que no se van a
                 guardar. Las otras {buenos} sí. Puedes corregir la planilla y volver a
@@ -997,7 +997,7 @@ function PasoCarga({ year, paso, recargar, navegar }) {
           </span>
         </div>
         {cursos.length === 0
-          ? <div className="ob-cajon-cuerpo" style={{ textAlign: 'center', padding: 24, color: '#9ca3af', fontSize: 13 }}>
+          ? <div className="ob-cajon-cuerpo" style={{ textAlign: 'center', padding: 24, color: '#9C8A7E', fontSize: 13 }}>
               Primero hay que crear los cursos.
             </div>
           : <div className="ob-tabla-scroll">
@@ -1011,7 +1011,7 @@ function PasoCarga({ year, paso, recargar, navegar }) {
                         <select value={c.head_teacher_id || ''}
                                 disabled={guardando === c.id}
                                 onChange={e => fijarJefe(c, e.target.value)}
-                                style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '5px 9px', fontSize: 12.5, fontFamily: 'inherit', minWidth: 190 }}>
+                                style={{ border: '1px solid #ECE8E3', borderRadius: 8, padding: '5px 9px', fontSize: 12.5, fontFamily: 'inherit', minWidth: 190 }}>
                           <option value="">Sin asignar</option>
                           {docentes.map(d => (
                             <option key={d.id} value={d.id}>{d.first_name} {d.last_name}</option>
@@ -1034,7 +1034,7 @@ function PasoCarga({ year, paso, recargar, navegar }) {
             </button>
           </div>
         </div>
-        <div className="ob-cajon-cuerpo" style={{ fontSize: 13, color: '#4b5563', lineHeight: 1.7 }}>
+        <div className="ob-cajon-cuerpo" style={{ fontSize: 13, color: '#5C463A', lineHeight: 1.7 }}>
           El reparto de horas vive en su propio módulo, porque es un proceso largo:
           se ingresa la jornada contratada de cada docente, se reparten las horas
           según la Tabla Legal del MINEDUC y se publica al libro de clases.
@@ -1152,7 +1152,7 @@ function PasoAccesos({ estado, year, recargar }) {
               Activar y entregar después
             </button>
           </div>
-          <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 12, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 12, color: '#9C8A7E', marginTop: 12, lineHeight: 1.6 }}>
             Si eliges «después», las cuentas quedan activas sin clave entregada y
             puedes generarlas cuando quieras, a una persona o a todas, desde Usuarios.
             Las claves no se guardan en ninguna parte: si se pierden, se generan otras.
@@ -1209,7 +1209,7 @@ function PasoAccesos({ estado, year, recargar }) {
             </Aviso>
           ) : estado.puede_cerrar ? (
             <>
-              <p style={{ fontSize: 13, color: '#4b5563', marginBottom: 12 }}>
+              <p style={{ fontSize: 13, color: '#5C463A', marginBottom: 12 }}>
                 Todo lo necesario está listo.
               </p>
               <button className="ob-btn ob-btn-p" disabled={ocupado} onClick={() => cerrar(false)}>

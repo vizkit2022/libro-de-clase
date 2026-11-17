@@ -2,12 +2,12 @@ import React from 'react';
 import './ui.css';
 
 export const ESTADOS_ENROLLMENT = {
-  activo:        { et: 'Activo',        col: '#15803d', bg: '#dcfce7' },
-  por_confirmar: { et: 'Por confirmar', col: '#b45309', bg: '#fef3c7' },
-  retirado:      { et: 'Retirado',      col: '#b91c1c', bg: '#fee2e2' },
-  trasladado:    { et: 'Trasladado',    col: '#1d4ed8', bg: '#dbeafe' },
-  no_continua:   { et: 'No continúa',   col: '#475569', bg: '#e2e8f0' },
-  egresado:      { et: 'Egresado',      col: '#6d28d9', bg: '#ede9fe' },
+  activo:        { et: 'Activo',        col: '#1F5E43', bg: '#DDF0E6' },
+  por_confirmar: { et: 'Por confirmar', col: '#7A4B00', bg: '#FFF0C7' },
+  retirado:      { et: 'Retirado',      col: '#9A3412', bg: '#FDE2D7' },
+  trasladado:    { et: 'Trasladado',    col: '#3D2A21', bg: '#FFF0C7' },
+  no_continua:   { et: 'No continúa',   col: '#5C463A', bg: '#ECE8E3' },
+  egresado:      { et: 'Egresado',      col: '#8A2846', bg: '#FCE4EC' },
 };
 
 export default function EstadoChip({ estado }) {

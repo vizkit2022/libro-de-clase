@@ -149,7 +149,49 @@
   .marca svg{flex-shrink:0}
   .marca-txt{font-family:var(--font-display);font-weight:700;font-size:28px;line-height:1;
     letter-spacing:-.02em;color:var(--cacao);white-space:nowrap}
-  .marca-txt span{color:var(--naranja)}
+  .marca-txt .edu{color:var(--naranja)}
+
+  /* Logo animado: la campana se mece y suena, y las letras llegan
+     saltando en fila como una cuncuna hasta acomodarse. */
+  .marca .l{display:inline-block;transform-origin:50% 100%}
+  .marca .edu{display:inline-block}
+  .cp-mece,.cp-badajo,.cp-onda{transform-box:view-box}
+  .cp-mece{transform-origin:48px 10px}
+  .cp-badajo{transform-origin:48px 60px}
+  .cp-onda-d{transform-origin:76px 36px}
+  .cp-onda-i{transform-origin:20px 36px}
+  .marca.jugar .l{animation:cuncuna .62s cubic-bezier(.3,.7,.4,1) both;
+    animation-delay:calc(.25s + var(--i) * 65ms)}
+  .marca.jugar .cp-mece{animation:mece 1.3s ease-in-out .05s both}
+  .marca.jugar .cp-badajo{animation:badajo 1.3s ease-in-out .12s both}
+  .marca.jugar .cp-onda-d{animation:onda 1.3s ease-out .05s both}
+  .marca.jugar .cp-onda-i{animation:onda 1.3s ease-out .3s both}
+  @keyframes cuncuna{
+    0%{opacity:0;transform:translateX(calc(var(--i) * -.42em - .3em)) scale(.6)}
+    25%{opacity:1}
+    45%{transform:translateX(calc(var(--i) * -.18em)) translateY(-.5em) rotate(-10deg)}
+    72%{transform:translateY(0) scale(1.14,.8)}
+    86%{transform:translateY(-.06em) scale(.96,1.06)}
+    100%{opacity:1;transform:none}
+  }
+  @keyframes mece{
+    0%,100%{transform:rotate(0)}
+    12%{transform:rotate(-16deg)} 30%{transform:rotate(13deg)}
+    48%{transform:rotate(-9deg)}  64%{transform:rotate(6deg)}
+    80%{transform:rotate(-3deg)}
+  }
+  @keyframes badajo{
+    0%,100%{transform:translateX(0)}
+    16%{transform:translateX(5px)} 34%{transform:translateX(-5px)}
+    52%{transform:translateX(3px)} 70%{transform:translateX(-2px)}
+  }
+  @keyframes onda{
+    0%{opacity:0;transform:scale(.6)}
+    15%{opacity:1;transform:scale(1.15)}
+    35%{opacity:.3;transform:scale(1)}
+    50%{opacity:1;transform:scale(1.1)}
+    100%{opacity:1;transform:none}
+  }
   .pie .marca{--c-perilla:#fff}
   .pie .marca-txt{color:var(--papel)}
 
@@ -300,7 +342,43 @@
   .mock-br em{font-style:normal;font-size:12px;color:var(--cacao-suave);width:84px;font-weight:600}
   .mock-br i{flex:1;height:8px;border-radius:4px;background:var(--arena);overflow:hidden;display:block}
   .mock-br i s{display:block;height:100%;border-radius:4px;background:var(--patio);text-decoration:none}
-  .mock-br:last-child i s{background:var(--sol)}
+  .mock-br.bajo i s{background:var(--sol)}
+  /* Recorrido animado por los módulos */
+  .mock{position:relative}
+  .mock-side .ml{cursor:pointer;transition:background .25s,color .25s}
+  .mock-main{display:grid}
+  .pant{grid-area:1/1;opacity:0;visibility:hidden;transform:translateY(10px);
+    transition:opacity .35s ease,transform .35s ease,visibility 0s .35s}
+  .pant.on{opacity:1;visibility:visible;transform:none;transition:opacity .35s ease .05s,transform .35s ease .05s}
+  .mock-br i s{transition:width .9s cubic-bezier(.2,.7,.3,1)}
+  .mock-li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;
+    font-size:12px;line-height:16px;color:var(--cacao);font-weight:700;border-bottom:1px solid var(--arena)}
+  .mock-li:first-child{padding-top:0}
+  .mock-li:last-child{border-bottom:0;padding-bottom:0}
+  .mock-li small{display:block;font-weight:500;color:var(--cacao-tenue);font-size:11px}
+  .mock-li mark{flex-shrink:0;font-size:11px;font-weight:800;padding:3px 9px;border-radius:var(--radius-pill)}
+  .mock-li .notas{display:flex;gap:6px}
+  .ch-exito{background:var(--exito-suave);color:var(--exito-texto)}
+  .ch-aviso{background:var(--aviso-suave);color:var(--aviso-texto)}
+  .ch-info{background:var(--info-suave);color:var(--info-texto)}
+  .ch-alerta{background:var(--alerta-suave);color:var(--alerta-texto)}
+  .ch-nota{background:var(--nube);color:var(--cacao)}
+  .pant.on .mock-li,.pant.on .mock-kpi{animation:entra .4s ease both}
+  .pant.on .mock-kpi:nth-child(2){animation-delay:.06s}
+  .pant.on .mock-kpi:nth-child(3){animation-delay:.12s}
+  .pant.on .mock-li:nth-child(2){animation-delay:.1s}
+  .pant.on .mock-li:nth-child(3){animation-delay:.16s}
+  .pant.on .mock-li:nth-child(4){animation-delay:.22s}
+  @keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .mock-cursor{position:absolute;left:0;top:0;z-index:3;pointer-events:none;opacity:0;
+    transition:transform .65s cubic-bezier(.45,0,.2,1),opacity .3s}
+  .mock-cursor.ve{opacity:1}
+  .mock-cursor.clic path{animation:clic .25s ease;transform-origin:2px 2px}
+  @keyframes clic{50%{transform:scale(.8)}}
+  .mock-clic{position:absolute;left:0;top:0;z-index:2;width:28px;height:28px;margin:-14px 0 0 -14px;
+    border-radius:50%;background:var(--naranja);opacity:0;pointer-events:none}
+  .mock-clic.va{animation:onda-clic .5s ease-out}
+  @keyframes onda-clic{from{opacity:.45;transform:scale(.3)}to{opacity:0;transform:scale(1.6)}}
   .mock-br b{font-size:12px;color:var(--cacao);font-weight:800;width:40px;text-align:right}
 
   /* ── Secciones ─────────────────────────────────────────── */
@@ -753,9 +831,18 @@
 
 <header>
   <div class="env nav">
-    <a href="#inicio" class="marca" aria-label="recreo.edu, ir al inicio">
-      <svg width="42" height="42" aria-hidden="true"><use href="#campana"/></svg>
-      <span class="marca-txt">recreo<span>.edu</span></span>
+    <a href="#inicio" class="marca" id="marca-anim" aria-label="recreo.edu, ir al inicio">
+      <svg width="42" height="42" viewBox="0 0 96 96" aria-hidden="true" style="overflow:visible">
+        <g class="cp-mece">
+          <circle cx="48" cy="12" r="6" fill="#2B1B14"/>
+          <path d="M48 16 C31 16 25 31 25 46 L25 61 L16 72 L80 72 L71 61 L71 46 C71 31 65 16 48 16 Z" fill="#FFC94A"/>
+          <circle class="cp-badajo" cx="48" cy="81" r="8" fill="#FF7417"/>
+        </g>
+        <g fill="none" stroke="#FF7417" stroke-width="5" stroke-linecap="round">
+          <path class="cp-onda cp-onda-d" d="M82 24 Q91 34 88 46"/><path class="cp-onda cp-onda-i" d="M14 24 Q5 34 8 46"/>
+        </g>
+      </svg>
+      <span class="marca-txt" aria-hidden="true"><span class="l" style="--i:0">r</span><span class="l" style="--i:1">e</span><span class="l" style="--i:2">c</span><span class="l" style="--i:3">r</span><span class="l" style="--i:4">e</span><span class="l" style="--i:5">o</span><span class="edu"><span class="l" style="--i:6">.</span><span class="l" style="--i:7">e</span><span class="l" style="--i:8">d</span><span class="l" style="--i:9">u</span></span></span>
     </a>
     <nav class="nav-links">
       <a href="#modulos">Módulos</a>
@@ -824,35 +911,31 @@
       <p>Cada módulo muestra lo que falta antes de que el problema llegue al papel.</p>
     </div>
     <div class="mock-centro rev">
-    <div class="mock" aria-hidden="true">
+    <div class="mock" id="recorrido" aria-hidden="true">
       <div class="mock-bar">
         <i></i><i></i><i></i>
         <span class="mock-url">kolevia.cl/carga-academica</span>
       </div>
       <div class="mock-cuerpo">
         <div class="mock-side">
-          <div class="ml"><u></u>Dashboard</div>
-          <div class="ml"><u></u>Cursos</div>
-          <div class="ml"><u></u>Calificaciones</div>
-          <div class="ml"><u></u>Convivencia</div>
-          <div class="ml on"><u></u>Carga Académica</div>
-          <div class="ml"><u></u>Reportes</div>
+          <div class="ml" data-i="0"><u></u>Dashboard</div>
+          <div class="ml" data-i="1"><u></u>Cursos</div>
+          <div class="ml" data-i="2"><u></u>Calificaciones</div>
+          <div class="ml" data-i="3"><u></u>Convivencia</div>
+          <div class="ml on" data-i="4"><u></u>Carga Académica</div>
+          <div class="ml" data-i="5"><u></u>Reportes</div>
         </div>
         <div class="mock-main">
-          <div class="mock-h">Carga Académica 2027</div>
-          <div class="mock-kpis">
-            <div class="mock-kpi"><b>100%</b><span>Cobertura</span></div>
-            <div class="mock-kpi"><b>6/6</b><span>Cuadrados</span></div>
-            <div class="mock-kpi"><b>0</b><span>Alertas</span></div>
-          </div>
-          <div class="mock-fila">
-            <div class="mock-br"><em>Lenguaje</em><i><s style="width:100%"></s></i><b>90/90</b></div>
-            <div class="mock-br"><em>Taller</em><i><s style="width:100%"></s></i><b>36/36</b></div>
-            <div class="mock-br"><em>Electivos</em><i><s style="width:100%"></s></i><b>18/18</b></div>
-            <div class="mock-br"><em>Matemática</em><i><s style="width:78%"></s></i><b>70/90</b></div>
-          </div>
+          <div class="pant" data-url="kolevia.cl/dashboard"><div class="mock-h">Resumen del colegio</div><div class="mock-kpis"><div class="mock-kpi"><b data-to="312" data-suf="">312</b><span>Estudiantes</span></div><div class="mock-kpi"><b data-to="94" data-suf="%">94%</b><span>Asistencia hoy</span></div><div class="mock-kpi"><b data-to="3" data-suf="">3</b><span>Alertas</span></div></div><div class="mock-fila"><div class="mock-br"><em>1° Básico</em><i><s style="width:96%"></s></i><b>96%</b></div><div class="mock-br"><em>4° Básico</em><i><s style="width:93%"></s></i><b>93%</b></div><div class="mock-br"><em>8° Básico</em><i><s style="width:91%"></s></i><b>91%</b></div><div class="mock-br bajo"><em>II Medio</em><i><s style="width:82%"></s></i><b>82%</b></div></div></div>
+          <div class="pant" data-url="kolevia.cl/cursos"><div class="mock-h">Cursos 2027</div><div class="mock-kpis"><div class="mock-kpi"><b data-to="12" data-suf="">12</b><span>Cursos</span></div><div class="mock-kpi"><b data-to="26" data-suf="">26</b><span>Prom. por curso</span></div><div class="mock-kpi"><b data-to="18" data-suf="">18</b><span>Docentes</span></div></div><div class="mock-fila"><div class="mock-li"><span>1° Básico A<small>Prof. jefe C. Muñoz · 27 estudiantes</small></span><mark class="ch-exito">Completo</mark></div><div class="mock-li"><span>4° Básico A<small>Prof. jefe R. Soto · 29 estudiantes</small></span><mark class="ch-exito">Completo</mark></div><div class="mock-li"><span>7° Básico A<small>Prof. jefe P. Rojas · 25 estudiantes</small></span><mark class="ch-aviso">Falta horario</mark></div><div class="mock-li"><span>II Medio A<small>Prof. jefe F. Díaz · 24 estudiantes</small></span><mark class="ch-exito">Completo</mark></div></div></div>
+          <div class="pant" data-url="kolevia.cl/calificaciones"><div class="mock-h">Calificaciones · 6° Básico A</div><div class="mock-kpis"><div class="mock-kpi"><b data-to="5,8" data-dec="1" data-suf="">5,8</b><span>Promedio curso</span></div><div class="mock-kpi"><b data-to="92" data-suf="%">92%</b><span>Notas al día</span></div><div class="mock-kpi"><b data-to="2" data-suf="">2</b><span>Bajo 4,0</span></div></div><div class="mock-fila"><div class="mock-li"><span>Valentina Reyes</span><span class="notas"><mark class="ch-nota">6,5</mark><mark class="ch-nota">6,8</mark><mark class="ch-nota">7,0</mark></span></div><div class="mock-li"><span>Tomás Fuentes</span><span class="notas"><mark class="ch-nota">5,9</mark><mark class="ch-nota">6,2</mark><mark class="ch-nota">5,5</mark></span></div><div class="mock-li"><span>Josefa Araya</span><span class="notas"><mark class="ch-nota">6,1</mark><mark class="ch-nota">5,7</mark><mark class="ch-nota">6,4</mark></span></div><div class="mock-li"><span>Benjamín Castro</span><span class="notas"><mark class="ch-nota">4,2</mark><mark class="ch-alerta">3,8</mark><mark class="ch-nota">4,5</mark></span></div></div></div>
+          <div class="pant" data-url="kolevia.cl/convivencia"><div class="mock-h">Convivencia escolar</div><div class="mock-kpis"><div class="mock-kpi"><b data-to="4" data-suf="">4</b><span>Casos abiertos</span></div><div class="mock-kpi"><b data-to="11" data-suf="">11</b><span>Cerrados este mes</span></div><div class="mock-kpi"><b data-to="2" data-suf="">2</b><span>Citaciones</span></div></div><div class="mock-fila"><div class="mock-li"><span>Conflicto en recreo · 5° B<small>Registrado hoy, 10:40</small></span><mark class="ch-aviso">Abierto</mark></div><div class="mock-li"><span>Seguimiento atrasos · 8° A<small>Entrevista con apoderado</small></span><mark class="ch-info">En seguimiento</mark></div><div class="mock-li"><span>Reconocimiento · 3° A<small>Anotación positiva</small></span><mark class="ch-exito">Registrado</mark></div><div class="mock-li"><span>Mediación · I Medio<small>Acuerdo firmado</small></span><mark class="ch-exito">Cerrado</mark></div></div></div>
+          <div class="pant on" data-url="kolevia.cl/carga-academica"><div class="mock-h">Carga Académica 2027</div><div class="mock-kpis"><div class="mock-kpi"><b data-to="100" data-suf="%">100%</b><span>Cobertura</span></div><div class="mock-kpi"><b data-to="6" data-suf="/6">6/6</b><span>Cuadrados</span></div><div class="mock-kpi"><b data-to="0" data-suf="">0</b><span>Alertas</span></div></div><div class="mock-fila"><div class="mock-br"><em>Lenguaje</em><i><s style="width:100%"></s></i><b>90/90</b></div><div class="mock-br"><em>Taller</em><i><s style="width:100%"></s></i><b>36/36</b></div><div class="mock-br"><em>Electivos</em><i><s style="width:100%"></s></i><b>18/18</b></div><div class="mock-br bajo"><em>Matemática</em><i><s style="width:78%"></s></i><b>70/90</b></div></div></div>
+          <div class="pant" data-url="kolevia.cl/reportes"><div class="mock-h">Reportes</div><div class="mock-kpis"><div class="mock-kpi"><b data-to="8" data-suf="">8</b><span>Listos</span></div><div class="mock-kpi"><b data-to="1" data-suf="">1</b><span>En proceso</span></div><div class="mock-kpi"><b data-to="100" data-suf="%">100%</b><span>Firmados</span></div></div><div class="mock-fila"><div class="mock-li"><span>Informe de notas 1er semestre<small>PDF por estudiante</small></span><mark class="ch-exito">Listo</mark></div><div class="mock-li"><span>Acta de calificaciones<small>Formato MINEDUC</small></span><mark class="ch-exito">Listo</mark></div><div class="mock-li"><span>Asistencia mensual<small>Exportable a SIGE</small></span><mark class="ch-exito">Listo</mark></div><div class="mock-li"><span>Informe de personalidad<small>Faltan 3 cursos</small></span><mark class="ch-aviso">En proceso</mark></div></div></div>
         </div>
       </div>
+      <svg class="mock-cursor" width="22" height="26" viewBox="0 0 22 26"><path d="M2 2 L2 21 L7 16.5 L10.5 24 L14 22.5 L10.5 15 L17.5 15 Z" fill="#2B1B14" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span class="mock-clic"></span>
     </div>
     </div>
   </div>
@@ -1530,7 +1613,7 @@
       <div>
         <div class="marca" role="img" aria-label="recreo.edu">
           <svg width="40" height="40" aria-hidden="true"><use href="#campana"/></svg>
-          <span class="marca-txt">recreo<span>.edu</span></span>
+          <span class="marca-txt">recreo<span class="edu">.edu</span></span>
         </div>
         <p class="lema">Tecnología para educar, con alma de recreo.</p>
         <p>Plataforma educacional 360 para colegios chilenos. La gestión pedagógica
@@ -1574,6 +1657,97 @@
   document.getElementById('anio').textContent = new Date().getFullYear();
 
   var sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Recorrido por los módulos: un cursor visita cada módulo del menú,
+  // hace clic y la pantalla cambia. Arranca cuando el mockup se ve.
+  (function () {
+    var caja = document.getElementById('recorrido');
+    if (!caja) return;
+    var items = caja.querySelectorAll('.ml');
+    var pants = caja.querySelectorAll('.pant');
+    var url = caja.querySelector('.mock-url');
+    var side = caja.querySelector('.mock-side');
+    var cursor = caja.querySelector('.mock-cursor');
+    var clic = caja.querySelector('.mock-clic');
+    var actual = 4, timer = null, visible = false, pausaHasta = 0;
+
+    function contar(b) {
+      var meta = parseFloat(b.dataset.to.replace(',', '.'));
+      var dec = b.dataset.dec ? 1 : 0, suf = b.dataset.suf || '', t0 = null;
+      function fmt(v) { return (dec ? v.toFixed(1).replace('.', ',') : Math.round(v)) + suf; }
+      if (sinMovimiento) { b.textContent = fmt(meta); return; }
+      function paso(t) {
+        if (t0 === null) t0 = t;
+        var k = Math.min(1, (t - t0) / 700), e = 1 - Math.pow(1 - k, 3);
+        b.textContent = fmt(meta * e);
+        if (k < 1) requestAnimationFrame(paso);
+      }
+      requestAnimationFrame(paso);
+    }
+    function mostrar(i) {
+      actual = (i + items.length) % items.length;
+      items.forEach(function (it, j) { it.classList.toggle('on', j === actual); });
+      pants.forEach(function (p, j) { p.classList.toggle('on', j === actual); });
+      var p = pants[actual];
+      url.textContent = p.dataset.url;
+      p.querySelectorAll('.mock-kpi b').forEach(contar);
+      p.querySelectorAll('.mock-br s').forEach(function (s) {
+        var w = s.dataset.w || (s.dataset.w = s.style.width);
+        s.style.transition = 'none'; s.style.width = '0'; void s.offsetWidth;
+        s.style.transition = ''; s.style.width = w;
+      });
+    }
+    function punto(it) {
+      var r = it.getBoundingClientRect(), c = caja.getBoundingClientRect();
+      return { x: r.left - c.left + Math.min(r.width * 0.55, 70), y: r.top - c.top + r.height / 2 };
+    }
+    function visitar(i) {
+      var it = items[(i + items.length) % items.length];
+      // En celular el menú es una fila con scroll: se acerca el módulo sin mover la página
+      if (side.scrollWidth > side.clientWidth) side.scrollLeft = it.offsetLeft - 20;
+      var pt = punto(it);
+      cursor.classList.add('ve');
+      cursor.style.transform = 'translate(' + pt.x + 'px,' + pt.y + 'px)';
+      setTimeout(function () {
+        cursor.classList.remove('clic'); void cursor.offsetWidth; cursor.classList.add('clic');
+        clic.style.left = pt.x + 'px'; clic.style.top = pt.y + 'px';
+        clic.classList.remove('va'); void clic.offsetWidth; clic.classList.add('va');
+        mostrar(i);
+      }, 700);
+    }
+    function ciclo() {
+      clearTimeout(timer);
+      if (!visible) return;
+      if (Date.now() < pausaHasta) { timer = setTimeout(ciclo, pausaHasta - Date.now()); return; }
+      visitar(actual + 1);
+      timer = setTimeout(ciclo, 3000);
+    }
+    items.forEach(function (it, j) {
+      it.addEventListener('click', function () { pausaHasta = Date.now() + 8000; cursor.classList.remove('ve'); mostrar(j); ciclo(); });
+    });
+    if (sinMovimiento || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(function (es) {
+      visible = es[0].isIntersecting;
+      if (visible) timer = setTimeout(ciclo, 600); else { clearTimeout(timer); cursor.classList.remove('ve'); }
+    }, { threshold: 0.5 }).observe(caja);
+  })();
+
+  // Logo: suena la campana y las letras llegan en cuncuna al cargar,
+  // y de nuevo al pasar el mouse (cuando la animación ya terminó).
+  (function () {
+    var m = document.getElementById('marca-anim');
+    if (!m || sinMovimiento) return;
+    var jugando = false;
+    function jugar() {
+      if (jugando) return;
+      jugando = true;
+      m.classList.remove('jugar'); void m.offsetWidth; m.classList.add('jugar');
+      setTimeout(function () { jugando = false; }, 1600);
+    }
+    var listo = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    listo.then(function () { setTimeout(jugar, 150); });
+    m.addEventListener('mouseenter', jugar);
+  })();
 
   // Cada bloque va aislado. Un error en uno no puede dejar la página
   // en blanco impidiendo que corran los siguientes.

@@ -17,7 +17,7 @@ import './StudentFichaPage.css';
 
 // Variables CSS derivadas del color primario del colegio
 function themeVars(primary) {
-  const hex = /^#[0-9a-f]{6}$/i.test(primary || '') ? primary : '#2563EB';
+  const hex = /^#[0-9a-f]{6}$/i.test(primary || '') ? primary : '#2B1B14';
   return {
     '--fp': hex,
     '--fp-soft': `${hex}22`,
@@ -29,9 +29,9 @@ function themeVars(primary) {
 function Silhouette() {
   return (
     <svg viewBox="0 0 200 200" className="fs-silhouette" aria-hidden="true">
-      <rect width="200" height="200" fill="#b9b6e8" />
-      <ellipse cx="100" cy="84" rx="40" ry="50" fill="#dcdaf7" />
-      <path d="M22 200c4-44 36-68 78-68s74 24 78 68z" fill="#dcdaf7" />
+      <rect width="200" height="200" fill="#FFE29A" />
+      <ellipse cx="100" cy="84" rx="40" ry="50" fill="#FFE29A" />
+      <path d="M22 200c4-44 36-68 78-68s74 24 78 68z" fill="#FFE29A" />
     </svg>
   );
 }
@@ -95,7 +95,7 @@ function FichaHeader({ ficha, photoUrl }) {
   const { student, summary = {}, profile = {} } = ficha;
   const { age, status, guardian, sexIcon, average: avg } = headerInfo(ficha);
   const chip = STATUS_CHIP[status] || STATUS_CHIP.matriculado;
-  const avgColor = avg == null ? '#94a3b8' : avg >= 6 ? '#16a34a' : avg >= 5 ? '#2563eb' : avg >= 4 ? '#d97706' : '#dc2626';
+  const avgColor = avg == null ? '#9C8A7E' : avg >= 6 ? '#2F7D5B' : avg >= 5 ? '#2B1B14' : avg >= 4 ? '#B26B00' : '#B8321B';
   return (
     <div className="fh">
       <StudentPhoto student={student} photoUrl={photoUrl} className="fh-mini-photo" />
@@ -204,7 +204,7 @@ export default function StudentFichaPage() {
   const esStaff = ROLES_STAFF.includes(user?.role);
   const pdfYear = anio || new Date().getFullYear();
   const sections = esStaff ? [...FICHA_SECTIONS, HISTORIAL_SECTION] : FICHA_SECTIONS;
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
 
   const [ficha, setFicha] = useState(null);
   const [error, setError] = useState(null); // 403 | 404 | 'other'

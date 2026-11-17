@@ -2,17 +2,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const ROLES = {
-  admin:     { et: 'Administrador', col: '#2a2eb0', bg: '#e0e5fb' },
-  directivo: { et: 'Directivo',     col: '#6d28d9', bg: '#ede9fe' },
-  profesor:  { et: 'Docente',       col: '#15803d', bg: '#dcfce7' },
+  admin:     { et: 'Administrador', col: '#3D2A21', bg: '#ECE8E3' },
+  directivo: { et: 'Directivo',     col: '#8A2846', bg: '#FCE4EC' },
+  profesor:  { et: 'Docente',       col: '#1F5E43', bg: '#DDF0E6' },
 };
 
 const inp = {
-  width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0',
+  width: '100%', padding: '9px 12px', border: '1px solid #ECE8E3',
   borderRadius: 8, fontSize: 14, boxSizing: 'border-box', fontFamily: 'inherit',
 };
 const lbl = {
-  display: 'block', fontSize: 12, fontWeight: 700, color: '#374151',
+  display: 'block', fontSize: 12, fontWeight: 700, color: '#5C463A',
   textTransform: 'uppercase', marginBottom: 5, letterSpacing: '.02em',
 };
 
@@ -114,17 +114,17 @@ export default function AdminsPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12,
         marginBottom: 20, flexWrap: 'wrap' }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#0f172a' }}>
+          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#2B1B14' }}>
             Administradores y docentes
           </h1>
-          <p style={{ fontSize: 13.5, color: '#64748b', margin: '3px 0 0' }}>
+          <p style={{ fontSize: 13.5, color: '#6B5446', margin: '3px 0 0' }}>
             Quienes operan la plataforma. Alumnos y apoderados los gestiona cada colegio.
           </p>
         </div>
         <button onClick={() => setEditando({
           nombre: '', apellido: '', email: '', rut: '', telefono: '',
           role: 'admin', school_id: '', password: 'colegio123', is_active: true,
-        })} style={{ padding: '10px 18px', background: '#3b4fd8', color: '#fff',
+        })} style={{ padding: '10px 18px', background: '#2B1B14', color: '#fff',
           border: 'none', borderRadius: 9, fontSize: 14, fontWeight: 700,
           cursor: 'pointer', fontFamily: 'inherit' }}>
           + Nuevo usuario
@@ -157,10 +157,10 @@ export default function AdminsPage() {
       ) : !usuarios.length ? (
         <div style={{ background: '#fff', borderRadius: 14, padding: 46, textAlign: 'center',
           boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-          <p style={{ fontSize: 15, fontWeight: 600, color: '#475569', margin: '0 0 5px' }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: '#5C463A', margin: '0 0 5px' }}>
             No hay usuarios que coincidan
           </p>
-          <p style={{ fontSize: 13.5, color: '#94a3b8', margin: 0 }}>
+          <p style={{ fontSize: 13.5, color: '#9C8A7E', margin: 0 }}>
             Probá cambiando los filtros, o creá uno nuevo.
           </p>
         </div>
@@ -169,18 +169,18 @@ export default function AdminsPage() {
           <div key={colegio} style={{ background: '#fff', borderRadius: 14, marginBottom: 16,
             overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10,
-              padding: '14px 20px', borderBottom: '1px solid #f1f5f9' }}>
+              padding: '14px 20px', borderBottom: '1px solid #F3F0EC' }}>
               <h3 style={{ fontSize: 15, fontWeight: 750, margin: 0, flex: 1 }}>{colegio}</h3>
-              <span style={{ fontSize: 12.5, color: '#94a3b8' }}>
+              <span style={{ fontSize: 12.5, color: '#9C8A7E' }}>
                 {lista.length} {lista.length === 1 ? 'usuario' : 'usuarios'}
               </span>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5 }}>
               <thead>
-                <tr style={{ background: '#f8fafc' }}>
+                <tr style={{ background: '#F7F6F4' }}>
                   {['Nombre', 'Correo', 'Rol', 'Estado', 'Último ingreso', ''].map(h => (
                     <th key={h} style={{ padding: '9px 20px', textAlign: 'left', fontSize: 11,
-                      textTransform: 'uppercase', color: '#64748b', fontWeight: 700 }}>{h}</th>
+                      textTransform: 'uppercase', color: '#6B5446', fontWeight: 700 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -188,12 +188,12 @@ export default function AdminsPage() {
                 {lista.map(u => {
                   const r = ROLES[u.role] || ROLES.admin;
                   return (
-                    <tr key={u.id} style={{ borderTop: '1px solid #f1f5f9',
+                    <tr key={u.id} style={{ borderTop: '1px solid #F3F0EC',
                       opacity: u.is_active ? 1 : .62 }}>
-                      <td style={{ padding: '11px 20px', fontWeight: 600, color: '#0f172a' }}>
+                      <td style={{ padding: '11px 20px', fontWeight: 600, color: '#2B1B14' }}>
                         {u.nombre} {u.apellido}
                       </td>
-                      <td style={{ padding: '11px 20px', color: '#64748b' }}>{u.email}</td>
+                      <td style={{ padding: '11px 20px', color: '#6B5446' }}>{u.email}</td>
                       <td style={{ padding: '11px 20px' }}>
                         <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px',
                           borderRadius: 999, background: r.bg, color: r.col }}>{r.et}</span>
@@ -201,12 +201,12 @@ export default function AdminsPage() {
                       <td style={{ padding: '11px 20px' }}>
                         <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px',
                           borderRadius: 999,
-                          background: u.is_active ? '#dcfce7' : '#f1f5f9',
-                          color: u.is_active ? '#166534' : '#64748b' }}>
+                          background: u.is_active ? '#DDF0E6' : '#F3F0EC',
+                          color: u.is_active ? '#1F5E43' : '#6B5446' }}>
                           {u.is_active ? 'activo' : 'sin acceso'}
                         </span>
                       </td>
-                      <td style={{ padding: '11px 20px', color: '#94a3b8', fontSize: 12.5 }}>
+                      <td style={{ padding: '11px 20px', color: '#9C8A7E', fontSize: 12.5 }}>
                         {u.last_login
                           ? new Date(u.last_login).toLocaleDateString('es-CL',
                               { day: '2-digit', month: 'short', year: 'numeric' })
@@ -217,9 +217,9 @@ export default function AdminsPage() {
                           style={btnMini}>Editar</button>
                         <button onClick={() => nuevaClave(u)} style={btnMini}>Clave</button>
                         <button onClick={() => alternarAcceso(u)}
-                          style={{ ...btnMini, color: u.is_active ? '#b91c1c' : '#15803d',
-                            borderColor: u.is_active ? '#fecaca' : '#bbf7d0',
-                            background: u.is_active ? '#fef2f2' : '#f0fdf4' }}>
+                          style={{ ...btnMini, color: u.is_active ? '#9A3412' : '#1F5E43',
+                            borderColor: u.is_active ? '#F8C4AE' : '#B8E0CB',
+                            background: u.is_active ? '#FEF1EB' : '#DDF0E6' }}>
                           {u.is_active ? 'Quitar acceso' : 'Dar acceso'}
                         </button>
                       </td>
@@ -239,7 +239,7 @@ export default function AdminsPage() {
             <h2 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 4px' }}>
               {editando.id ? 'Editar usuario' : 'Nuevo usuario'}
             </h2>
-            <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>
+            <p style={{ fontSize: 13, color: '#6B5446', margin: '0 0 20px' }}>
               {editando.id
                 ? 'Los cambios se aplican de inmediato.'
                 : 'Va a poder entrar con el correo y la contraseña que definas.'}
@@ -305,7 +305,7 @@ export default function AdminsPage() {
             </div>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 16,
-              fontSize: 13.5, color: '#334155', cursor: 'pointer' }}>
+              fontSize: 13.5, color: '#5C463A', cursor: 'pointer' }}>
               <input type="checkbox" checked={editando.is_active !== false}
                 onChange={e => setEditando({ ...editando, is_active: e.target.checked })} />
               Puede iniciar sesión
@@ -313,11 +313,11 @@ export default function AdminsPage() {
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 22 }}>
               <button onClick={() => setEditando(null)} disabled={guardando}
-                style={{ padding: '9px 17px', background: '#f1f5f9', border: 'none',
+                style={{ padding: '9px 17px', background: '#F3F0EC', border: 'none',
                   borderRadius: 9, fontSize: 13.5, fontWeight: 650, cursor: 'pointer',
-                  color: '#475569', fontFamily: 'inherit' }}>Cancelar</button>
+                  color: '#5C463A', fontFamily: 'inherit' }}>Cancelar</button>
               <button onClick={guardar} disabled={guardando}
-                style={{ padding: '9px 20px', background: '#3b4fd8', color: '#fff',
+                style={{ padding: '9px 20px', background: '#2B1B14', color: '#fff',
                   border: 'none', borderRadius: 9, fontSize: 13.5, fontWeight: 700,
                   cursor: 'pointer', fontFamily: 'inherit', opacity: guardando ? .6 : 1 }}>
                 {guardando ? 'Guardando…' : editando.id ? 'Guardar cambios' : 'Crear usuario'}
@@ -329,7 +329,7 @@ export default function AdminsPage() {
 
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 3000,
-          background: toast.tipo === 'err' ? '#dc2626' : '#16a34a', color: '#fff',
+          background: toast.tipo === 'err' ? '#B8321B' : '#2F7D5B', color: '#fff',
           padding: '11px 18px', borderRadius: 10, fontWeight: 600, fontSize: 14,
           maxWidth: 440, boxShadow: '0 8px 24px rgba(0,0,0,.2)' }}>
           {toast.msg}
@@ -340,12 +340,12 @@ export default function AdminsPage() {
 }
 
 const btnMini = {
-  padding: '5px 11px', background: '#fff', border: '1px solid #e2e8f0',
+  padding: '5px 11px', background: '#fff', border: '1px solid #ECE8E3',
   borderRadius: 7, fontSize: 12, fontWeight: 650, cursor: 'pointer',
-  color: '#475569', fontFamily: 'inherit', marginLeft: 6,
+  color: '#5C463A', fontFamily: 'inherit', marginLeft: 6,
 };
 const capa = {
-  position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 2000,
+  position: 'fixed', inset: 0, background: 'rgba(43, 27, 20,.45)', zIndex: 2000,
   display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
 };
 const caja = {

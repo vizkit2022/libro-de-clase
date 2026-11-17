@@ -114,7 +114,7 @@ export const LEVEL_GROUP_LABELS = {
 
 // Colores por grupo de nivel (para UI)
 export const LEVEL_GROUP_COLORS = {
-  '1o-6o-basico': '#3b82f6',
-  '7o-8o-basico': '#8b5cf6',
-  '1o-4o-medio':  '#f59e0b',
+  '1o-6o-basico': '#2B1B14',
+  '7o-8o-basico': '#8A2846',
+  '1o-4o-medio':  '#E8A317',
 };

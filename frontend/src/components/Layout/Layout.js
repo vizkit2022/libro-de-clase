@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import UserAvatar, { avatarColor } from '../UserAvatar/UserAvatar';
 import { Icono } from './iconos';
 import { FranjaPrueba, AvisoDatosEjemplo } from '../Prueba/AvisosPrueba';
+import Marca from '../Marca/Marca';
 import './Layout.css';
 
 const ROLES = {
@@ -189,13 +190,9 @@ export default function Layout() {
       <div className="kv-velo-menu" onClick={() => setAbierto(false)} />
 
       <aside className="kv-lat">
-        <a href="/" className="kv-lat-marca">
-          <img src="/inicio/img/recreo-isotipo.png" alt="" width="32" height="32" />
-          <span>
-            <b>Recreo Edu</b>
-            <i>Tecnología para educar</i>
-          </span>
-        </a>
+        <div className="kv-lat-marca">
+          <Marca tam={34} claro />
+        </div>
 
         <div className="kv-lat-colegio">
           <span className="kv-sello">

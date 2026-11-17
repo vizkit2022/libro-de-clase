@@ -47,7 +47,7 @@ describe('Layout', () => {
 
   test('arma el menú agrupado y muestra el contenido', () => {
     montar('admin');
-    expect(screen.getByText('Recreo Edu')).toBeTruthy();
+    expect(screen.getByLabelText('recreo.edu')).toBeTruthy();
     expect(screen.getByText('Colegio Franz Liszt')).toBeTruthy();
     expect(screen.getByText('contenido del panel')).toBeTruthy();
     // Encabezados de sección. "General" aparece dos veces a propósito: como

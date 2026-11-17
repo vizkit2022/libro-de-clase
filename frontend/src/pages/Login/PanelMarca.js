@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Marca from '../../components/Marca/Marca';
 import './LoginPage.css';
 
 // Las mismas fotos del sitio público: el ingreso se siente parte de Recreo Edu
@@ -30,19 +31,11 @@ export function FotosFondo() {
   );
 }
 
-export function Logo({ className = '', tam = 44 }) {
-  return (
-    <a href="/" className={`kv-logo ${className}`}>
-      <img src="/inicio/img/recreo-isotipo.png" alt="" width={tam} height={tam} />
-      <span className="kv-lock">
-        <b>Recreo Edu</b>
-        <i>Tecnología para educar</i>
-      </span>
-    </a>
-  );
+export function Logo({ className = '', tam = 44, claro = true }) {
+  return <Marca className={`kv-logo ${className}`} tam={tam} claro={claro} />;
 }
 
-export const LogoMovil = () => <Logo className="kv-logo-movil" tam={38} />;
+export const LogoMovil = () => <Logo className="kv-logo-movil" tam={38} claro={false} />;
 
 // Panel izquierdo de ingreso y registro: la marca sobre las fotos del sitio.
 export default function PanelMarca({ titulo, texto, puntos, pie }) {

@@ -60,7 +60,7 @@ const PrivateRoute = ({ children, roles, permitirSinColegio = false }) => {
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh'}}>
       <div style={{textAlign:'center'}}>
         <div className="spinner" />
-        <p style={{color:'#64748b',marginTop:'12px'}}>Cargando...</p>
+        <p style={{color:'#6B5446',marginTop:'12px'}}>Cargando...</p>
       </div>
     </div>
   );

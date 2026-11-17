@@ -5,21 +5,21 @@ import { Link, useNavigate } from 'react-router-dom';
 
 const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-const CRITICALITY_COLOR = { alta: '#ef4444', media: '#f59e0b', baja: '#94a3b8' };
+const CRITICALITY_COLOR = { alta: '#B8321B', media: '#E8A317', baja: '#9C8A7E' };
 
 function StatCard({ label, value, pct, color }) {
   return (
     <div style={{
-      border: `1px dashed ${color || '#e2e8f0'}`,
+      border: `1px dashed ${color || '#ECE8E3'}`,
       borderRadius: 8, padding: '12px 16px', minWidth: 110, textAlign: 'center',
-      background: color ? `${color}08` : '#fafafa'
+      background: color ? `${color}08` : '#F7F6F4'
     }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: color || '#94a3b8', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: color || '#9C8A7E', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {label}
       </p>
-      <p style={{ fontSize: 28, fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1 }}>{value}</p>
+      <p style={{ fontSize: 28, fontWeight: 900, color: '#2B1B14', margin: 0, lineHeight: 1 }}>{value}</p>
       {pct !== undefined && (
-        <p style={{ fontSize: 11, color: '#94a3b8', margin: '3px 0 0' }}>{pct}%</p>
+        <p style={{ fontSize: 11, color: '#9C8A7E', margin: '3px 0 0' }}>{pct}%</p>
       )}
     </div>
   );
@@ -27,7 +27,7 @@ function StatCard({ label, value, pct, color }) {
 
 export default function ConvivenciaDashboard() {
   const { school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const year = new Date().getFullYear();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -61,7 +61,7 @@ export default function ConvivenciaDashboard() {
   }, [year]);
 
   if (loading) return <div className="loading-container"><div className="spinner" /></div>;
-  if (!data) return <p style={{ color: '#ef4444', padding: 24 }}>Error al cargar datos.</p>;
+  if (!data) return <p style={{ color: '#B8321B', padding: 24 }}>Error al cargar datos.</p>;
 
   const total = data.total || 1; // evitar /0
 
@@ -81,13 +81,13 @@ export default function ConvivenciaDashboard() {
             📋 Ver casos
           </Link>
           <Link to="/convivencia/casos/nuevo" style={{
-            padding: '9px 20px', background: '#10b981', color: '#fff',
+            padding: '9px 20px', background: '#2F7D5B', color: '#fff',
             borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none'
           }}>
             + Crear caso
           </Link>
           <label style={{
-            padding: '9px 20px', background: '#7c3aed', color: '#fff',
+            padding: '9px 20px', background: '#8A2846', color: '#fff',
             borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: extracting ? 'not-allowed' : 'pointer',
             opacity: extracting ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: 6
           }}>
@@ -101,9 +101,9 @@ export default function ConvivenciaDashboard() {
       {/* Resumen abiertos/cerrados */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 16, marginBottom: 28 }}>
         {[
-          { icon: '📂', label: 'Total casos', value: data.total, bg: '#ede9fe', color: '#7c3aed' },
-          { icon: '🔓', label: 'Abiertos', value: data.open, bg: '#fef3c7', color: '#d97706' },
-          { icon: '✅', label: 'Cerrados', value: data.closed, bg: '#d1fae5', color: '#059669' },
+          { icon: '📂', label: 'Total casos', value: data.total, bg: '#FCE4EC', color: '#8A2846' },
+          { icon: '🔓', label: 'Abiertos', value: data.open, bg: '#FFF0C7', color: '#B26B00' },
+          { icon: '✅', label: 'Cerrados', value: data.closed, bg: '#DDF0E6', color: '#2F7D5B' },
         ].map((s, i) => (
           <div key={i} className="card" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
@@ -111,7 +111,7 @@ export default function ConvivenciaDashboard() {
             </div>
             <div>
               <p style={{ fontSize: 26, fontWeight: 800, color: s.color, margin: 0, lineHeight: 1 }}>{s.value}</p>
-              <p style={{ fontSize: 12, color: '#64748b', margin: '3px 0 0' }}>{s.label}</p>
+              <p style={{ fontSize: 12, color: '#6B5446', margin: '3px 0 0' }}>{s.label}</p>
             </div>
           </div>
         ))}
@@ -129,10 +129,10 @@ export default function ConvivenciaDashboard() {
               <circle cx="9.5" cy="7" r="4" /><path d="m17 11 2 2 4-4" />
             </svg>
           </div>
-          <h3 style={{ fontSize: 17, fontWeight: 750, color: '#0f172a', margin: '0 0 7px' }}>
+          <h3 style={{ fontSize: 17, fontWeight: 750, color: '#2B1B14', margin: '0 0 7px' }}>
             Todavía no hay casos registrados en {new Date().getFullYear()}
           </h3>
-          <p style={{ fontSize: 14, color: '#64748b', margin: '0 auto 22px', maxWidth: 430,
+          <p style={{ fontSize: 14, color: '#6B5446', margin: '0 auto 22px', maxWidth: 430,
             lineHeight: 1.55 }}>
             Cada caso avanza por cinco etapas con los anexos oficiales, desde la
             recepción hasta la apelación, y podés imprimir el informe de cada una.
@@ -144,7 +144,7 @@ export default function ConvivenciaDashboard() {
               Registrar el primer caso
             </Link>
             <Link to="/convivencia/casos" style={{ padding: '10px 20px', background: '#fff',
-              color: '#475569', border: '1px solid #e2e8f0', borderRadius: 9, fontSize: 14,
+              color: '#5C463A', border: '1px solid #ECE8E3', borderRadius: 9, fontSize: 14,
               fontWeight: 650, textDecoration: 'none' }}>
               Ver la lista de casos
             </Link>
@@ -154,7 +154,7 @@ export default function ConvivenciaDashboard() {
       <>
       {/* Casos por mes */}
       <div className="card" style={{ marginBottom: 24 }}>
-        <h3 style={{ fontWeight: 700, fontSize: 15, color: '#0f172a', margin: '0 0 20px', textAlign: 'center' }}>
+        <h3 style={{ fontWeight: 700, fontSize: 15, color: '#2B1B14', margin: '0 0 20px', textAlign: 'center' }}>
           Cantidad de casos por mes
         </h3>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
@@ -183,15 +183,15 @@ export default function ConvivenciaDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
         {/* Procedimientos */}
         <div className="card">
-          <h3 style={{ fontWeight: 700, fontSize: 15, color: '#0f172a', margin: '0 0 16px', textAlign: 'center' }}>
+          <h3 style={{ fontWeight: 700, fontSize: 15, color: '#2B1B14', margin: '0 0 16px', textAlign: 'center' }}>
             Procedimientos
           </h3>
           {data.by_procedure.length === 0
-            ? <p style={{ color: '#94a3b8', textAlign: 'center', fontSize: 13 }}>Sin datos</p>
+            ? <p style={{ color: '#9C8A7E', textAlign: 'center', fontSize: 13 }}>Sin datos</p>
             : <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
                 {data.by_procedure.map(p => (
                   <StatCard key={p.name} label={p.name} value={p.count}
-                    pct={Math.round((p.count / total) * 100)} color="#6366f1" />
+                    pct={Math.round((p.count / total) * 100)} color="#2B1B14" />
                 ))}
               </div>
           }
@@ -199,15 +199,15 @@ export default function ConvivenciaDashboard() {
 
         {/* Tipificación */}
         <div className="card">
-          <h3 style={{ fontWeight: 700, fontSize: 15, color: '#0f172a', margin: '0 0 16px', textAlign: 'center' }}>
+          <h3 style={{ fontWeight: 700, fontSize: 15, color: '#2B1B14', margin: '0 0 16px', textAlign: 'center' }}>
             Tipificación de casos
           </h3>
           {data.by_typification.length === 0
-            ? <p style={{ color: '#94a3b8', textAlign: 'center', fontSize: 13 }}>Sin datos</p>
+            ? <p style={{ color: '#9C8A7E', textAlign: 'center', fontSize: 13 }}>Sin datos</p>
             : <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
                 {data.by_typification.map(t => (
                   <StatCard key={t.name} label={t.name} value={t.count}
-                    pct={Math.round((t.count / total) * 100)} color="#ef4444" />
+                    pct={Math.round((t.count / total) * 100)} color="#B8321B" />
                 ))}
               </div>
           }
@@ -216,15 +216,15 @@ export default function ConvivenciaDashboard() {
 
       {/* Por profesional */}
       <div className="card">
-        <h3 style={{ fontWeight: 700, fontSize: 15, color: '#0f172a', margin: '0 0 16px', textAlign: 'center' }}>
+        <h3 style={{ fontWeight: 700, fontSize: 15, color: '#2B1B14', margin: '0 0 16px', textAlign: 'center' }}>
           Atenciones por Profesional
         </h3>
         {data.by_professional.length === 0
-          ? <p style={{ color: '#94a3b8', textAlign: 'center', fontSize: 13 }}>Sin datos</p>
+          ? <p style={{ color: '#9C8A7E', textAlign: 'center', fontSize: 13 }}>Sin datos</p>
           : <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
               {data.by_professional.map(p => (
                 <StatCard key={p.name} label={p.name} value={p.count}
-                  pct={Math.round((p.count / total) * 100)} color="#0ea5e9" />
+                  pct={Math.round((p.count / total) * 100)} color="#1D4F70" />
               ))}
             </div>
         }

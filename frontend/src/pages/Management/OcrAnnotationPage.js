@@ -3,17 +3,17 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 
 const TIPO_LABELS = {
-  positiva:  { label: 'Positiva',  icon: '⭐', bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
-  negativa:  { label: 'Negativa',  icon: '⚠️', bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
-  neutral:   { label: 'Neutral',   icon: '📝', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
-  academica: { label: 'Académica', icon: '📚', bg: '#dbeafe', color: '#1d4ed8', border: '#93c5fd' },
+  positiva:  { label: 'Positiva',  icon: '⭐', bg: '#DDF0E6', color: '#1F5E43', border: '#B8E0CB' },
+  negativa:  { label: 'Negativa',  icon: '⚠️', bg: '#FDE2D7', color: '#9A3412', border: '#F8C4AE' },
+  neutral:   { label: 'Neutral',   icon: '📝', bg: '#F3F0EC', color: '#5C463A', border: '#D9D2CA' },
+  academica: { label: 'Académica', icon: '📚', bg: '#FFF0C7', color: '#9A3412', border: '#FFE29A' },
 };
 
 const STEPS = { UPLOAD: 'upload', LOADING: 'loading', REVIEW: 'review', SAVING: 'saving', DONE: 'done' };
 
 export default function OcrAnnotationPage() {
   const { school, user } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
 
@@ -211,8 +211,8 @@ export default function OcrAnnotationPage() {
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '8px 18px',
                 borderRadius: 8,
-                background: active ? primary : done ? '#ecfdf5' : '#f8fafc',
-                color: active ? '#fff' : done ? '#065f46' : '#94a3b8',
+                background: active ? primary : done ? '#DDF0E6' : '#F7F6F4',
+                color: active ? '#fff' : done ? '#1F5E43' : '#9C8A7E',
                 fontWeight: active ? 700 : 500,
                 fontSize: 13,
                 transition: 'all 0.2s'
@@ -221,7 +221,7 @@ export default function OcrAnnotationPage() {
                 <span>{s.label}</span>
               </div>
               {i < arr.length - 1 && (
-                <div style={{ flex: 1, height: 2, background: done ? primary : '#e2e8f0', transition: 'background 0.3s', minWidth: 20, maxWidth: 60 }} />
+                <div style={{ flex: 1, height: 2, background: done ? primary : '#ECE8E3', transition: 'background 0.3s', minWidth: 20, maxWidth: 60 }} />
               )}
             </React.Fragment>
           );
@@ -239,22 +239,22 @@ export default function OcrAnnotationPage() {
               onDrop={handleDrop}
               onClick={() => !imagePreview && fileRef.current?.click()}
               style={{
-                border: `2px dashed ${imagePreview ? '#e2e8f0' : primary}`,
+                border: `2px dashed ${imagePreview ? '#ECE8E3' : primary}`,
                 borderRadius: 12,
                 padding: imagePreview ? '16px' : '48px 24px',
                 textAlign: 'center',
                 cursor: imagePreview ? 'default' : 'pointer',
-                background: imagePreview ? '#fafafa' : `${primary}08`,
+                background: imagePreview ? '#F7F6F4' : `${primary}08`,
                 transition: 'all 0.2s',
               }}
             >
               {!imagePreview ? (
                 <>
                   <div style={{ fontSize: 52, marginBottom: 12 }}>📄</div>
-                  <p style={{ fontWeight: 700, fontSize: 16, color: '#0f172a', marginBottom: 6 }}>
+                  <p style={{ fontWeight: 700, fontSize: 16, color: '#2B1B14', marginBottom: 6 }}>
                     Arrastra una foto aquí
                   </p>
-                  <p style={{ color: '#64748b', fontSize: 13, marginBottom: 20 }}>
+                  <p style={{ color: '#6B5446', fontSize: 13, marginBottom: 20 }}>
                     o haz clic para seleccionar desde tu dispositivo
                   </p>
                   <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -299,8 +299,8 @@ export default function OcrAnnotationPage() {
             {errorMsg && (
               <div style={{
                 marginTop: 16, padding: '12px 16px',
-                background: '#fef2f2', border: '1px solid #fca5a5',
-                borderRadius: 8, color: '#991b1b', fontSize: 13
+                background: '#FEF1EB', border: '1px solid #F8C4AE',
+                borderRadius: 8, color: '#9A3412', fontSize: 13
               }}>
                 ❌ {errorMsg}
               </div>
@@ -324,7 +324,7 @@ export default function OcrAnnotationPage() {
               }}>
                 <div className="spinner" style={{ margin: '0 auto 12px', borderTopColor: primary }} />
                 <p style={{ fontWeight: 600, color: primary, fontSize: 14 }}>Analizando imagen...</p>
-                <p style={{ color: '#64748b', fontSize: 12, marginTop: 4 }}>
+                <p style={{ color: '#6B5446', fontSize: 12, marginTop: 4 }}>
                   Claude está leyendo el libro de clases
                 </p>
               </div>
@@ -333,10 +333,10 @@ export default function OcrAnnotationPage() {
             {/* Tips */}
             {!imagePreview && (
               <div style={{ marginTop: 20 }}>
-                <p style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: '#6B5446', marginBottom: 8 }}>
                   💡 CONSEJOS PARA MEJORES RESULTADOS
                 </p>
-                <ul style={{ fontSize: 12, color: '#94a3b8', paddingLeft: 16, lineHeight: 1.8 }}>
+                <ul style={{ fontSize: 12, color: '#9C8A7E', paddingLeft: 16, lineHeight: 1.8 }}>
                   <li>Fotografía con buena iluminación y sin sombras</li>
                   <li>Mantén el libro plano y la cámara perpendicular</li>
                   <li>Asegúrate que el texto sea legible en la pantalla</li>
@@ -349,8 +349,8 @@ export default function OcrAnnotationPage() {
           {/* Vista previa */}
           {imagePreview && (
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9' }}>
-                <p style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Vista previa</p>
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid #F3F0EC' }}>
+                <p style={{ fontWeight: 600, fontSize: 14, color: '#2B1B14' }}>Vista previa</p>
               </div>
               <img
                 src={imagePreview}
@@ -359,7 +359,7 @@ export default function OcrAnnotationPage() {
                   width: '100%',
                   maxHeight: 400,
                   objectFit: 'contain',
-                  background: '#f8fafc',
+                  background: '#F7F6F4',
                   display: 'block'
                 }}
               />
@@ -376,14 +376,14 @@ export default function OcrAnnotationPage() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div>
-                <p style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>
+                <p style={{ fontWeight: 700, fontSize: 16, color: '#2B1B14' }}>
                   Anotaciones detectadas
-                  <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 400, color: '#64748b' }}>
+                  <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 400, color: '#6B5446' }}>
                     ({annotations.length} encontrada{annotations.length !== 1 ? 's' : ''})
                   </span>
                 </p>
                 {transcription?.observaciones && (
-                  <p style={{ fontSize: 12, color: '#f59e0b', marginTop: 2 }}>
+                  <p style={{ fontSize: 12, color: '#E8A317', marginTop: 2 }}>
                     ⚠️ {transcription.observaciones}
                   </p>
                 )}
@@ -400,7 +400,7 @@ export default function OcrAnnotationPage() {
             {annotations.length === 0 ? (
               <div className="card" style={{ textAlign: 'center', padding: '32px' }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-                <p style={{ color: '#64748b' }}>No se detectaron anotaciones en la imagen.</p>
+                <p style={{ color: '#6B5446' }}>No se detectaron anotaciones en la imagen.</p>
                 <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={addBlankAnnotation}>
                   ＋ Agregar manualmente
                 </button>
@@ -412,7 +412,7 @@ export default function OcrAnnotationPage() {
                   return (
                     <div key={ann.id} className="card" style={{
                       padding: 0,
-                      border: `1.5px solid ${ann.selected ? tipo.border : '#e2e8f0'}`,
+                      border: `1.5px solid ${ann.selected ? tipo.border : '#ECE8E3'}`,
                       opacity: ann.selected ? 1 : 0.55,
                       transition: 'all 0.2s'
                     }}>
@@ -420,9 +420,9 @@ export default function OcrAnnotationPage() {
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: 10,
                         padding: '12px 16px',
-                        background: ann.selected ? tipo.bg : '#f8fafc',
+                        background: ann.selected ? tipo.bg : '#F7F6F4',
                         borderRadius: '8px 8px 0 0',
-                        borderBottom: '1px solid #f1f5f9'
+                        borderBottom: '1px solid #F3F0EC'
                       }}>
                         {/* Checkbox seleccionar */}
                         <input
@@ -455,7 +455,7 @@ export default function OcrAnnotationPage() {
                           type="date"
                           value={ann.fecha}
                           onChange={e => updateAnnotation(ann.id, 'fecha', e.target.value)}
-                          style={{ fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6, padding: '2px 6px', marginLeft: 'auto' }}
+                          style={{ fontSize: 12, border: '1px solid #ECE8E3', borderRadius: 6, padding: '2px 6px', marginLeft: 'auto' }}
                         />
 
                         {/* Eliminar */}
@@ -463,7 +463,7 @@ export default function OcrAnnotationPage() {
                           onClick={() => removeAnnotation(ann.id)}
                           style={{
                             background: 'none', border: 'none', cursor: 'pointer',
-                            color: '#94a3b8', fontSize: 16, padding: '0 2px',
+                            color: '#9C8A7E', fontSize: 16, padding: '0 2px',
                             lineHeight: 1
                           }}
                           title="Eliminar"
@@ -478,9 +478,9 @@ export default function OcrAnnotationPage() {
                           placeholder="Título de la anotación..."
                           style={{
                             width: '100%', fontSize: 14, fontWeight: 600,
-                            border: '1px solid #e2e8f0', borderRadius: 6,
+                            border: '1px solid #ECE8E3', borderRadius: 6,
                             padding: '7px 10px', boxSizing: 'border-box',
-                            background: '#fafafa'
+                            background: '#F7F6F4'
                           }}
                         />
                         <textarea
@@ -490,14 +490,14 @@ export default function OcrAnnotationPage() {
                           rows={3}
                           style={{
                             width: '100%', fontSize: 13,
-                            border: '1px solid #e2e8f0', borderRadius: 6,
+                            border: '1px solid #ECE8E3', borderRadius: 6,
                             padding: '7px 10px', boxSizing: 'border-box',
                             resize: 'vertical', lineHeight: 1.5,
-                            background: '#fafafa', color: '#374151'
+                            background: '#F7F6F4', color: '#5C463A'
                           }}
                         />
                         {ann.alumno_nombre && (
-                          <p style={{ fontSize: 11, color: '#94a3b8' }}>
+                          <p style={{ fontSize: 11, color: '#9C8A7E' }}>
                             📌 Alumno mencionado en el libro: <strong>{ann.alumno_nombre}</strong>
                           </p>
                         )}
@@ -517,12 +517,12 @@ export default function OcrAnnotationPage() {
           {/* Panel derecho: seleccionar alumno */}
           <div style={{ position: 'sticky', top: 80 }}>
             <div className="card" style={{ border: `1.5px solid ${primary}40` }}>
-              <p style={{ fontWeight: 700, fontSize: 15, color: '#0f172a', marginBottom: 16 }}>
+              <p style={{ fontWeight: 700, fontSize: 15, color: '#2B1B14', marginBottom: 16 }}>
                 👤 Asignar a alumno
               </p>
 
               <div className="form-group" style={{ marginBottom: 14 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#6B5446', marginBottom: 6 }}>
                   Alumno *
                 </label>
                 <select
@@ -540,7 +540,7 @@ export default function OcrAnnotationPage() {
               </div>
 
               <div className="form-group" style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#6B5446', marginBottom: 6 }}>
                   Curso *
                 </label>
                 <select
@@ -557,15 +557,15 @@ export default function OcrAnnotationPage() {
 
               {/* Resumen */}
               <div style={{
-                background: '#f8fafc', borderRadius: 8,
-                padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#64748b'
+                background: '#F7F6F4', borderRadius: 8,
+                padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#6B5446'
               }}>
                 <p style={{ marginBottom: 4 }}>
-                  ✅ <strong style={{ color: '#0f172a' }}>{annotations.filter(a => a.selected).length}</strong> anotaciones para guardar
+                  ✅ <strong style={{ color: '#2B1B14' }}>{annotations.filter(a => a.selected).length}</strong> anotaciones para guardar
                 </p>
                 {selectedStudent && (
                   <p>
-                    👤 <strong style={{ color: '#0f172a' }}>
+                    👤 <strong style={{ color: '#2B1B14' }}>
                       {students.find(s => s.id === parseInt(selectedStudent))?.first_name}{' '}
                       {students.find(s => s.id === parseInt(selectedStudent))?.last_name}
                     </strong>
@@ -596,11 +596,11 @@ export default function OcrAnnotationPage() {
               {/* Vista previa thumbnail */}
               {imagePreview && (
                 <div style={{ marginTop: 16 }}>
-                  <p style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6 }}>Foto procesada:</p>
+                  <p style={{ fontSize: 11, color: '#9C8A7E', marginBottom: 6 }}>Foto procesada:</p>
                   <img
                     src={imagePreview}
                     alt="preview"
-                    style={{ width: '100%', borderRadius: 8, maxHeight: 160, objectFit: 'cover', border: '1px solid #e2e8f0' }}
+                    style={{ width: '100%', borderRadius: 8, maxHeight: 160, objectFit: 'cover', border: '1px solid #ECE8E3' }}
                   />
                 </div>
               )}
@@ -609,13 +609,13 @@ export default function OcrAnnotationPage() {
             {/* Texto transcrito completo (colapsable) */}
             {transcription?.texto_completo && (
               <details style={{ marginTop: 14 }} className="card">
-                <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#64748b' }}>
+                <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#6B5446' }}>
                   📄 Ver texto completo transcrito
                 </summary>
                 <pre style={{
-                  marginTop: 10, fontSize: 11, color: '#475569',
+                  marginTop: 10, fontSize: 11, color: '#5C463A',
                   whiteSpace: 'pre-wrap', lineHeight: 1.6,
-                  fontFamily: 'inherit', background: '#f8fafc',
+                  fontFamily: 'inherit', background: '#F7F6F4',
                   padding: 10, borderRadius: 6, maxHeight: 200, overflowY: 'auto'
                 }}>
                   {transcription.texto_completo}
@@ -630,8 +630,8 @@ export default function OcrAnnotationPage() {
       {step === STEPS.DONE && (
         <div className="card" style={{ textAlign: 'center', padding: '48px 24px', maxWidth: 480, margin: '0 auto' }}>
           <div style={{ fontSize: 64, marginBottom: 16 }}>🎉</div>
-          <h2 style={{ fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>¡Anotaciones guardadas!</h2>
-          <p style={{ color: '#64748b', marginBottom: 28 }}>
+          <h2 style={{ fontWeight: 800, color: '#2B1B14', marginBottom: 8 }}>¡Anotaciones guardadas!</h2>
+          <p style={{ color: '#6B5446', marginBottom: 28 }}>
             Las anotaciones fueron registradas exitosamente en la hoja de vida del alumno.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>

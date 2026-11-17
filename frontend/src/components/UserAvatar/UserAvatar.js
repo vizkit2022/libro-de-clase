@@ -18,8 +18,8 @@ import axios from 'axios';
  */
 
 const AVATAR_COLORS = [
-  '#6366f1','#ec4899','#f59e0b','#10b981',
-  '#3b82f6','#ef4444','#8b5cf6','#14b8a6',
+  '#2B1B14','#8A2846','#E8A317','#2F7D5B',
+  '#2B1B14','#B8321B','#8A2846','#2F7D5B',
 ];
 
 export function avatarColor(id) {

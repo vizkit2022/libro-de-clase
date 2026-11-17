@@ -6,7 +6,7 @@ import UserAvatar, { avatarColor } from '../../components/UserAvatar/UserAvatar'
 
 export default function ApoderadoPage() {
   const { user, school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
 
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,12 +54,12 @@ export default function ApoderadoPage() {
   };
 
   const colorNota = (nota) => {
-    if (nota === null || nota === undefined) return '#94a3b8';
+    if (nota === null || nota === undefined) return '#9C8A7E';
     const n = parseFloat(nota);
-    if (n >= 6.0) return '#10b981';
-    if (n >= 5.0) return '#3b82f6';
-    if (n >= 4.0) return '#f59e0b';
-    return '#ef4444';
+    if (n >= 6.0) return '#2F7D5B';
+    if (n >= 5.0) return '#2B1B14';
+    if (n >= 4.0) return '#E8A317';
+    return '#B8321B';
   };
 
   const getCourseFromEnrollments = (life, s) => {
@@ -118,16 +118,16 @@ export default function ApoderadoPage() {
                       color={avatarColor(s.id)}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontWeight: 700, fontSize: 16, color: '#0f172a', margin: 0 }}>
+                      <p style={{ fontWeight: 700, fontSize: 16, color: '#2B1B14', margin: 0 }}>
                         {s.first_name} {s.last_name}
                       </p>
                       {courseName && (
-                        <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 0' }}>
+                        <p style={{ fontSize: 12, color: '#6B5446', margin: '2px 0 0' }}>
                           📚 {courseName}{s.relationship ? ` · ${s.relationship}` : ''}
                         </p>
                       )}
                       {!life && (
-                        <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0' }}>Cargando...</p>
+                        <p style={{ fontSize: 12, color: '#9C8A7E', margin: '2px 0 0' }}>Cargando...</p>
                       )}
                     </div>
                     {prom !== null && (
@@ -146,7 +146,7 @@ export default function ApoderadoPage() {
                         }}>
                           {prom}
                         </p>
-                        <p style={{ fontSize: 10, color: '#94a3b8', margin: '2px 0 0', textTransform: 'uppercase' }}>prom.</p>
+                        <p style={{ fontSize: 10, color: '#9C8A7E', margin: '2px 0 0', textTransform: 'uppercase' }}>prom.</p>
                       </div>
                     )}
                   </div>
@@ -157,7 +157,7 @@ export default function ApoderadoPage() {
                   {subjects.length > 0 ? (
                     <>
                       <p style={{
-                        fontSize: 11, fontWeight: 700, color: '#94a3b8',
+                        fontSize: 11, fontWeight: 700, color: '#9C8A7E',
                         textTransform: 'uppercase', letterSpacing: '0.06em',
                         margin: '0 0 8px'
                       }}>
@@ -166,9 +166,9 @@ export default function ApoderadoPage() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                         {subjects.slice(0, 5).map(sub => (
                           <div key={sub.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 13, color: '#374151', flex: 1 }}>{sub.name}</span>
+                            <span style={{ fontSize: 13, color: '#5C463A', flex: 1 }}>{sub.name}</span>
                             {/* Barra de progreso visual */}
-                            <div style={{ width: 60, height: 5, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden' }}>
+                            <div style={{ width: 60, height: 5, background: '#F3F0EC', borderRadius: 3, overflow: 'hidden' }}>
                               {sub.avg !== null && (
                                 <div style={{
                                   width: `${(sub.avg / 7) * 100}%`,
@@ -184,20 +184,20 @@ export default function ApoderadoPage() {
                           </div>
                         ))}
                         {subjects.length > 5 && (
-                          <p style={{ fontSize: 12, color: '#94a3b8', margin: '4px 0 0' }}>
+                          <p style={{ fontSize: 12, color: '#9C8A7E', margin: '4px 0 0' }}>
                             + {subjects.length - 5} asignatura(s) más
                           </p>
                         )}
                       </div>
                     </>
                   ) : life ? (
-                    <p style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', padding: '6px 0' }}>
+                    <p style={{ fontSize: 13, color: '#9C8A7E', textAlign: 'center', padding: '6px 0' }}>
                       Sin calificaciones publicadas aún
                     </p>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', padding: '6px 0' }}>
                       <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                      <span style={{ fontSize: 13, color: '#94a3b8' }}>Cargando notas...</span>
+                      <span style={{ fontSize: 13, color: '#9C8A7E' }}>Cargando notas...</span>
                     </div>
                   )}
                 </div>
@@ -207,7 +207,7 @@ export default function ApoderadoPage() {
                   <div style={{ padding: '0 20px 12px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {posCount > 0 && (
                       <span style={{
-                        fontSize: 12, background: '#ecfdf5', color: '#065f46',
+                        fontSize: 12, background: '#DDF0E6', color: '#1F5E43',
                         borderRadius: 6, padding: '3px 10px', fontWeight: 600
                       }}>
                         ✅ {posCount} positiva{posCount !== 1 ? 's' : ''}
@@ -215,7 +215,7 @@ export default function ApoderadoPage() {
                     )}
                     {negCount > 0 && (
                       <span style={{
-                        fontSize: 12, background: '#fef2f2', color: '#991b1b',
+                        fontSize: 12, background: '#FEF1EB', color: '#9A3412',
                         borderRadius: 6, padding: '3px 10px', fontWeight: 600
                       }}>
                         ⚠️ {negCount} negativa{negCount !== 1 ? 's' : ''}
@@ -227,7 +227,7 @@ export default function ApoderadoPage() {
                 {/* Botón de acción */}
                 <div style={{
                   padding: '12px 20px',
-                  borderTop: '1px solid #f1f5f9',
+                  borderTop: '1px solid #F3F0EC',
                 }}>
                   <Link
                     to={`/students/${s.id}/life`}

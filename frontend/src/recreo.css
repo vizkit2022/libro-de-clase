@@ -1,0 +1,81 @@
+/* Sistema de diseño recreo.edu (versión blanca) para la plataforma.
+   Mismos tokens que el sitio público: fondo blanco, texto cacao, la
+   campana sol como firma y el naranja solo como acento. */
+
+:root {
+  --papel: #FFFFFF; --tiza: #FFFFFF; --arena: #ECE8E3; --nube: #F7F6F4;
+  --cacao: #2B1B14; --cacao-suave: #5C463A; --cacao-tenue: #6B5446;
+  --naranja: #FF7417; --ladrillo: #C2410C; --sol: #FFC94A; --chicle: #F9A8C0;
+  --patio: #2F7D5B; --cielo: #9CCFEF;
+  --exito-suave: #DDF0E6; --exito-texto: #1F5E43;
+  --aviso-suave: #FFF0C7; --aviso-texto: #7A4B00;
+  --alerta-suave: #FDE2D7; --alerta-texto: #9A3412;
+  --convivencia-suave: #FCE4EC; --convivencia-texto: #8A2846;
+  --info-suave: #E3F1FA; --info-texto: #1D4F70;
+  --font-display: "Fredoka", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Figtree", system-ui, sans-serif;
+  --radius-sm: 8px; --radius-md: 16px; --radius-lg: 24px; --radius-pill: 999px;
+
+  /* Variables heredadas de la app, ahora con la paleta nueva */
+  --color-primary: #2B1B14;
+  --color-secondary: #3D2A21;
+  --color-accent: #FF7417;
+  --primary: #2B1B14;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--cacao);
+  background: var(--nube);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font-family: inherit; }
+
+/* Títulos en Fredoka */
+h1, h2, h3,
+.page-title, .modal-header h2, .modal-header h3,
+.kv-titulo h1, .kv-caja h2, .kv-pitch h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+
+a { color: var(--ladrillo); }
+::selection { background: var(--sol); color: var(--cacao); }
+:focus-visible { outline-color: var(--ladrillo); }
+
+/* ── Componentes heredados: sin sombras, borde arena, radios del sistema ── */
+.card, .card-sm, .stat-card, .table-wrapper {
+  box-shadow: none !important;
+  border: 1.5px solid var(--arena) !important;
+  border-radius: var(--radius-md) !important;
+}
+.stat-card h3, .stat-info h3 { font-family: var(--font-display); }
+
+.btn { border-radius: var(--radius-pill) !important; font-weight: 700; }
+.btn-primary { background: var(--cacao) !important; color: #fff !important; box-shadow: none !important; }
+.btn-primary:hover:not(:disabled) { background: #3D2A21 !important; }
+.btn-secondary {
+  background: #fff !important; color: var(--cacao) !important;
+  border: 1.5px solid var(--cacao) !important; box-shadow: none !important;
+}
+.btn-secondary:hover:not(:disabled) { background: var(--nube) !important; }
+
+.form-group input, .form-group select, .form-group textarea, .search-bar {
+  border: 1.5px solid var(--arena) !important;
+  border-radius: 12px !important;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus,
+.search-bar:focus-within {
+  border-color: var(--cacao) !important;
+  box-shadow: 0 0 0 3px rgba(255, 193, 74, .45) !important;
+}
+
+.modal { border-radius: var(--radius-lg) !important; }
+.modal-overlay { background: rgba(43, 27, 20, .45) !important; }
+
+th { color: var(--cacao-tenue) !important; background: var(--nube) !important; }
+
+.tab.active { color: var(--cacao) !important; border-color: var(--naranja) !important; }
+.spinner { border-top-color: var(--naranja) !important; }
+.toast-success { background: var(--exito-texto) !important; }

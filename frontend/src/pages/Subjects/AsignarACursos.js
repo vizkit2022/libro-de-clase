@@ -68,18 +68,18 @@ export default function AsignarACursos({ asignatura, onCerrar, onListo }) {
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)',
+      position: 'fixed', inset: 0, background: 'rgba(43, 27, 20,.45)',
       display: 'grid', placeItems: 'center', zIndex: 1000, padding: 16,
     }} onClick={onCerrar}>
       <div onClick={e => e.stopPropagation()} style={{
         background: '#fff', borderRadius: 16, maxWidth: 560, width: '100%',
-        maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(15,23,42,.25)',
+        maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(43, 27, 20,.25)',
       }}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f172a' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid #F3F0EC' }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#2B1B14' }}>
             Asignar «{asignatura.name}» a los cursos
           </h3>
-          <p style={{ margin: '5px 0 0', fontSize: 13, color: '#64748b' }}>
+          <p style={{ margin: '5px 0 0', fontSize: 13, color: '#6B5446' }}>
             Se agrega a los cursos que todavía no la tienen. Los que ya la tienen
             no se tocan.
           </p>
@@ -87,18 +87,18 @@ export default function AsignarACursos({ asignatura, onCerrar, onListo }) {
 
         <div style={{ padding: 24 }}>
           {anios.length === 0 && !error && (
-            <p style={{ fontSize: 13, color: '#64748b' }}>Cargando cursos…</p>
+            <p style={{ fontSize: 13, color: '#6B5446' }}>Cargando cursos…</p>
           )}
 
           {anios.length > 0 && (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <label htmlFor="aac-year" style={{ display: 'block', fontSize: 12.5, fontWeight: 650, color: '#475569', marginBottom: 6 }}>
+                  <label htmlFor="aac-year" style={{ display: 'block', fontSize: 12.5, fontWeight: 650, color: '#5C463A', marginBottom: 6 }}>
                     Año
                   </label>
                   <select id="aac-year" value={year ?? ''} onChange={e => setYear(Number(e.target.value))}
-                          style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid #e2e8f0', fontSize: 13.5, fontFamily: 'inherit' }}>
+                          style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid #ECE8E3', fontSize: 13.5, fontFamily: 'inherit' }}>
                     {anios.map(a => (
                       <option key={a.year} value={a.year}>
                         {a.year} · {a.cursos} curso{a.cursos === 1 ? '' : 's'}
@@ -107,21 +107,21 @@ export default function AsignarACursos({ asignatura, onCerrar, onListo }) {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="aac-horas" style={{ display: 'block', fontSize: 12.5, fontWeight: 650, color: '#475569', marginBottom: 6 }}>
+                  <label htmlFor="aac-horas" style={{ display: 'block', fontSize: 12.5, fontWeight: 650, color: '#5C463A', marginBottom: 6 }}>
                     Horas semanales
                   </label>
                   <input id="aac-horas" type="number" min="1" max="45" value={horas}
                          onChange={e => setHoras(Number(e.target.value) || 1)}
-                         style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid #e2e8f0', fontSize: 13.5, fontFamily: 'inherit' }} />
+                         style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid #ECE8E3', fontSize: 13.5, fontFamily: 'inherit' }} />
                 </div>
               </div>
 
               {nivelesDisponibles.length > 1 && (
                 <div style={{ marginTop: 18 }}>
-                  <p style={{ fontSize: 12.5, fontWeight: 650, color: '#475569', margin: '0 0 4px' }}>
+                  <p style={{ fontSize: 12.5, fontWeight: 650, color: '#5C463A', margin: '0 0 4px' }}>
                     Niveles
                   </p>
-                  <p style={{ fontSize: 11.5, color: '#94a3b8', margin: '0 0 8px' }}>
+                  <p style={{ fontSize: 11.5, color: '#9C8A7E', margin: '0 0 8px' }}>
                     Sin seleccionar ninguno va a todos. Útil cuando la asignatura no
                     corresponde a todos los niveles.
                   </p>
@@ -131,9 +131,9 @@ export default function AsignarACursos({ asignatura, onCerrar, onListo }) {
                       return (
                         <button key={n} type="button" onClick={() => alternarNivel(n)}
                                 style={{
-                                  border: `1px solid ${activo ? '#3b4fd8' : '#e2e8f0'}`,
-                                  background: activo ? '#eef2ff' : '#fff',
-                                  color: activo ? '#2a2eb0' : '#475569',
+                                  border: `1px solid ${activo ? '#2B1B14' : '#ECE8E3'}`,
+                                  background: activo ? '#FFF8E6' : '#fff',
+                                  color: activo ? '#9A3412' : '#5C463A',
                                   borderRadius: 8, padding: '5px 11px', fontSize: 12.5,
                                   fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                                 }}>
@@ -149,9 +149,9 @@ export default function AsignarACursos({ asignatura, onCerrar, onListo }) {
                 <div style={{
                   marginTop: 20, borderRadius: 10, padding: '13px 16px', fontSize: 13.3,
                   lineHeight: 1.6,
-                  background: previa.por_crear ? '#eef2ff' : '#f1f5f9',
-                  border: `1px solid ${previa.por_crear ? '#c7d2fe' : '#e2e8f0'}`,
-                  color: previa.por_crear ? '#2a2eb0' : '#475569',
+                  background: previa.por_crear ? '#FFF8E6' : '#F3F0EC',
+                  border: `1px solid ${previa.por_crear ? '#FFE29A' : '#ECE8E3'}`,
+                  color: previa.por_crear ? '#9A3412' : '#5C463A',
                 }}>
                   {previa.por_crear > 0 ? (
                     <>
@@ -171,14 +171,14 @@ export default function AsignarACursos({ asignatura, onCerrar, onListo }) {
           )}
 
           {error && (
-            <div style={{ marginTop: 16, background: '#fee2e2', border: '1px solid #fecaca',
-                          color: '#b91c1c', borderRadius: 10, padding: '11px 14px', fontSize: 13 }}>
+            <div style={{ marginTop: 16, background: '#FDE2D7', border: '1px solid #F8C4AE',
+                          color: '#9A3412', borderRadius: 10, padding: '11px 14px', fontSize: 13 }}>
               {error}
             </div>
           )}
         </div>
 
-        <div style={{ padding: '16px 24px', borderTop: '1px solid #f1f5f9',
+        <div style={{ padding: '16px 24px', borderTop: '1px solid #F3F0EC',
                       display: 'flex', gap: 9, justifyContent: 'flex-end' }}>
           <button className="btn btn-secondary" onClick={onCerrar}>Cancelar</button>
           <button className="btn btn-primary" onClick={aplicar}

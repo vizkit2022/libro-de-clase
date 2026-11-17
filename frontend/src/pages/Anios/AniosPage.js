@@ -20,8 +20,8 @@ function ChipEstado({ estado }) {
   const cerrado = estado === 'cerrado';
   return (
     <span className="ui-chip" style={cerrado
-      ? { color: '#92400e', background: '#fef3c7' }
-      : { color: '#15803d', background: '#dcfce7' }}>
+      ? { color: '#7A4B00', background: '#FFF0C7' }
+      : { color: '#1F5E43', background: '#DDF0E6' }}>
       {cerrado && <Icono nombre="candado" tam={11} />}
       {cerrado ? 'Cerrado' : 'Abierto'}
     </span>
@@ -272,7 +272,7 @@ export default function AniosPage() {
   if (error && !datos) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: 40, maxWidth: 560, margin: '20px auto' }}>
-        <p style={{ fontWeight: 650, color: '#475569', margin: '0 0 12px' }}>{error}</p>
+        <p style={{ fontWeight: 650, color: '#5C463A', margin: '0 0 12px' }}>{error}</p>
         <button type="button" className="ui-btn ui-btn-pri" onClick={cargar}>Reintentar</button>
       </div>
     );
@@ -321,8 +321,8 @@ export default function AniosPage() {
                   <td className="num">{n(a.alumnos_activos)}</td>
                   <td className="num">
                     {a.por_confirmar > 0
-                      ? <span className="ui-chip" style={{ color: '#b45309', background: '#fef3c7' }}>{n(a.por_confirmar)}</span>
-                      : <span style={{ color: '#cbd5e1' }}>0</span>}
+                      ? <span className="ui-chip" style={{ color: '#7A4B00', background: '#FFF0C7' }}>{n(a.por_confirmar)}</span>
+                      : <span style={{ color: '#D9D2CA' }}>0</span>}
                   </td>
                   <td className="an-reg">
                     {a.estado === 'cerrado' && a.closed_at && (
@@ -330,7 +330,7 @@ export default function AniosPage() {
                     )}
                     {a.estado !== 'cerrado' && a.reopened_at && <span>Reabierto {fmtFechaHora(a.reopened_at)}</span>}
                     {a.created_from_year && <span>Creado a partir de {a.created_from_year}</span>}
-                    {!a.closed_at && !a.reopened_at && !a.created_from_year && <span style={{ color: '#cbd5e1' }}>—</span>}
+                    {!a.closed_at && !a.reopened_at && !a.created_from_year && <span style={{ color: '#D9D2CA' }}>—</span>}
                   </td>
                   <td className="an-acc">
                     {a.year !== anioActual && setAnio && (
@@ -363,7 +363,7 @@ export default function AniosPage() {
       )}
 
       {toast && (
-        <div className="an-toast" style={{ background: toast.tipo === 'err' ? '#dc2626' : '#16a34a' }}>{toast.msg}</div>
+        <div className="an-toast" style={{ background: toast.tipo === 'err' ? '#B8321B' : '#2F7D5B' }}>{toast.msg}</div>
       )}
     </div>
   );

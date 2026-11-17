@@ -3,12 +3,12 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import AsignarACursos from './AsignarACursos';
 
-const COLORS = ['#EF4444','#F97316','#EAB308','#22C55E','#06B6D4','#3B82F6','#8B5CF6','#EC4899','#10B981','#6366F1'];
-const EMPTY = { name:'', code:'', ministry_code:'', description:'', color:'#6366F1' };
+const COLORS = ['#B8321B','#FF7417','#E8A317','#2F7D5B','#1D4F70','#2B1B14','#8A2846','#8A2846','#2F7D5B','#2B1B14'];
+const EMPTY = { name:'', code:'', ministry_code:'', description:'', color:'#C2410C' };
 
 export default function SubjectsPage() {
   const { school, user } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const [subjects, setSubjects] = useState([]);
   const [ministry, setMinistry] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -62,11 +62,11 @@ export default function SubjectsPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {subjects.map(s => (
-                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, background: '#f8fafc' }}>
+                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, background: '#F7F6F4' }}>
                   <div style={{ width: 12, height: 12, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
                     <p style={{ fontWeight: 600, fontSize: 14 }}>{s.name}</p>
-                    <p style={{ fontSize: 11, color: '#64748b' }}>{s.code}{s.ministry_code ? ` · Min: ${s.ministry_code}` : ''}</p>
+                    <p style={{ fontSize: 11, color: '#6B5446' }}>{s.code}{s.ministry_code ? ` · Min: ${s.ministry_code}` : ''}</p>
                   </div>
                   {canEdit && (
                     <div style={{ display: 'flex', gap: 4 }}>
@@ -88,7 +88,7 @@ export default function SubjectsPage() {
         {/* Asignaturas ministerio */}
         <div className="card">
           <h3 style={{ fontWeight: 700, marginBottom: 4 }}>Asignaturas del Ministerio</h3>
-          <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Haz clic para agregar al colegio</p>
+          <p style={{ fontSize: 13, color: '#6B5446', marginBottom: 16 }}>Haz clic para agregar al colegio</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {ministry.map((m, i) => {
               const exists = subjects.some(s => s.ministry_code === m.code);
@@ -96,14 +96,14 @@ export default function SubjectsPage() {
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '8px 12px', borderRadius: 8, cursor: exists ? 'default' : 'pointer',
-                  background: exists ? '#f0fdf4' : '#f8fafc',
-                  border: `1px solid ${exists ? '#bbf7d0' : '#e2e8f0'}`,
+                  background: exists ? '#DDF0E6' : '#F7F6F4',
+                  border: `1px solid ${exists ? '#B8E0CB' : '#ECE8E3'}`,
                   opacity: exists ? 0.7 : 1
                 }}
                 onClick={() => { if (!exists && canEdit) { fillFromMinistry(m); setEditing(null); setShowModal(true); } }}>
-                  <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#64748b', width: 32 }}>{m.code}</span>
+                  <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#6B5446', width: 32 }}>{m.code}</span>
                   <span style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{m.name}</span>
-                  {exists ? <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>✓ Agregada</span>
+                  {exists ? <span style={{ fontSize: 11, color: '#2F7D5B', fontWeight: 600 }}>✓ Agregada</span>
                            : canEdit ? <span style={{ fontSize: 11, color: primary, fontWeight: 600 }}>+ Agregar</span> : null}
                 </div>
               );
@@ -140,7 +140,7 @@ export default function SubjectsPage() {
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {COLORS.map(c => (
                         <button type="button" key={c} onClick={() => setForm({...form, color: c})}
-                          style={{ width: 32, height: 32, borderRadius: 8, background: c, border: form.color === c ? '3px solid #0f172a' : '2px solid transparent', cursor: 'pointer' }} />
+                          style={{ width: 32, height: 32, borderRadius: 8, background: c, border: form.color === c ? '3px solid #2B1B14' : '2px solid transparent', cursor: 'pointer' }} />
                       ))}
                     </div>
                   </div>

@@ -9,11 +9,11 @@ const MAX_NOTAS = 15;
 const gradeColor = (v) => {
   const n = parseFloat(v);
   if (isNaN(n) || v === '') return null;
-  if (n >= 6.0) return { bg: '#dcfce7', border: '#86efac', color: '#166534', dot: '#16a34a' };
-  if (n >= 5.0) return { bg: '#d1fae5', border: '#6ee7b7', color: '#065f46', dot: '#10b981' };
-  if (n >= 4.0) return { bg: '#fef9c3', border: '#fde047', color: '#854d0e', dot: '#ca8a04' };
-  if (n >= 3.0) return { bg: '#ffedd5', border: '#fdba74', color: '#9a3412', dot: '#ea580c' };
-  return       { bg: '#fee2e2', border: '#fca5a5', color: '#991b1b', dot: '#dc2626' };
+  if (n >= 6.0) return { bg: '#DDF0E6', border: '#B8E0CB', color: '#1F5E43', dot: '#2F7D5B' };
+  if (n >= 5.0) return { bg: '#DDF0E6', border: '#B8E0CB', color: '#1F5E43', dot: '#2F7D5B' };
+  if (n >= 4.0) return { bg: '#FFF0C7', border: '#FFE29A', color: '#7A4B00', dot: '#B26B00' };
+  if (n >= 3.0) return { bg: '#FFE6D5', border: '#fdba74', color: '#9a3412', dot: '#FF7417' };
+  return       { bg: '#FDE2D7', border: '#F8C4AE', color: '#9A3412', dot: '#B8321B' };
 };
 
 const calcAvg = (vals) => {
@@ -44,10 +44,10 @@ const GradeCell = React.memo(({ value, onChange, onKeyDown, inputRef, isExisting
           textAlign: 'center',
           fontSize: 13,
           fontWeight: col ? 700 : 400,
-          border: `2px solid ${col ? col.border : '#e2e8f0'}`,
+          border: `2px solid ${col ? col.border : '#ECE8E3'}`,
           borderRadius: 8,
-          background: col ? col.bg : '#f8fafc',
-          color: col ? col.color : '#94a3b8',
+          background: col ? col.bg : '#F7F6F4',
+          color: col ? col.color : '#9C8A7E',
           outline: 'none',
           cursor: 'text',
           transition: 'all 0.15s',
@@ -70,7 +70,7 @@ const GradeCell = React.memo(({ value, onChange, onKeyDown, inputRef, isExisting
           <span style={{
             position: 'absolute', top: 1, right: 2,
             width: 7, height: 7, borderRadius: '50%',
-            background: '#fff', border: '2px solid #f59e0b', boxSizing: 'border-box', flexShrink: 0
+            background: '#fff', border: '2px solid #E8A317', boxSizing: 'border-box', flexShrink: 0
           }} title="Nota guardada, pendiente de publicar (aún no visible para apoderados)" />
         )
       )}
@@ -81,7 +81,7 @@ const GradeCell = React.memo(({ value, onChange, onKeyDown, inputRef, isExisting
 // ── Componente principal ────────────────────────────────────────────
 export default function GradesPage() {
   const { school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
 
   const [courses, setCourses]           = useState([]);
   const [periods, setPeriods]           = useState([]);
@@ -333,7 +333,7 @@ export default function GradesPage() {
 
   const cs = courseDetail?.subjects?.find(s => String(s.id) === selectedSubject);
   const visibleCols = getUsedCols();
-  const avatarColors = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6','#0ea5e9'];
+  const avatarColors = ['#2B1B14','#8A2846','#E8A317','#2F7D5B','#2B1B14','#B8321B','#8A2846','#1D4F70'];
   const avatarColor = (id) => avatarColors[id % avatarColors.length];
 
   // ── Summary view ─────────────────────────────────────────────────
@@ -341,15 +341,15 @@ export default function GradesPage() {
     if (!courseDetail) return null;
     return (
       <div className="card" style={{ padding: 0 }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #F3F0EC' }}>
           <h3 style={{ fontWeight: 700, fontSize: 15 }}>Resumen del curso: {courseDetail.name}</h3>
-          <p style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>Promedios por asignatura</p>
+          <p style={{ fontSize: 12, color: '#6B5446', marginTop: 3 }}>Promedios por asignatura</p>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead style={{ background: '#f8fafc' }}>
+            <thead style={{ background: '#F7F6F4' }}>
               <tr>
-                <th style={{ ...thStyle, minWidth: 180, position: 'sticky', left: 0, background: '#f8fafc', zIndex: 2 }}>Alumno</th>
+                <th style={{ ...thStyle, minWidth: 180, position: 'sticky', left: 0, background: '#F7F6F4', zIndex: 2 }}>Alumno</th>
                 {courseDetail.subjects?.map(s => (
                   <th key={s.id} style={{ ...thStyle, textAlign: 'center', minWidth: 90 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
@@ -358,7 +358,7 @@ export default function GradesPage() {
                     </div>
                   </th>
                 ))}
-                <th style={{ ...thStyle, textAlign: 'center', background: '#f1f5f9' }}>Prom. Gral.</th>
+                <th style={{ ...thStyle, textAlign: 'center', background: '#F3F0EC' }}>Prom. Gral.</th>
               </tr>
             </thead>
             <tbody>
@@ -374,7 +374,7 @@ export default function GradesPage() {
 
                 return (
                   <tr key={e.id} style={{ transition: 'background .15s' }}
-                    onMouseEnter={e2 => e2.currentTarget.style.background = '#fafafa'}
+                    onMouseEnter={e2 => e2.currentTarget.style.background = '#F7F6F4'}
                     onMouseLeave={e2 => e2.currentTarget.style.background = ''}>
                     <td style={{ ...tdStyle, position: 'sticky', left: 0, background: 'white', zIndex: 1, fontWeight: 600 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -399,11 +399,11 @@ export default function GradesPage() {
                               background: col?.bg, color: col?.color, border: `1.5px solid ${col?.border}` }}>
                               {avg}
                             </span>
-                          ) : <span style={{ color: '#d1d5db', fontSize: 12 }}>—</span>}
+                          ) : <span style={{ color: '#D9D2CA', fontSize: 12 }}>—</span>}
                         </td>
                       );
                     })}
-                    <td style={{ ...tdStyle, textAlign: 'center', background: '#fafafa' }}>
+                    <td style={{ ...tdStyle, textAlign: 'center', background: '#F7F6F4' }}>
                       {general ? (() => {
                         const col = gradeColor(general);
                         return (
@@ -413,7 +413,7 @@ export default function GradesPage() {
                             {general}
                           </span>
                         );
-                      })() : <span style={{ color: '#d1d5db' }}>—</span>}
+                      })() : <span style={{ color: '#D9D2CA' }}>—</span>}
                     </td>
                   </tr>
                 );
@@ -430,16 +430,16 @@ export default function GradesPage() {
     padding: '10px 12px',
     fontSize: 11,
     fontWeight: 600,
-    color: '#64748b',
+    color: '#6B5446',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
-    borderBottom: '1px solid #e2e8f0',
+    borderBottom: '1px solid #ECE8E3',
     whiteSpace: 'nowrap',
     textAlign: 'left',
   };
   const tdStyle = {
     padding: '6px 10px',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #F3F0EC',
     verticalAlign: 'middle',
   };
 
@@ -488,11 +488,11 @@ export default function GradesPage() {
           )}
 
           {/* Toggle vista */}
-          <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 9, padding: 4, alignSelf: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 4, background: '#F3F0EC', borderRadius: 9, padding: 4, alignSelf: 'flex-end' }}>
             <button
               style={{ padding: '7px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                 background: view === 'grid' ? 'white' : 'transparent',
-                color: view === 'grid' ? primary : '#64748b',
+                color: view === 'grid' ? primary : '#6B5446',
                 boxShadow: view === 'grid' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none' }}
               onClick={() => setView('grid')}>
               📋 Grilla
@@ -500,7 +500,7 @@ export default function GradesPage() {
             <button
               style={{ padding: '7px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                 background: view === 'summary' ? 'white' : 'transparent',
-                color: view === 'summary' ? primary : '#64748b',
+                color: view === 'summary' ? primary : '#6B5446',
                 boxShadow: view === 'summary' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none' }}
               onClick={() => setView('summary')}>
               👤 Resumen
@@ -515,8 +515,8 @@ export default function GradesPage() {
               disabled={saving}
               style={{
                 marginLeft: 'auto', alignSelf: 'flex-end',
-                background: dirty ? primary : '#e2e8f0',
-                color: dirty ? 'white' : '#94a3b8',
+                background: dirty ? primary : '#ECE8E3',
+                color: dirty ? 'white' : '#9C8A7E',
                 boxShadow: dirty ? `0 2px 8px ${primary}44` : 'none',
                 transition: 'all 0.2s',
                 padding: '9px 20px', borderRadius: 10, fontWeight: 700, fontSize: 13,
@@ -546,24 +546,24 @@ export default function GradesPage() {
 
       ) : (
         /* ══════════ GRILLA PRINCIPAL ══════════ */
-        <div style={{ borderRadius: 16, background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+        <div style={{ borderRadius: 16, background: 'white', border: '1px solid #F3F0EC', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
 
           {/* Cabecera de la grilla */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '14px 20px', borderBottom: '2px solid #f1f5f9', background: 'white' }}>
+            padding: '14px 20px', borderBottom: '2px solid #F3F0EC', background: 'white' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {cs?.subject?.color && (
                   <span style={{ width: 12, height: 12, borderRadius: '50%', background: cs.subject.color, flexShrink: 0, display: 'inline-block' }} />
                 )}
-                <h3 style={{ fontWeight: 800, fontSize: 16, color: '#0f172a' }}>
-                  {cs?.subject?.name || '—'} <span style={{ color: '#94a3b8', fontWeight: 400 }}>—</span> {courseDetail.name}
+                <h3 style={{ fontWeight: 800, fontSize: 16, color: '#2B1B14' }}>
+                  {cs?.subject?.name || '—'} <span style={{ color: '#9C8A7E', fontWeight: 400 }}>—</span> {courseDetail.name}
                 </h3>
               </div>
               {cs?.teacher && (
-                <p style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>
+                <p style={{ fontSize: 12, color: '#6B5446', marginTop: 3 }}>
                   👨‍🏫 {cs.teacher.first_name} {cs.teacher.last_name}
-                  {' · '}<span style={{ color: '#94a3b8' }}>Máx. {MAX_NOTAS} notas por período · {courseDetail.students?.length} alumnos</span>
+                  {' · '}<span style={{ color: '#9C8A7E' }}>Máx. {MAX_NOTAS} notas por período · {courseDetail.students?.length} alumnos</span>
                 </p>
               )}
             </div>
@@ -572,15 +572,15 @@ export default function GradesPage() {
               {existingGrades.length > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 6 }}>
                   <span style={{ padding: '3px 9px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-                    background: pendingCount ? '#fef3c7' : '#dcfce7', color: pendingCount ? '#92400e' : '#166534',
-                    border: `1.5px solid ${pendingCount ? '#fcd34d' : '#86efac'}` }}
+                    background: pendingCount ? '#FFF0C7' : '#DDF0E6', color: pendingCount ? '#7A4B00' : '#1F5E43',
+                    border: `1.5px solid ${pendingCount ? '#FFE29A' : '#B8E0CB'}` }}
                     title="Las notas pendientes solo las ve el equipo docente; al publicar quedan visibles para apoderados y alumnos">
                     {pendingCount ? `⏳ ${pendingCount} sin publicar` : `✓ ${publishedCount} publicadas`}
                   </span>
                   {pendingCount > 0 && (
                     <button onClick={() => handlePublish(true)} disabled={publishing || dirty}
                       style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, border: 'none', fontFamily: 'inherit',
-                        cursor: publishing || dirty ? 'not-allowed' : 'pointer', background: dirty ? '#e2e8f0' : '#f59e0b', color: dirty ? '#94a3b8' : 'white' }}
+                        cursor: publishing || dirty ? 'not-allowed' : 'pointer', background: dirty ? '#ECE8E3' : '#E8A317', color: dirty ? '#9C8A7E' : 'white' }}
                       title={dirty ? 'Guarda las notas primero' : 'Publicar las notas pendientes de esta asignatura y período'}>
                       {publishing ? '⏳' : '📢 Publicar'}
                     </button>
@@ -588,7 +588,7 @@ export default function GradesPage() {
                   {publishedCount > 0 && (
                     <button onClick={() => handlePublish(false)} disabled={publishing || dirty}
                       style={{ padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
-                        cursor: publishing || dirty ? 'not-allowed' : 'pointer', background: 'white', color: '#64748b', border: '1px solid #e2e8f0' }}
+                        cursor: publishing || dirty ? 'not-allowed' : 'pointer', background: 'white', color: '#6B5446', border: '1px solid #ECE8E3' }}
                       title="Retirar la publicación (los apoderados dejan de ver estas notas)">
                       🔒 Despublicar
                     </button>
@@ -596,9 +596,9 @@ export default function GradesPage() {
                 </div>
               )}
               {[
-                { label: '≥6.0', bg: '#dcfce7', border: '#86efac', color: '#166534' },
-                { label: '5–5.9', bg: '#fef9c3', border: '#fde047', color: '#854d0e' },
-                { label: '<4.0', bg: '#fee2e2', border: '#fca5a5', color: '#991b1b' },
+                { label: '≥6.0', bg: '#DDF0E6', border: '#B8E0CB', color: '#1F5E43' },
+                { label: '5–5.9', bg: '#FFF0C7', border: '#FFE29A', color: '#7A4B00' },
+                { label: '<4.0', bg: '#FDE2D7', border: '#F8C4AE', color: '#9A3412' },
               ].map(l => (
                 <span key={l.label} style={{ padding: '3px 9px', borderRadius: 6, fontSize: 11, fontWeight: 700,
                   background: l.bg, border: `1.5px solid ${l.border}`, color: l.color }}>
@@ -623,17 +623,17 @@ export default function GradesPage() {
 
               {/* Encabezado columnas */}
               <thead>
-                <tr style={{ background: '#f8fafc' }}>
-                  <th style={{ ...thStyle, textAlign: 'center', padding: '10px 6px', color: '#cbd5e1' }}>#</th>
+                <tr style={{ background: '#F7F6F4' }}>
+                  <th style={{ ...thStyle, textAlign: 'center', padding: '10px 6px', color: '#D9D2CA' }}>#</th>
                   <th style={{ ...thStyle, paddingLeft: 14 }}>Alumno</th>
                   {Array.from({ length: visibleCols }, (_, i) => (
                     <th key={i} style={{ ...thStyle, textAlign: 'center', padding: '10px 4px',
-                      color: i < visibleCols - 1 ? '#475569' : '#cbd5e1',
+                      color: i < visibleCols - 1 ? '#5C463A' : '#D9D2CA',
                       fontWeight: i < visibleCols - 1 ? 700 : 500 }}>
                       N{i + 1}
                     </th>
                   ))}
-                  <th style={{ ...thStyle, textAlign: 'center', background: '#f1f5f9', color: '#475569', padding: '10px 4px' }}>PROM</th>
+                  <th style={{ ...thStyle, textAlign: 'center', background: '#F3F0EC', color: '#5C463A', padding: '10px 4px' }}>PROM</th>
                   <th style={{ ...thStyle, textAlign: 'center', padding: '10px 4px' }}></th>
                 </tr>
               </thead>
@@ -652,11 +652,11 @@ export default function GradesPage() {
                   return (
                     <tr key={e.id}
                       style={{ transition: 'background .1s' }}
-                      onMouseEnter={ev => ev.currentTarget.style.background = '#fafcff'}
+                      onMouseEnter={ev => ev.currentTarget.style.background = '#F7F6F4'}
                       onMouseLeave={ev => ev.currentTarget.style.background = ''}>
 
                       {/* # */}
-                      <td style={{ ...tdStyle, textAlign: 'center', color: '#cbd5e1', fontSize: 12, fontWeight: 600, padding: '6px 4px' }}>
+                      <td style={{ ...tdStyle, textAlign: 'center', color: '#D9D2CA', fontSize: 12, fontWeight: 600, padding: '6px 4px' }}>
                         {studentIdx + 1}
                       </td>
 
@@ -675,7 +675,7 @@ export default function GradesPage() {
                               onMouseLeave={ev => ev.target.style.textDecoration='none'}>
                               {e.student?.last_name}
                             </Link>
-                            <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.2 }}>
+                            <div style={{ fontSize: 11, color: '#9C8A7E', lineHeight: 1.2 }}>
                               {e.student?.first_name}
                             </div>
                           </div>
@@ -701,7 +701,7 @@ export default function GradesPage() {
                       })}
 
                       {/* Promedio */}
-                      <td style={{ ...tdStyle, textAlign: 'center', background: '#fafafa', padding: '5px 4px' }}>
+                      <td style={{ ...tdStyle, textAlign: 'center', background: '#F7F6F4', padding: '5px 4px' }}>
                         {avg ? (
                           <span style={{
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -713,7 +713,7 @@ export default function GradesPage() {
                             {avg}
                           </span>
                         ) : (
-                          <span style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 600 }}>—</span>
+                          <span style={{ color: '#ECE8E3', fontSize: 14, fontWeight: 600 }}>—</span>
                         )}
                       </td>
 
@@ -721,11 +721,11 @@ export default function GradesPage() {
                       <td style={{ ...tdStyle, textAlign: 'center', padding: '5px 4px' }}>
                         <Link to={`/students/${sid}/life`}
                           style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: 30, height: 30, borderRadius: 7, background: '#f1f5f9',
-                            border: '1px solid #e2e8f0', color: '#64748b', fontSize: 14,
+                            width: 30, height: 30, borderRadius: 7, background: '#F3F0EC',
+                            border: '1px solid #ECE8E3', color: '#6B5446', fontSize: 14,
                             textDecoration: 'none', transition: 'all .15s' }}
                           onMouseEnter={ev => { ev.currentTarget.style.background = primary; ev.currentTarget.style.color = 'white'; }}
-                          onMouseLeave={ev => { ev.currentTarget.style.background = '#f1f5f9'; ev.currentTarget.style.color = '#64748b'; }}
+                          onMouseLeave={ev => { ev.currentTarget.style.background = '#F3F0EC'; ev.currentTarget.style.color = '#6B5446'; }}
                           title="Hoja de vida">
                           📋
                         </Link>
@@ -737,8 +737,8 @@ export default function GradesPage() {
 
               {/* Footer con promedios por columna */}
               <tfoot>
-                <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
-                  <td colSpan={2} style={{ padding: '8px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <tr style={{ background: '#F7F6F4', borderTop: '2px solid #ECE8E3' }}>
+                  <td colSpan={2} style={{ padding: '8px 14px', fontSize: 11, fontWeight: 700, color: '#6B5446', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Promedio clase
                   </td>
                   {Array.from({ length: visibleCols }, (_, colIdx) => {
@@ -755,16 +755,16 @@ export default function GradesPage() {
                             background: col?.bg, color: col?.color, border: `1.5px solid ${col?.border}` }}>
                             {colAvg}
                           </span>
-                        ) : <span style={{ color: '#e2e8f0', fontSize: 12 }}>—</span>}
+                        ) : <span style={{ color: '#ECE8E3', fontSize: 12 }}>—</span>}
                       </td>
                     );
                   })}
-                  <td style={{ padding: '8px 4px', textAlign: 'center', background: '#f1f5f9' }}>
+                  <td style={{ padding: '8px 4px', textAlign: 'center', background: '#F3F0EC' }}>
                     {(() => {
                       const allAvgs = (courseDetail.students || [])
                         .map(e => parseFloat(calcAvg(gridData[e.student_id] || [])))
                         .filter(n => !isNaN(n));
-                      if (!allAvgs.length) return <span style={{ color: '#e2e8f0' }}>—</span>;
+                      if (!allAvgs.length) return <span style={{ color: '#ECE8E3' }}>—</span>;
                       const total = (allAvgs.reduce((a, b) => a + b, 0) / allAvgs.length).toFixed(1);
                       const col = gradeColor(total);
                       return (
@@ -783,9 +783,9 @@ export default function GradesPage() {
           </div>
 
           {/* Pie de grilla */}
-          <div style={{ padding: '10px 20px', borderTop: '1px solid #f1f5f9', background: '#fafafa',
+          <div style={{ padding: '10px 20px', borderTop: '1px solid #F3F0EC', background: '#F7F6F4',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: 16, fontSize: 11, color: '#94a3b8' }}>
+            <div style={{ display: 'flex', gap: 16, fontSize: 11, color: '#9C8A7E' }}>
               <span>⌨️ <strong>Tab</strong> / <strong>Enter</strong> → siguiente celda</span>
               <span>↑↓←→ navegar</span>
               <span>🔵 punto = nota publicada</span>
@@ -793,7 +793,7 @@ export default function GradesPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {dirty && (
-                <span style={{ fontSize: 12, color: '#f59e0b', fontWeight: 600 }}>
+                <span style={{ fontSize: 12, color: '#E8A317', fontWeight: 600 }}>
                   ⚠️ Cambios sin guardar
                 </span>
               )}
@@ -803,8 +803,8 @@ export default function GradesPage() {
                 style={{
                   padding: '8px 20px', borderRadius: 10, fontWeight: 700, fontSize: 13,
                   border: 'none', cursor: dirty ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
-                  background: dirty ? primary : '#e2e8f0',
-                  color: dirty ? 'white' : '#94a3b8',
+                  background: dirty ? primary : '#ECE8E3',
+                  color: dirty ? 'white' : '#9C8A7E',
                   boxShadow: dirty ? `0 2px 8px ${primary}44` : 'none',
                   transition: 'all 0.2s',
                 }}>

@@ -143,9 +143,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const applySchoolTheme = (schoolData) => {
-    document.documentElement.style.setProperty('--color-primary', schoolData.primary_color || '#2563EB');
-    document.documentElement.style.setProperty('--color-secondary', schoolData.secondary_color || '#1E40AF');
-    document.documentElement.style.setProperty('--color-accent', schoolData.accent_color || '#3B82F6');
+    document.documentElement.style.setProperty('--color-primary', '#2B1B14');
+    document.documentElement.style.setProperty('--color-secondary', schoolData.secondary_color || '#3D2A21');
+    document.documentElement.style.setProperty('--color-accent', schoolData.accent_color || '#2B1B14');
   };
 
   const updateSchool = (updatedSchool) => {

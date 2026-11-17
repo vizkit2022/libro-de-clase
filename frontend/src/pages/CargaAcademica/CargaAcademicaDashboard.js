@@ -12,13 +12,13 @@ const fmtHM = (min) => {
 };
 
 const inp = {
-  width: '100%', padding: '6px 9px', border: '1px solid #e2e8f0',
+  width: '100%', padding: '6px 9px', border: '1px solid #ECE8E3',
   borderRadius: 6, fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit',
 };
 
 function Bar({ pct, color, height = 10 }) {
   return (
-    <div style={{ flex: 1, height, background: '#e2e8f0', borderRadius: height / 2,
+    <div style={{ flex: 1, height, background: '#ECE8E3', borderRadius: height / 2,
       overflow: 'hidden', minWidth: 60 }}>
       <div style={{ width: `${Math.min(pct, 100)}%`, height: '100%', background: color,
         borderRadius: height / 2, transition: 'width .4s' }} />
@@ -32,15 +32,15 @@ function StatBox({ label, value, sub, color }) {
       background: `${color}0A`, flex: 1, minWidth: 140 }}>
       <p style={{ fontSize: 10, fontWeight: 700, color, margin: '0 0 4px',
         textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
-      <p style={{ fontSize: 28, fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1 }}>{value}</p>
-      {sub && <p style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 0' }}>{sub}</p>}
+      <p style={{ fontSize: 28, fontWeight: 900, color: '#2B1B14', margin: 0, lineHeight: 1 }}>{value}</p>
+      {sub && <p style={{ fontSize: 11, color: '#9C8A7E', margin: '4px 0 0' }}>{sub}</p>}
     </div>
   );
 }
 
 export default function CargaAcademicaDashboard() {
   const { school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const navigate = useNavigate();
 
   const [year, setYear] = useState(null);
@@ -286,12 +286,12 @@ export default function CargaAcademicaDashboard() {
   const otrosAnios = procesos.filter(p => p.year !== year && p.filas_asignacion > 0).map(p => p.year);
   const anioBase = procesos.filter(p => p.year < year).map(p => p.year).sort((a, b) => b - a)[0];
   const seccProc = {
-    fontSize: 11, fontWeight: 700, color: '#64748b', margin: '0 0 6px',
+    fontSize: 11, fontWeight: 700, color: '#6B5446', margin: '0 0 6px',
     textTransform: 'uppercase', letterSpacing: '0.04em',
   };
   const btnProc = {
     padding: '6px 13px', borderRadius: 8, fontSize: 12.5, cursor: busy ? 'default' : 'pointer',
-    border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontWeight: 600,
+    border: '1px solid #ECE8E3', background: '#fff', color: '#5C463A', fontWeight: 600,
     opacity: busy ? 0.5 : 1,
   };
 
@@ -300,20 +300,20 @@ export default function CargaAcademicaDashboard() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#2B1B14' }}>
             📚 Carga Académica {year}
             {procActivo?.cerrado && (
               <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-                background: '#d1fae5', color: '#065f46', marginLeft: 10,
+                background: '#DDF0E6', color: '#1F5E43', marginLeft: 10,
                 verticalAlign: 'middle' }}>✓ cerrado</span>
             )}
             {procActivo && !procActivo.cerrado && !procActivo.en_blanco && (
               <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-                background: '#fef3c7', color: '#92400e', marginLeft: 10,
+                background: '#FFF0C7', color: '#7A4B00', marginLeft: 10,
                 verticalAlign: 'middle' }}>en proceso</span>
             )}
           </h1>
-          <p style={{ fontSize: 13, color: '#64748b', margin: '3px 0 0' }}>
+          <p style={{ fontSize: 13, color: '#6B5446', margin: '3px 0 0' }}>
             Distribución de horas por docente según Tabla Legal MINEDUC
           </p>
         </div>
@@ -325,12 +325,12 @@ export default function CargaAcademicaDashboard() {
               📄 Word · {dep}
             </button>
             <button onClick={() => descargarDepartamentoPdf(dep)} style={{
-              padding: '8px 14px', background: '#fee2e2', color: '#991b1b', border: 'none',
+              padding: '8px 14px', background: '#FDE2D7', color: '#9A3412', border: 'none',
               borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               📕 PDF · {dep}
             </button>
             <button onClick={() => descargarHorariosDep(dep)} style={{
-              padding: '8px 14px', background: '#fef3c7', color: '#92400e', border: 'none',
+              padding: '8px 14px', background: '#FFF0C7', color: '#7A4B00', border: 'none',
               borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               🗓 Horarios PDF
             </button>
@@ -339,7 +339,7 @@ export default function CargaAcademicaDashboard() {
         <button onClick={() => setPromptOpen(true)} disabled={busy || vacio}
           title="Propone un reparto completo respetando las jornadas y la demanda"
           style={{ padding: '8px 16px',
-            background: 'linear-gradient(135deg,#7c3aed,#2563eb)', color: '#fff',
+            background: 'linear-gradient(135deg,#8A2846,#2B1B14)', color: '#fff',
             border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
             cursor: 'pointer', opacity: busy || vacio ? 0.5 : 1 }}>
           ✨ Sugerir reparto
@@ -348,26 +348,26 @@ export default function CargaAcademicaDashboard() {
           style={{ padding: '8px 16px', background: primary, color: '#fff', border: 'none',
             borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Docente</button>
         <button onClick={() => setShowProceso(v => !v)} title="Gestionar el proceso del año"
-          style={{ padding: '8px 12px', background: showProceso ? '#e2e8f0' : '#f1f5f9',
-            border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, cursor: 'pointer',
-            fontWeight: 600, color: '#475569' }}>⚙️</button>
+          style={{ padding: '8px 12px', background: showProceso ? '#ECE8E3' : '#F3F0EC',
+            border: '1px solid #ECE8E3', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+            fontWeight: 600, color: '#5C463A' }}>⚙️</button>
       </div>
 
       {/* Selector de año */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
         {procesos.map(p => {
           const sel = p.year === year;
-          const col = p.cerrado ? '#16a34a' : p.en_blanco ? '#94a3b8' : '#f59e0b';
+          const col = p.cerrado ? '#2F7D5B' : p.en_blanco ? '#9C8A7E' : '#E8A317';
           return (
             <button key={p.year} onClick={() => cambiarAnio(p.year)}
               style={{
                 padding: '7px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
-                border: `1px solid ${sel ? primary : '#e2e8f0'}`,
+                border: `1px solid ${sel ? primary : '#ECE8E3'}`,
                 background: sel ? `${primary}10` : '#fff',
                 boxShadow: sel ? `0 0 0 2px ${primary}22` : 'none',
               }}>
               <span style={{ fontSize: 14, fontWeight: 800,
-                color: sel ? primary : '#0f172a' }}>{p.year}</span>
+                color: sel ? primary : '#2B1B14' }}>{p.year}</span>
               <span style={{ fontSize: 11, color: col, fontWeight: 700, marginLeft: 8 }}>
                 {p.cerrado ? '✓ cerrado' : p.en_blanco ? 'sin repartir' : `${p.cobertura_pct}%`}
               </span>
@@ -382,27 +382,27 @@ export default function CargaAcademicaDashboard() {
         )}
         <button onClick={abrirOtroAnio} title="Abrir cualquier otro año" style={{
           padding: '7px 12px', borderRadius: 10, cursor: 'pointer',
-          border: '1px dashed #cbd5e1', background: '#fff', color: '#64748b',
+          border: '1px dashed #D9D2CA', background: '#fff', color: '#6B5446',
           fontSize: 13, fontWeight: 600 }}>+ Otro año…</button>
       </div>
 
       {/* Aviso: el año está completo igual que el anterior, probablemente por un
           seed repetido. Ofrece vaciarlo para armarlo de verdad. */}
       {!showProceso && procActivo?.cerrado && anioBase && (
-        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10,
+        <div style={{ background: '#FFF8E6', border: '1px solid #FFE29A', borderRadius: 10,
           padding: '12px 16px', marginBottom: 18, display: 'flex', alignItems: 'center',
           gap: 12, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 260 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#1e3a8a', margin: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#2B1B14', margin: 0 }}>
               El proceso {year} ya viene repartido al 100%
             </p>
-            <p style={{ fontSize: 12, color: '#1d4ed8', margin: '3px 0 0' }}>
+            <p style={{ fontSize: 12, color: '#9A3412', margin: '3px 0 0' }}>
               Si querés armar {year} de cero manteniendo docentes, jornadas y demanda,
               vaciá el reparto. El histórico de {anioBase} no se toca.
             </p>
           </div>
           <button disabled={busy} onClick={reiniciarDist} style={{
-            padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none',
+            padding: '8px 16px', background: '#2B1B14', color: '#fff', border: 'none',
             borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
             opacity: busy ? 0.6 : 1, whiteSpace: 'nowrap' }}>
             ↺ Vaciar reparto de {year}
@@ -412,10 +412,10 @@ export default function CargaAcademicaDashboard() {
 
       {/* Panel de gestión del proceso */}
       {showProceso && (
-        <div className="card" style={{ marginBottom: 18, background: '#f8fafc' }}>
-          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', margin: '0 0 4px',
+        <div className="card" style={{ marginBottom: 18, background: '#F7F6F4' }}>
+          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#9C8A7E', margin: '0 0 4px',
             textTransform: 'uppercase', letterSpacing: '0.06em' }}>Proceso {year}</h3>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 14px' }}>
+          <p style={{ fontSize: 12, color: '#6B5446', margin: '0 0 14px' }}>
             {procActivo
               ? `${procActivo.docentes} docentes · ${procActivo.total_asignado} de ${procActivo.total_demanda} h repartidas`
               : 'Este año todavía no existe.'}
@@ -425,8 +425,8 @@ export default function CargaAcademicaDashboard() {
           <p style={seccProc}>Empezar de nuevo</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
             <button disabled={busy || !procActivo} onClick={reiniciarDist}
-              style={{ ...btnProc, borderColor: '#bfdbfe', background: '#eff6ff',
-                color: '#1d4ed8', fontWeight: 700 }}
+              style={{ ...btnProc, borderColor: '#FFE29A', background: '#FFF8E6',
+                color: '#9A3412', fontWeight: 700 }}
               title="Conserva docentes, jornadas y demanda. Solo borra el reparto.">
               ↺ Vaciar el reparto de {year} y partir de cero
             </button>
@@ -477,7 +477,7 @@ export default function CargaAcademicaDashboard() {
           <button disabled={busy || !procActivo} onClick={() => accion(
             () => axios.delete(`/api/carga-academica/procesos/${year}`).then(() => setYear(null)),
             `¿Eliminar por completo el proceso ${year}? Borra docentes, demanda, reparto y horarios.`
-          )} style={{ ...btnProc, color: '#dc2626', borderColor: '#fecaca', background: '#fef2f2' }}>
+          )} style={{ ...btnProc, color: '#B8321B', borderColor: '#F8C4AE', background: '#FEF1EB' }}>
             🗑 Eliminar proceso {year}
           </button>
         </div>
@@ -492,9 +492,9 @@ export default function CargaAcademicaDashboard() {
 
       {!cargandoAnio && vacio && (
         <div className="card" style={{ padding: 32, marginBottom: 20 }}>
-          <p style={{ fontSize: 16, color: '#0f172a', margin: '0 0 4px', fontWeight: 700,
+          <p style={{ fontSize: 16, color: '#2B1B14', margin: '0 0 4px', fontWeight: 700,
             textAlign: 'center' }}>Abrir el proceso {year}</p>
-          <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 22px', textAlign: 'center' }}>
+          <p style={{ fontSize: 13, color: '#9C8A7E', margin: '0 0 22px', textAlign: 'center' }}>
             {anioBase
               ? `Se arrastran los docentes de ${anioBase} manteniendo su jornada contratada, y la demanda de horas por asignatura.`
               : 'Aún no hay ningún año cargado en el módulo.'}
@@ -506,10 +506,10 @@ export default function CargaAcademicaDashboard() {
               <>
                 <div style={{ border: `2px solid ${primary}`, borderRadius: 12, padding: 18,
                   background: `${primary}08` }}>
-                  <p style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', margin: '0 0 6px' }}>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: '#2B1B14', margin: '0 0 6px' }}>
                     Partir en blanco
                   </p>
-                  <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 14px', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 12, color: '#6B5446', margin: '0 0 14px', lineHeight: 1.5 }}>
                     Trae docentes y demanda de {anioBase}, pero deja la distribución vacía
                     para repartir de cero con las reglas nuevas.
                   </p>
@@ -520,17 +520,17 @@ export default function CargaAcademicaDashboard() {
                     Iniciar {year} en blanco
                   </button>
                 </div>
-                <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: 18 }}>
-                  <p style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', margin: '0 0 6px' }}>
+                <div style={{ border: '1px solid #ECE8E3', borderRadius: 12, padding: 18 }}>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: '#2B1B14', margin: '0 0 6px' }}>
                     Partir desde {anioBase}
                   </p>
-                  <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 14px', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 12, color: '#6B5446', margin: '0 0 14px', lineHeight: 1.5 }}>
                     Copia también la distribución de {anioBase} como borrador, para irla
                     ajustando y mover docentes de nivel.
                   </p>
                   <button disabled={busy} onClick={() => iniciarProceso(year, anioBase, true)}
-                    style={{ width: '100%', padding: '9px 0', background: '#f1f5f9', color: '#374151',
-                      border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontWeight: 700,
+                    style={{ width: '100%', padding: '9px 0', background: '#F3F0EC', color: '#5C463A',
+                      border: '1px solid #ECE8E3', borderRadius: 8, fontSize: 13, fontWeight: 700,
                       cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
                     Copiar carga {anioBase} → {year}
                   </button>
@@ -539,15 +539,15 @@ export default function CargaAcademicaDashboard() {
             )}
           </div>
 
-          <div style={{ borderTop: '1px solid #f1f5f9', marginTop: 24, paddingTop: 18,
+          <div style={{ borderTop: '1px solid #F3F0EC', marginTop: 24, paddingTop: 18,
             textAlign: 'center' }}>
-            <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 10px' }}>
+            <p style={{ fontSize: 12, color: '#9C8A7E', margin: '0 0 10px' }}>
               {anioBase
                 ? `¿Falta el histórico? Carga el Departamento de Lenguaje en ${year}.`
                 : `Carga el histórico del Departamento de Lenguaje (Word 2026) en ${year}.`}
             </p>
             <button onClick={seed} disabled={seeding} style={{ padding: '8px 18px',
-              background: '#fff', color: '#475569', border: '1px solid #e2e8f0', borderRadius: 8,
+              background: '#fff', color: '#5C463A', border: '1px solid #ECE8E3', borderRadius: 8,
               fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: seeding ? 0.6 : 1 }}>
               {seeding ? 'Poblando...' : `⚡ Poblar histórico de Lenguaje en ${year}`}
             </button>
@@ -561,24 +561,24 @@ export default function CargaAcademicaDashboard() {
           <div style={{ display: 'flex', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
             <StatBox label="Cobertura total" value={`${r.cobertura_pct}%`}
               sub={`${r.total_asignado} de ${r.total_demanda} h asignadas`}
-              color={r.cobertura_pct >= 100 ? '#16a34a' : '#f59e0b'} />
+              color={r.cobertura_pct >= 100 ? '#2F7D5B' : '#E8A317'} />
             <StatBox label="Horas sin asignar" value={r.total_faltante}
-              sub="de la demanda definida" color={r.total_faltante === 0 ? '#16a34a' : '#dc2626'} />
+              sub="de la demanda definida" color={r.total_faltante === 0 ? '#2F7D5B' : '#B8321B'} />
             <StatBox label="Docentes cuadrados" value={`${r.docentes_completos}/${r.docentes_total}`}
               sub="carga = jornada legal"
-              color={r.docentes_completos === r.docentes_total ? '#16a34a' : '#f59e0b'} />
+              color={r.docentes_completos === r.docentes_total ? '#2F7D5B' : '#E8A317'} />
             <StatBox label="Alertas" value={alertas.length}
-              sub="descuadres y reglas" color={alertas.length ? '#dc2626' : '#16a34a'} />
+              sub="descuadres y reglas" color={alertas.length ? '#B8321B' : '#2F7D5B'} />
           </div>
 
           {/* Alertas */}
           {alertas.length > 0 && (
-            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10,
+            <div style={{ background: '#FFF8E1', border: '1px solid #FFE29A', borderRadius: 10,
               padding: '12px 16px', marginBottom: 18 }}>
-              <p style={{ fontSize: 12, fontWeight: 800, color: '#92400e', margin: '0 0 6px',
+              <p style={{ fontSize: 12, fontWeight: 800, color: '#7A4B00', margin: '0 0 6px',
                 textTransform: 'uppercase', letterSpacing: '0.05em' }}>Revisar</p>
               {alertas.map((a, i) => (
-                <p key={i} style={{ fontSize: 13, color: '#92400e', margin: '3px 0' }}>• {a.mensaje}</p>
+                <p key={i} style={{ fontSize: 13, color: '#7A4B00', margin: '3px 0' }}>• {a.mensaje}</p>
               ))}
             </div>
           )}
@@ -599,17 +599,17 @@ export default function CargaAcademicaDashboard() {
           {tab === 'asignaturas' && (
             <>
               <div className="card" style={{ marginBottom: 16 }}>
-                <h3 style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', margin: '0 0 16px',
+                <h3 style={{ fontSize: 12, fontWeight: 800, color: '#9C8A7E', margin: '0 0 16px',
                   textTransform: 'uppercase', letterSpacing: '0.06em' }}>Cobertura por asignatura</h3>
                 {(data?.por_asignatura || []).map(a => {
                   const full = a.horas_faltantes === 0;
                   const over = a.horas_faltantes < 0;
-                  const color = over ? '#dc2626' : full ? '#16a34a' : '#f59e0b';
+                  const color = over ? '#B8321B' : full ? '#2F7D5B' : '#E8A317';
                   return (
                     <div key={a.asignatura} style={{ marginBottom: 14 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between',
                         alignItems: 'baseline', marginBottom: 5 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#1e293b' }}>{a.asignatura}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#2B1B14' }}>{a.asignatura}</span>
                         <span style={{ fontSize: 12, fontWeight: 700, color }}>
                           {a.horas_asignadas} / {a.horas_demanda} h
                           {over ? ` · sobrecarga ${-a.horas_faltantes}` : full ? ' ✓' : ` · faltan ${a.horas_faltantes}`}
@@ -622,8 +622,8 @@ export default function CargaAcademicaDashboard() {
               </div>
 
               <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ padding: '12px 18px', borderBottom: '1px solid #f1f5f9' }}>
-                  <h3 style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', margin: 0,
+                <div style={{ padding: '12px 18px', borderBottom: '1px solid #F3F0EC' }}>
+                  <h3 style={{ fontSize: 12, fontWeight: 800, color: '#9C8A7E', margin: 0,
                     textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     Detalle: asignatura › nivel › curso
                   </h3>
@@ -638,21 +638,21 @@ export default function CargaAcademicaDashboard() {
                   return Object.entries(porAsig).map(([asig, niveles]) => {
                     const dem = niveles.reduce((n, x) => n + x.horas_totales, 0);
                     const asi = niveles.reduce((n, x) => n + x.horas_asignadas, 0);
-                    const col = asi === dem ? '#16a34a' : asi > dem ? '#dc2626' : '#f59e0b';
+                    const col = asi === dem ? '#2F7D5B' : asi > dem ? '#B8321B' : '#E8A317';
                     const open = !!abiertas[asig];
                     return (
-                      <div key={asig} style={{ borderTop: '1px solid #f1f5f9' }}>
+                      <div key={asig} style={{ borderTop: '1px solid #F3F0EC' }}>
                         {/* Nivel 1: asignatura */}
                         <div onClick={() => setAbiertas(a => ({ ...a, [asig]: !a[asig] }))}
                           style={{ display: 'flex', alignItems: 'center', gap: 10,
                             padding: '11px 18px', cursor: 'pointer', userSelect: 'none',
-                            background: open ? '#f8fafc' : '#fff' }}>
-                          <span style={{ color: '#94a3b8', fontSize: 11, width: 12 }}>
+                            background: open ? '#F7F6F4' : '#fff' }}>
+                          <span style={{ color: '#9C8A7E', fontSize: 11, width: 12 }}>
                             {open ? '▼' : '▶'}
                           </span>
                           <span style={{ flex: 1, fontWeight: 700, fontSize: 13.5,
-                            color: '#0f172a' }}>{asig}</span>
-                          <span style={{ fontSize: 12, color: '#94a3b8' }}>
+                            color: '#2B1B14' }}>{asig}</span>
+                          <span style={{ fontSize: 12, color: '#9C8A7E' }}>
                             {niveles.length} {niveles.length === 1 ? 'nivel' : 'niveles'}
                           </span>
                           <span style={{ fontSize: 12.5, fontWeight: 800, color: col,
@@ -664,21 +664,21 @@ export default function CargaAcademicaDashboard() {
                         {open && niveles.map(n => {
                           const clave = `${asig}|${n.nivel}`;
                           const abierto = !!abiertas[clave];
-                          const cn = n.horas_asignadas === n.horas_totales ? '#16a34a'
-                            : n.horas_asignadas > n.horas_totales ? '#dc2626' : '#f59e0b';
+                          const cn = n.horas_asignadas === n.horas_totales ? '#2F7D5B'
+                            : n.horas_asignadas > n.horas_totales ? '#B8321B' : '#E8A317';
                           const detalle = n.por_letra_detalle;
                           return (
-                            <div key={n.id} style={{ borderTop: '1px solid #f8fafc' }}>
+                            <div key={n.id} style={{ borderTop: '1px solid #F7F6F4' }}>
                               {/* Nivel 2: nivel */}
                               <div onClick={() => setAbiertas(a => ({ ...a, [clave]: !a[clave] }))}
                                 style={{ display: 'flex', alignItems: 'center', gap: 10,
                                   padding: '8px 18px 8px 42px', cursor: detalle ? 'pointer' : 'default',
-                                  background: abierto ? '#f1f5f9' : 'transparent' }}>
-                                <span style={{ color: '#cbd5e1', fontSize: 10, width: 12 }}>
+                                  background: abierto ? '#F3F0EC' : 'transparent' }}>
+                                <span style={{ color: '#D9D2CA', fontSize: 10, width: 12 }}>
                                   {detalle ? (abierto ? '▼' : '▶') : '·'}
                                 </span>
-                                <span style={{ flex: 1, fontSize: 13, color: '#334155' }}>{n.nivel}</span>
-                                <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                                <span style={{ flex: 1, fontSize: 13, color: '#5C463A' }}>{n.nivel}</span>
+                                <span style={{ fontSize: 11.5, color: '#9C8A7E' }}>
                                   {n.por_letra
                                     ? `${(n.letras_demanda || n.letras?.split(',') || []).join(', ')} · ${n.horas_por_grupo} h c/u`
                                     : `grupo único · ${n.horas_por_grupo} h`}
@@ -691,18 +691,18 @@ export default function CargaAcademicaDashboard() {
 
                               {/* Nivel 3: curso */}
                               {abierto && detalle && (
-                                <div style={{ padding: '4px 18px 12px 66px', background: '#fafbfc' }}>
+                                <div style={{ padding: '4px 18px 12px 66px', background: '#F7F6F4' }}>
                                   {n.por_letra ? (
                                     (n.letras_demanda || []).map(L => {
                                       const quienes = detalle[L] || [];
-                                      const cc = quienes.length > 1 ? '#dc2626'
-                                        : quienes.length === 1 ? '#16a34a' : '#94a3b8';
+                                      const cc = quienes.length > 1 ? '#B8321B'
+                                        : quienes.length === 1 ? '#2F7D5B' : '#9C8A7E';
                                       return (
                                         <div key={L} style={{ display: 'flex', alignItems: 'center',
                                           gap: 10, padding: '5px 0',
-                                          borderBottom: '1px solid #f1f5f9' }}>
+                                          borderBottom: '1px solid #F3F0EC' }}>
                                           <span style={{ fontSize: 12, fontWeight: 800,
-                                            color: '#0f172a', minWidth: 92 }}>
+                                            color: '#2B1B14', minWidth: 92 }}>
                                             {n.nivel} {L}
                                           </span>
                                           <span style={{ flex: 1, fontSize: 12.5, color: cc,
@@ -712,7 +712,7 @@ export default function CargaAcademicaDashboard() {
                                                 ? `⚠ ${quienes.map(q => q.docente).join(' + ')}`
                                                 : quienes[0].docente}
                                           </span>
-                                          <span style={{ fontSize: 12, color: '#64748b',
+                                          <span style={{ fontSize: 12, color: '#6B5446',
                                             fontWeight: 700 }}>
                                             {quienes.length ? `${n.horas_por_grupo} h` : '—'}
                                           </span>
@@ -723,14 +723,14 @@ export default function CargaAcademicaDashboard() {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10,
                                       padding: '5px 0' }}>
                                       <span style={{ fontSize: 12, fontWeight: 800,
-                                        color: '#0f172a', minWidth: 92 }}>grupo único</span>
+                                        color: '#2B1B14', minWidth: 92 }}>grupo único</span>
                                       <span style={{ flex: 1, fontSize: 12.5,
-                                        color: n.asignados?.length ? '#16a34a' : '#94a3b8' }}>
+                                        color: n.asignados?.length ? '#2F7D5B' : '#9C8A7E' }}>
                                         {n.asignados?.length
                                           ? n.asignados.map(a => a.docente).join(', ')
                                           : 'sin docente asignado'}
                                       </span>
-                                      <span style={{ fontSize: 12, color: '#64748b',
+                                      <span style={{ fontSize: 12, color: '#6B5446',
                                         fontWeight: 700 }}>{n.horas_por_grupo} h</span>
                                     </div>
                                   )}
@@ -752,34 +752,34 @@ export default function CargaAcademicaDashboard() {
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
-                  <tr style={{ background: '#f8fafc' }}>
+                  <tr style={{ background: '#F7F6F4' }}>
                     {['Docente', 'Depto.', 'Jornada', 'En aula', 'Asignadas', 'Dif.', 'Dispon.', 'No lectivas', 'Estado'].map(h => (
                       <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11,
-                        textTransform: 'uppercase', color: '#64748b', fontWeight: 700 }}>{h}</th>
+                        textTransform: 'uppercase', color: '#6B5446', fontWeight: 700 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {docentes.map(d => {
                     const ok = d.completo && !d.excede_disponibilidad && !d.excede_no_lectivas;
-                    const col = ok ? '#16a34a' : '#dc2626';
+                    const col = ok ? '#2F7D5B' : '#B8321B';
                     return (
                       <tr key={d.id} onClick={() => navigate(`/carga-academica/docentes/${d.id}`)}
-                        style={{ borderTop: '1px solid #f1f5f9', cursor: 'pointer' }}>
-                        <td style={{ padding: '9px 10px', fontWeight: 700, color: '#0f172a' }}>{d.nombre}</td>
-                        <td style={{ padding: '9px 10px', color: '#64748b', fontSize: 12 }}>{d.departamento || '—'}</td>
-                        <td style={{ padding: '9px 10px', color: '#475569' }}>{d.horas_contrato} h</td>
-                        <td style={{ padding: '9px 10px', color: '#475569' }}>{d.horas_pedagogicas}</td>
+                        style={{ borderTop: '1px solid #F3F0EC', cursor: 'pointer' }}>
+                        <td style={{ padding: '9px 10px', fontWeight: 700, color: '#2B1B14' }}>{d.nombre}</td>
+                        <td style={{ padding: '9px 10px', color: '#6B5446', fontSize: 12 }}>{d.departamento || '—'}</td>
+                        <td style={{ padding: '9px 10px', color: '#5C463A' }}>{d.horas_contrato} h</td>
+                        <td style={{ padding: '9px 10px', color: '#5C463A' }}>{d.horas_pedagogicas}</td>
                         <td style={{ padding: '9px 10px', fontWeight: 700 }}>{d.total_lectivas}</td>
                         <td style={{ padding: '9px 10px', fontWeight: 800,
-                          color: d.diferencia === 0 ? '#16a34a' : '#dc2626' }}>
+                          color: d.diferencia === 0 ? '#2F7D5B' : '#B8321B' }}>
                           {d.diferencia === 0 ? '0' : (d.diferencia > 0 ? `+${d.diferencia}` : d.diferencia)}
                         </td>
                         <td style={{ padding: '9px 10px', fontWeight: 700,
-                          color: d.excede_disponibilidad ? '#dc2626' : '#64748b' }}>
+                          color: d.excede_disponibilidad ? '#B8321B' : '#6B5446' }}>
                           {d.disponibilidad}{d.excede_disponibilidad ? ' ⚠' : ''}
                         </td>
-                        <td style={{ padding: '9px 10px', color: '#64748b', fontSize: 12 }}>
+                        <td style={{ padding: '9px 10px', color: '#6B5446', fontSize: 12 }}>
                           {fmtHM(d.total_actividades_min)} / {fmtHM(d.no_lectivas_min)}
                         </td>
                         <td style={{ padding: '9px 10px' }}>
@@ -799,9 +799,9 @@ export default function CargaAcademicaDashboard() {
           {/* ── TAB: DEMANDA ── */}
           {tab === 'demanda' && (
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div style={{ padding: '12px 18px', borderBottom: '1px solid #f1f5f9',
+              <div style={{ padding: '12px 18px', borderBottom: '1px solid #F3F0EC',
                 display: 'flex', alignItems: 'center', gap: 10 }}>
-                <h3 style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', margin: 0, flex: 1,
+                <h3 style={{ fontSize: 12, fontWeight: 800, color: '#9C8A7E', margin: 0, flex: 1,
                   textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Horas que necesita cada asignatura por nivel
                 </h3>
@@ -810,21 +810,21 @@ export default function CargaAcademicaDashboard() {
                   cursor: 'pointer', fontWeight: 700 }}>+ Fila</button>
               </div>
               {cursosDem && cursosDem.faltan.length > 0 && (
-                <div style={{ margin: '12px 18px', background: '#fffbeb',
-                  border: '1px solid #fde68a', borderRadius: 10, padding: '12px 16px',
+                <div style={{ margin: '12px 18px', background: '#FFF8E1',
+                  border: '1px solid #FFE29A', borderRadius: 10, padding: '12px 16px',
                   display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 280 }}>
-                    <p style={{ fontSize: 13, fontWeight: 700, color: '#92400e', margin: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#7A4B00', margin: 0 }}>
                       Faltan {cursosDem.faltan.length} cursos que esta demanda da por existentes
                     </p>
-                    <p style={{ fontSize: 12, color: '#92400e', margin: '3px 0 0',
+                    <p style={{ fontSize: 12, color: '#7A4B00', margin: '3px 0 0',
                       lineHeight: 1.5 }}>
                       {cursosDem.faltan.map(c => c.nombre).join(', ')}.
                       {' '}Sin ellos, publicar al libro de clases no encuentra dónde colgar las horas.
                     </p>
                   </div>
                   <button disabled={busy} onClick={crearCursosFaltantes} style={{
-                    padding: '8px 16px', background: '#d97706', color: '#fff', border: 'none',
+                    padding: '8px 16px', background: '#B26B00', color: '#fff', border: 'none',
                     borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
                     whiteSpace: 'nowrap', opacity: busy ? 0.6 : 1 }}>
                     Crear los cursos
@@ -832,29 +832,29 @@ export default function CargaAcademicaDashboard() {
                 </div>
               )}
               {cursosDem && cursosDem.faltan.length === 0 && cursosDem.implicados > 0 && (
-                <p style={{ margin: '10px 18px 0', fontSize: 12, color: '#15803d' }}>
+                <p style={{ margin: '10px 18px 0', fontSize: 12, color: '#1F5E43' }}>
                   ✓ Los {cursosDem.implicados} cursos de esta demanda ya existen.
                 </p>
               )}
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
-                  <tr style={{ background: '#f8fafc' }}>
+                  <tr style={{ background: '#F7F6F4' }}>
                     {['Departamento', 'Asignatura', 'Nivel', 'Modalidad', 'Letras', 'Hrs/grupo', 'Total', ''].map(h => (
                       <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11,
-                        textTransform: 'uppercase', color: '#64748b', fontWeight: 700 }}>{h}</th>
+                        textTransform: 'uppercase', color: '#6B5446', fontWeight: 700 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {demanda.map(d => (
-                    <tr key={d.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                    <tr key={d.id} style={{ borderTop: '1px solid #F3F0EC' }}>
                       <td style={{ padding: '4px 6px', width: 120 }}>
                         <input style={inp} defaultValue={d.departamento || ''}
                           onBlur={e => patchDemanda(d.id, { departamento: e.target.value })} />
                       </td>
                       <td style={{ padding: '4px 6px' }}>
                         <select
-                          style={{ ...inp, borderColor: d.en_catalogo ? '#e2e8f0' : '#fbbf24' }}
+                          style={{ ...inp, borderColor: d.en_catalogo ? '#ECE8E3' : '#E8A317' }}
                           value={d.subject_id || ''}
                           title={d.en_catalogo ? '' : 'Esta fila no está enlazada al catálogo'}
                           onChange={e => onPickAsignatura(d.id, e.target.value)}>
@@ -890,18 +890,18 @@ export default function CargaAcademicaDashboard() {
                           defaultValue={d.horas_por_grupo}
                           onBlur={e => patchDemanda(d.id, { horas_por_grupo: Number(e.target.value) || 0 })} />
                       </td>
-                      <td style={{ padding: '4px 10px', fontWeight: 800, color: '#0f172a' }}>{d.horas_totales}</td>
+                      <td style={{ padding: '4px 10px', fontWeight: 800, color: '#2B1B14' }}>{d.horas_totales}</td>
                       <td style={{ padding: '4px', width: 36, textAlign: 'center' }}>
                         <button onClick={async () => {
                           if (!window.confirm(`¿Eliminar "${d.asignatura} · ${d.nivel}"?`)) return;
                           await axios.delete(`/api/carga-academica/demanda/${d.id}`);
                           fetchAll();
-                        }} style={{ background: '#fee2e2', border: 'none', borderRadius: 5,
-                          cursor: 'pointer', color: '#dc2626', fontSize: 11, padding: '4px 7px' }}>✕</button>
+                        }} style={{ background: '#FDE2D7', border: 'none', borderRadius: 5,
+                          cursor: 'pointer', color: '#B8321B', fontSize: 11, padding: '4px 7px' }}>✕</button>
                       </td>
                     </tr>
                   ))}
-                  <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
+                  <tr style={{ background: '#F7F6F4', borderTop: '2px solid #ECE8E3' }}>
                     <td colSpan={6} style={{ padding: '9px 12px', fontWeight: 800 }}>Demanda total</td>
                     <td style={{ padding: '9px 10px', fontWeight: 900, fontSize: 15 }}>{r.total_demanda}</td>
                     <td />
@@ -916,14 +916,14 @@ export default function CargaAcademicaDashboard() {
       {/* Prompt de la sugerencia */}
       {promptOpen && (
         <div onClick={() => !pensando && setPromptOpen(false)} style={{
-          position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 2000,
+          position: 'fixed', inset: 0, background: 'rgba(43, 27, 20,.45)', zIndex: 2000,
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff',
             borderRadius: 16, width: 540, maxWidth: '95vw', padding: 24 }}>
             <h2 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 800 }}>
               ✨ Sugerir reparto {year}
             </h2>
-            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6B5446', lineHeight: 1.5 }}>
               Respeta las jornadas, no pasa de {cat?.max_disponibilidad || 3} h de
               disponibilidad y no deja un curso con dos profesores. Primero vas a ver
               la propuesta.
@@ -937,48 +937,48 @@ export default function CargaAcademicaDashboard() {
                  'Borra las asignaturas actuales y arma la distribución de cero. Los cargos como jefatura se conservan.'],
               ].map(([k, titulo, desc]) => (
                 <label key={k} style={{ display: 'flex', gap: 10, padding: '10px 12px',
-                  border: `1px solid ${modoSug === k ? primary : '#e2e8f0'}`,
+                  border: `1px solid ${modoSug === k ? primary : '#ECE8E3'}`,
                   background: modoSug === k ? `${primary}0A` : '#fff',
                   borderRadius: 10, cursor: 'pointer' }}>
                   <input type="radio" name="modoSug" checked={modoSug === k}
                     onChange={() => setModoSug(k)} style={{ marginTop: 3 }} />
                   <span>
                     <span style={{ display: 'block', fontSize: 13, fontWeight: 700,
-                      color: k === 'rehacer' ? '#b45309' : '#0f172a' }}>
+                      color: k === 'rehacer' ? '#7A4B00' : '#2B1B14' }}>
                       {titulo}{k === 'completar' ? ' · recomendado' : ''}
                     </span>
-                    <span style={{ display: 'block', fontSize: 12, color: '#64748b',
+                    <span style={{ display: 'block', fontSize: 12, color: '#6B5446',
                       lineHeight: 1.45, marginTop: 2 }}>{desc}</span>
                   </span>
                 </label>
               ))}
             </div>
 
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b',
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B5446',
               textTransform: 'uppercase', marginBottom: 6 }}>
               Qué tener en cuenta <span style={{ fontWeight: 400 }}>(opcional)</span>
             </label>
             <textarea rows={5} value={instrucciones}
               onChange={e => setInstrucciones(e.target.value)}
               placeholder={'Por ejemplo:\n· Karla prefiere básica, no darle IV Medio\n· Los electivos de III Medio para Dominique\n· Francisca sigue con Taller PAES'}
-              style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0',
+              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ECE8E3',
                 borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical',
                 boxSizing: 'border-box', lineHeight: 1.5 }} />
 
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14,
-              fontSize: 13, color: '#334155', cursor: 'pointer' }}>
+              fontSize: 13, color: '#5C463A', cursor: 'pointer' }}>
               <input type="checkbox" checked={rotar} onChange={e => setRotar(e.target.checked)} />
               Mover de niveles a los docentes respecto del año anterior
             </label>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 22 }}>
               <button disabled={pensando} onClick={() => setPromptOpen(false)} style={{
-                padding: '9px 18px', background: '#f1f5f9', border: 'none', borderRadius: 8,
-                fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#475569' }}>
+                padding: '9px 18px', background: '#F3F0EC', border: 'none', borderRadius: 8,
+                fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#5C463A' }}>
                 Cancelar
               </button>
               <button disabled={pensando} onClick={pedirSugerencia} style={{
-                padding: '9px 20px', background: 'linear-gradient(135deg,#7c3aed,#2563eb)',
+                padding: '9px 20px', background: 'linear-gradient(135deg,#8A2846,#2B1B14)',
                 color: '#fff', border: 'none', borderRadius: 8, fontSize: 13,
                 fontWeight: 700, cursor: 'pointer', opacity: pensando ? 0.6 : 1 }}>
                 {pensando ? 'Calculando…' : 'Proponer reparto'}
@@ -991,36 +991,36 @@ export default function CargaAcademicaDashboard() {
       {/* Vista previa de la propuesta */}
       {sugerencia && (
         <div onClick={() => setSugerencia(null)} style={{
-          position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 2000,
+          position: 'fixed', inset: 0, background: 'rgba(43, 27, 20,.45)', zIndex: 2000,
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff',
             borderRadius: 16, width: 760, maxWidth: '96vw', maxHeight: '88vh',
             display: 'flex', flexDirection: 'column' }}>
 
-            <div style={{ padding: '18px 22px', borderBottom: '1px solid #e2e8f0' }}>
+            <div style={{ padding: '18px 22px', borderBottom: '1px solid #ECE8E3' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, flex: 1 }}>
                   Propuesta de reparto {year}
                   <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px',
                     borderRadius: 20, marginLeft: 10, verticalAlign: 'middle',
-                    background: sugerencia.modo === 'rehacer' ? '#fef3c7' : '#dcfce7',
-                    color: sugerencia.modo === 'rehacer' ? '#92400e' : '#15803d' }}>
+                    background: sugerencia.modo === 'rehacer' ? '#FFF0C7' : '#DDF0E6',
+                    color: sugerencia.modo === 'rehacer' ? '#7A4B00' : '#1F5E43' }}>
                     {sugerencia.modo === 'rehacer' ? 'rehace todo' : 'solo completa'}
                   </span>
                 </h2>
                 <button onClick={() => setSugerencia(null)} style={{ background: 'none',
-                  border: 'none', fontSize: 22, cursor: 'pointer', color: '#94a3b8' }}>×</button>
+                  border: 'none', fontSize: 22, cursor: 'pointer', color: '#9C8A7E' }}>×</button>
               </div>
               <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
                 {[
                   ['Horas repartidas', `${sugerencia.resumen.total_propuesto} / ${sugerencia.resumen.total_demanda}`,
-                    sugerencia.resumen.sin_repartir === 0 ? '#16a34a' : '#dc2626'],
+                    sugerencia.resumen.sin_repartir === 0 ? '#2F7D5B' : '#B8321B'],
                   ['Docentes cuadrados', `${sugerencia.resumen.docentes_cuadrados} / ${sugerencia.resumen.docentes}`,
-                    sugerencia.resumen.docentes_cuadrados === sugerencia.resumen.docentes ? '#16a34a' : '#f59e0b'],
-                  ['Se agregan', `${sugerencia.resumen.filas_nuevas} filas · ${sugerencia.resumen.horas_nuevas} h`, '#2563eb'],
+                    sugerencia.resumen.docentes_cuadrados === sugerencia.resumen.docentes ? '#2F7D5B' : '#E8A317'],
+                  ['Se agregan', `${sugerencia.resumen.filas_nuevas} filas · ${sugerencia.resumen.horas_nuevas} h`, '#2B1B14'],
                 ].map(([l, v, c]) => (
                   <div key={l}>
-                    <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: '#94a3b8',
+                    <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: '#9C8A7E',
                       textTransform: 'uppercase' }}>{l}</p>
                     <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: c }}>{v}</p>
                   </div>
@@ -1030,23 +1030,23 @@ export default function CargaAcademicaDashboard() {
 
             <div style={{ overflowY: 'auto', padding: '16px 22px', flex: 1 }}>
               {(sugerencia.preferencias?.notas || []).length > 0 && (
-                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe',
+                <div style={{ background: '#FFF8E6', border: '1px solid #FFE29A',
                   borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
-                  <p style={{ fontSize: 11, fontWeight: 800, color: '#1e3a8a',
+                  <p style={{ fontSize: 11, fontWeight: 800, color: '#2B1B14',
                     textTransform: 'uppercase', margin: '0 0 5px' }}>Qué se consideró</p>
                   {sugerencia.preferencias.notas.map((n, i) => (
-                    <p key={i} style={{ fontSize: 12.5, color: '#1d4ed8', margin: '2px 0' }}>· {n}</p>
+                    <p key={i} style={{ fontSize: 12.5, color: '#9A3412', margin: '2px 0' }}>· {n}</p>
                   ))}
                 </div>
               )}
 
               {sugerencia.advertencias.length > 0 && (
-                <div style={{ background: '#fffbeb', border: '1px solid #fde68a',
+                <div style={{ background: '#FFF8E1', border: '1px solid #FFE29A',
                   borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
-                  <p style={{ fontSize: 11, fontWeight: 800, color: '#92400e',
+                  <p style={{ fontSize: 11, fontWeight: 800, color: '#7A4B00',
                     textTransform: 'uppercase', margin: '0 0 5px' }}>Revisar</p>
                   {sugerencia.advertencias.map((a, i) => (
-                    <p key={i} style={{ fontSize: 12.5, color: '#92400e', margin: '3px 0',
+                    <p key={i} style={{ fontSize: 12.5, color: '#7A4B00', margin: '3px 0',
                       lineHeight: 1.5 }}>· {a}</p>
                   ))}
                 </div>
@@ -1055,39 +1055,39 @@ export default function CargaAcademicaDashboard() {
               {sugerencia.propuesta.map(p => {
                 const ok = p.horas_asignadas === p.horas_pedagogicas;
                 return (
-                  <div key={p.docente_id} style={{ border: '1px solid #e2e8f0',
+                  <div key={p.docente_id} style={{ border: '1px solid #ECE8E3',
                     borderRadius: 10, marginBottom: 10, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '9px 14px', background: '#f8fafc' }}>
+                      padding: '9px 14px', background: '#F7F6F4' }}>
                       <span style={{ fontWeight: 700, fontSize: 13.5, flex: 1 }}>{p.docente}</span>
-                      <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                      <span style={{ fontSize: 11.5, color: '#9C8A7E' }}>
                         jornada {p.horas_contrato} h
                       </span>
                       <span style={{ fontSize: 12.5, fontWeight: 800,
-                        color: ok ? '#16a34a' : '#dc2626' }}>
+                        color: ok ? '#2F7D5B' : '#B8321B' }}>
                         {p.horas_asignadas} / {p.horas_pedagogicas} h {ok ? '✓' : ''}
                       </span>
                     </div>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
                       <tbody>
                         {p.filas.map((f, i) => (
-                          <tr key={i} style={{ borderTop: '1px solid #f1f5f9',
-                            background: f.existente ? '#fafafa' : '#f0f9ff' }}>
+                          <tr key={i} style={{ borderTop: '1px solid #F3F0EC',
+                            background: f.existente ? '#F7F6F4' : '#FFF8E6' }}>
                             <td style={{ padding: '5px 14px',
-                              color: f.existente ? '#94a3b8' : '#0f172a',
+                              color: f.existente ? '#9C8A7E' : '#2B1B14',
                               fontWeight: f.existente ? 400 : 600 }}>
-                              {!f.existente && <span style={{ color: '#2563eb', marginRight: 5,
+                              {!f.existente && <span style={{ color: '#C2410C', marginRight: 5,
                                 fontWeight: 800 }}>+</span>}
                               {f.asignatura}
                             </td>
                             <td style={{ padding: '5px 10px', width: 170,
-                              color: f.existente ? '#cbd5e1' : '#64748b' }}>
+                              color: f.existente ? '#D9D2CA' : '#6B5446' }}>
                               {f.nivel
                                 ? `${f.nivel}${f.letras ? ' ' + f.letras.replace(/,/g, ', ') : ''}`
                                 : (f.letras || '')}
                             </td>
                             <td style={{ padding: '5px 14px', textAlign: 'right', width: 54,
-                              fontWeight: 700, color: f.existente ? '#94a3b8' : '#0f172a' }}>
+                              fontWeight: 700, color: f.existente ? '#9C8A7E' : '#2B1B14' }}>
                               {f.horas} h
                             </td>
                           </tr>
@@ -1099,15 +1099,15 @@ export default function CargaAcademicaDashboard() {
               })}
             </div>
 
-            <div style={{ padding: '14px 22px', borderTop: '1px solid #e2e8f0',
+            <div style={{ padding: '14px 22px', borderTop: '1px solid #ECE8E3',
               display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => { setSugerencia(null); setPromptOpen(true); }}
-                style={{ padding: '9px 18px', background: '#f1f5f9', border: 'none',
+                style={{ padding: '9px 18px', background: '#F3F0EC', border: 'none',
                   borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  color: '#475569' }}>Ajustar instrucciones</button>
+                  color: '#5C463A' }}>Ajustar instrucciones</button>
               <button disabled={busy} onClick={aplicarSugerencia} style={{
                 padding: '9px 20px',
-                background: sugerencia.modo === 'rehacer' ? '#d97706' : '#16a34a',
+                background: sugerencia.modo === 'rehacer' ? '#B26B00' : '#2F7D5B',
                 color: '#fff', border: 'none',
                 borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
                 opacity: busy ? 0.6 : 1 }}>
@@ -1133,7 +1133,7 @@ export default function CargaAcademicaDashboard() {
               ['departamento', 'Departamento', 'text'],
             ].map(([k, label, type]) => (
               <div key={k} style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b',
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B5446',
                   textTransform: 'uppercase', marginBottom: 4 }}>{label}</label>
                 <input type={type} style={inp} value={nuevoDocente[k] || ''}
                   onChange={e => setNuevoDocente({ ...nuevoDocente, [k]: e.target.value })} />
@@ -1141,7 +1141,7 @@ export default function CargaAcademicaDashboard() {
             ))}
             <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b',
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B5446',
                   textTransform: 'uppercase', marginBottom: 4 }}>Nivel</label>
                 <select style={inp} value={nuevoDocente.nivel}
                   onChange={e => setNuevoDocente({ ...nuevoDocente, nivel: e.target.value })}>
@@ -1150,7 +1150,7 @@ export default function CargaAcademicaDashboard() {
                 </select>
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b',
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B5446',
                   textTransform: 'uppercase', marginBottom: 4 }}>Horas contrato</label>
                 <select style={inp} value={nuevoDocente.horas_contrato}
                   onChange={e => setNuevoDocente({ ...nuevoDocente, horas_contrato: Number(e.target.value) })}>
@@ -1164,8 +1164,8 @@ export default function CargaAcademicaDashboard() {
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setNuevoDocente(null)} style={{ padding: '8px 16px',
-                background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer',
-                fontSize: 13, fontWeight: 600, color: '#475569' }}>Cancelar</button>
+                background: '#F3F0EC', border: 'none', borderRadius: 8, cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, color: '#5C463A' }}>Cancelar</button>
               <button onClick={crearDocente} style={{ padding: '8px 18px', background: primary,
                 color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer',
                 fontSize: 13, fontWeight: 700 }}>Crear y distribuir</button>

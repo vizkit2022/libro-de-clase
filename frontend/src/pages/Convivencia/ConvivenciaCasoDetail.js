@@ -62,9 +62,9 @@ function printAnexo(html, title) {
       h2 { font-size: 11pt; text-align: center; color: #555; margin-bottom: 16px; }
       table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
       td, th { border: 1px solid #999; padding: 5px 8px; vertical-align: top; }
-      th { background: #e8e8e8; font-weight: 700; font-size: 10pt; text-align: left; width: 30%; }
+      th { background: #ECE8E3; font-weight: 700; font-size: 10pt; text-align: left; width: 30%; }
       .section { font-size: 10pt; font-weight: 700; text-transform: uppercase;
-                 background: #dce6f5; padding: 5px 8px; border: 1px solid #999;
+                 background: #ECE8E3; padding: 5px 8px; border: 1px solid #999;
                  margin-bottom: 0; letter-spacing: 0.04em; }
       .firma-row td { height: 50px; }
       @media print { body { padding: 10px; } }
@@ -233,7 +233,7 @@ function generateAnexo5(caso) {
 function Field({ label, children }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>
+      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B5446', textTransform: 'uppercase', marginBottom: 4 }}>
         {label}
       </label>
       {children}
@@ -242,7 +242,7 @@ function Field({ label, children }) {
 }
 
 const inp = {
-  width: '100%', padding: '7px 10px', border: '1px solid #e2e8f0',
+  width: '100%', padding: '7px 10px', border: '1px solid #ECE8E3',
   borderRadius: 6, fontSize: 14, boxSizing: 'border-box', fontFamily: 'inherit',
 };
 
@@ -284,7 +284,7 @@ function Anx1Form({ data, onChange }) {
         </Field>
       </div>
 
-      <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase', margin: '14px 0 6px', borderLeft: '3px solid #2563eb', paddingLeft: 8 }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: '#5C463A', textTransform: 'uppercase', margin: '14px 0 6px', borderLeft: '3px solid #2B1B14', paddingLeft: 8 }}>
         Persona(s) Afectada(s)
       </p>
       {(d.afectados || [{ nombre:'',rut:'',curso:'',rol:'' }]).map((a, i) => (
@@ -293,12 +293,12 @@ function Anx1Form({ data, onChange }) {
           <input placeholder="RUT" style={{ ...inp, flex: 1 }} value={a.rut||''} onChange={e => setAfectado(i,'rut',e.target.value)} />
           <input placeholder="Curso" style={{ ...inp, flex: 1 }} value={a.curso||''} onChange={e => setAfectado(i,'curso',e.target.value)} />
           <input placeholder="Rol" style={{ ...inp, flex: 1 }} value={a.rol||''} onChange={e => setAfectado(i,'rol',e.target.value)} />
-          {i > 0 && <button onClick={() => removeAfectado(i)} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, padding: '4px 8px', cursor: 'pointer', color: '#dc2626', fontSize: 12 }}>✕</button>}
+          {i > 0 && <button onClick={() => removeAfectado(i)} style={{ background: '#FDE2D7', border: 'none', borderRadius: 4, padding: '4px 8px', cursor: 'pointer', color: '#B8321B', fontSize: 12 }}>✕</button>}
         </div>
       ))}
-      <button onClick={addAfectado} style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '4px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer', marginBottom: 14 }}>+ Agregar afectado</button>
+      <button onClick={addAfectado} style={{ background: '#FFF8E6', color: '#C2410C', border: '1px solid #FFE29A', padding: '4px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer', marginBottom: 14 }}>+ Agregar afectado</button>
 
-      <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase', margin: '0 0 6px', borderLeft: '3px solid #2563eb', paddingLeft: 8 }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: '#5C463A', textTransform: 'uppercase', margin: '0 0 6px', borderLeft: '3px solid #2B1B14', paddingLeft: 8 }}>
         Persona(s) Involucrada(s)
       </p>
       {(d.involucrados || [{ nombre:'',rut:'',curso:'',rol:'' }]).map((a, i) => (
@@ -307,10 +307,10 @@ function Anx1Form({ data, onChange }) {
           <input placeholder="RUT" style={{ ...inp, flex: 1 }} value={a.rut||''} onChange={e => setInvolucrado(i,'rut',e.target.value)} />
           <input placeholder="Curso" style={{ ...inp, flex: 1 }} value={a.curso||''} onChange={e => setInvolucrado(i,'curso',e.target.value)} />
           <input placeholder="Rol" style={{ ...inp, flex: 1 }} value={a.rol||''} onChange={e => setInvolucrado(i,'rol',e.target.value)} />
-          {i > 0 && <button onClick={() => removeInvolucrado(i)} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, padding: '4px 8px', cursor: 'pointer', color: '#dc2626', fontSize: 12 }}>✕</button>}
+          {i > 0 && <button onClick={() => removeInvolucrado(i)} style={{ background: '#FDE2D7', border: 'none', borderRadius: 4, padding: '4px 8px', cursor: 'pointer', color: '#B8321B', fontSize: 12 }}>✕</button>}
         </div>
       ))}
-      <button onClick={addInvolucrado} style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '4px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer', marginBottom: 14 }}>+ Agregar involucrado</button>
+      <button onClick={addInvolucrado} style={{ background: '#FFF8E6', color: '#C2410C', border: '1px solid #FFE29A', padding: '4px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer', marginBottom: 14 }}>+ Agregar involucrado</button>
 
       <Field label="Descripción de los hechos">
         <textarea rows={4} style={ta} value={d.descripcion_hechos||''} onChange={e => set('descripcion_hechos', e.target.value)} />
@@ -351,7 +351,7 @@ function Anx2Form({ data, onChange }) {
         <Field label="Hora término"><input type="time" style={inp} value={d.hora_termino||''} onChange={e => set('hora_termino', e.target.value)} /></Field>
       </div>
 
-      <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase', margin: '4px 0 8px', borderLeft: '3px solid #2563eb', paddingLeft: 8 }}>Apoderado/a</p>
+      <p style={{ fontSize: 12, fontWeight: 700, color: '#5C463A', textTransform: 'uppercase', margin: '4px 0 8px', borderLeft: '3px solid #2B1B14', paddingLeft: 8 }}>Apoderado/a</p>
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
         <Field label="Nombre"><input type="text" style={inp} value={d.apoderado_nombre||''} onChange={e => set('apoderado_nombre', e.target.value)} /></Field>
         <Field label="RUT"><input type="text" style={inp} value={d.apoderado_rut||''} onChange={e => set('apoderado_rut', e.target.value)} /></Field>
@@ -359,7 +359,7 @@ function Anx2Form({ data, onChange }) {
         <Field label="Teléfono"><input type="text" style={inp} value={d.apoderado_telefono||''} onChange={e => set('apoderado_telefono', e.target.value)} /></Field>
       </div>
 
-      <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase', margin: '4px 0 8px', borderLeft: '3px solid #2563eb', paddingLeft: 8 }}>Entrevistador/a</p>
+      <p style={{ fontSize: 12, fontWeight: 700, color: '#5C463A', textTransform: 'uppercase', margin: '4px 0 8px', borderLeft: '3px solid #2B1B14', paddingLeft: 8 }}>Entrevistador/a</p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
         <Field label="Nombre"><input type="text" style={inp} value={d.entrevistador||''} onChange={e => set('entrevistador', e.target.value)} /></Field>
         <Field label="Cargo"><input type="text" style={inp} value={d.entrevistador_cargo||''} onChange={e => set('entrevistador_cargo', e.target.value)} /></Field>
@@ -410,43 +410,43 @@ function Anx3Form({ data, onChange, caseId, bitacora, onBitacoraChange }) {
         <input type="date" style={inp} value={d.proximo_monitoreo||''} onChange={e => set('proximo_monitoreo', e.target.value)} />
       </Field>
 
-      <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase', margin: '16px 0 8px', borderLeft: '3px solid #2563eb', paddingLeft: 8 }}>Bitácora de Seguimiento</p>
+      <p style={{ fontSize: 12, fontWeight: 700, color: '#5C463A', textTransform: 'uppercase', margin: '16px 0 8px', borderLeft: '3px solid #2B1B14', paddingLeft: 8 }}>Bitácora de Seguimiento</p>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 10 }}>
         <thead>
-          <tr style={{ background: '#f1f5f9' }}>
-            <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #e2e8f0', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', width: 110 }}>Fecha</th>
-            <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #e2e8f0', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', width: 160 }}>Tipo de acción</th>
-            <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #e2e8f0', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>Observaciones</th>
-            <th style={{ width: 36, border: '1px solid #e2e8f0' }}></th>
+          <tr style={{ background: '#F3F0EC' }}>
+            <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #ECE8E3', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', width: 110 }}>Fecha</th>
+            <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #ECE8E3', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', width: 160 }}>Tipo de acción</th>
+            <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #ECE8E3', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>Observaciones</th>
+            <th style={{ width: 36, border: '1px solid #ECE8E3' }}></th>
           </tr>
         </thead>
         <tbody>
           {bitacora.map(b => (
             <tr key={b.id}>
-              <td style={{ padding: '5px 8px', border: '1px solid #e2e8f0' }}>{fmtDate(b.fecha)}</td>
-              <td style={{ padding: '5px 8px', border: '1px solid #e2e8f0' }}>{b.tipo_accion}</td>
-              <td style={{ padding: '5px 8px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap' }}>{b.observaciones}</td>
-              <td style={{ padding: '4px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                <button onClick={() => deleteEntry(b.id)} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#dc2626', fontSize: 11, padding: '2px 6px' }}>✕</button>
+              <td style={{ padding: '5px 8px', border: '1px solid #ECE8E3' }}>{fmtDate(b.fecha)}</td>
+              <td style={{ padding: '5px 8px', border: '1px solid #ECE8E3' }}>{b.tipo_accion}</td>
+              <td style={{ padding: '5px 8px', border: '1px solid #ECE8E3', whiteSpace: 'pre-wrap' }}>{b.observaciones}</td>
+              <td style={{ padding: '4px', border: '1px solid #ECE8E3', textAlign: 'center' }}>
+                <button onClick={() => deleteEntry(b.id)} style={{ background: '#FDE2D7', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#B8321B', fontSize: 11, padding: '2px 6px' }}>✕</button>
               </td>
             </tr>
           ))}
           {/* Fila nueva entrada */}
-          <tr style={{ background: '#f8fafc' }}>
-            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>
+          <tr style={{ background: '#F7F6F4' }}>
+            <td style={{ padding: '4px 6px', border: '1px solid #ECE8E3' }}>
               <input type="date" style={{ ...inp, fontSize: 12, padding: '4px 6px' }} value={newEntry.fecha} onChange={e => setNewEntry(p => ({ ...p, fecha: e.target.value }))} />
             </td>
-            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>
+            <td style={{ padding: '4px 6px', border: '1px solid #ECE8E3' }}>
               <select style={{ ...inp, fontSize: 12, padding: '4px 6px' }} value={newEntry.tipo_accion} onChange={e => setNewEntry(p => ({ ...p, tipo_accion: e.target.value }))}>
                 <option value="">Seleccionar...</option>
                 {TIPOS_ACCION.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </td>
-            <td style={{ padding: '4px 6px', border: '1px solid #e2e8f0' }}>
+            <td style={{ padding: '4px 6px', border: '1px solid #ECE8E3' }}>
               <textarea rows={2} style={{ ...ta, fontSize: 12, padding: '4px 6px' }} placeholder="Observaciones..." value={newEntry.observaciones} onChange={e => setNewEntry(p => ({ ...p, observaciones: e.target.value }))} />
             </td>
-            <td style={{ padding: '4px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-              <button onClick={addEntry} disabled={saving} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11, padding: '4px 8px' }}>
+            <td style={{ padding: '4px', border: '1px solid #ECE8E3', textAlign: 'center' }}>
+              <button onClick={addEntry} disabled={saving} style={{ background: '#2B1B14', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11, padding: '4px 8px' }}>
                 {saving ? '...' : '+ Add'}
               </button>
             </td>
@@ -500,7 +500,7 @@ function Anx5Form({ data, onChange }) {
     <div>
       <Field label="Fecha de apelación"><input type="date" style={inp} value={d.fecha||''} onChange={e => set('fecha', e.target.value)} /></Field>
 
-      <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase', margin: '10px 0 8px', borderLeft: '3px solid #2563eb', paddingLeft: 8 }}>Apoderado/a Apelante</p>
+      <p style={{ fontSize: 12, fontWeight: 700, color: '#5C463A', textTransform: 'uppercase', margin: '10px 0 8px', borderLeft: '3px solid #2B1B14', paddingLeft: 8 }}>Apoderado/a Apelante</p>
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
         <Field label="Nombre"><input type="text" style={inp} value={d.apoderado||''} onChange={e => set('apoderado', e.target.value)} /></Field>
         <Field label="RUT"><input type="text" style={inp} value={d.rut||''} onChange={e => set('rut', e.target.value)} /></Field>
@@ -526,15 +526,15 @@ function Anx5Form({ data, onChange }) {
 
 const celdaDato = { background: '#fff', padding: '10px 14px 12px' };
 const etiquetaDato = {
-  display: 'block', fontSize: 10, fontWeight: 750, color: '#94a3b8',
+  display: 'block', fontSize: 10, fontWeight: 750, color: '#9C8A7E',
   textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 5,
 };
 // Lo que falta por definir se marca en ámbar, para que salte a la vista
 const selectDato = (vacio) => ({
   width: '100%', padding: '6px 8px', fontSize: 13, fontFamily: 'inherit',
-  border: `1px solid ${vacio ? '#fcd34d' : '#e2e8f0'}`, borderRadius: 7,
-  background: vacio ? '#fffbeb' : '#fff',
-  color: vacio ? '#92400e' : '#334155',
+  border: `1px solid ${vacio ? '#FFE29A' : '#ECE8E3'}`, borderRadius: 7,
+  background: vacio ? '#FFF8E1' : '#fff',
+  color: vacio ? '#7A4B00' : '#5C463A',
 });
 
 // ── Componente principal ──────────────────────────────────────────────
@@ -543,7 +543,7 @@ export default function ConvivenciaCasoDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
 
   const [caso, setCaso] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -663,7 +663,7 @@ export default function ConvivenciaCasoDetail() {
     return i <= estadoIdx;
   };
 
-  const CRIT_COLORS = { alta: '#dc2626', media: '#d97706', baja: '#64748b' };
+  const CRIT_COLORS = { alta: '#B8321B', media: '#B26B00', baja: '#6B5446' };
   const critColor = CRIT_COLORS[caso.criticality] || CRIT_COLORS.baja;
 
   return (
@@ -671,16 +671,16 @@ export default function ConvivenciaCasoDetail() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <button onClick={() => navigate('/convivencia/casos')} style={{
-          padding: '7px 14px', background: '#f1f5f9', border: 'none', borderRadius: 8,
-          cursor: 'pointer', fontSize: 13, color: '#475569', fontWeight: 600
+          padding: '7px 14px', background: '#F3F0EC', border: 'none', borderRadius: 8,
+          cursor: 'pointer', fontSize: 13, color: '#5C463A', fontWeight: 600
         }}>← Volver</button>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 800, fontSize: 18, color: primary }}>#{String(caso.case_number).padStart(3,'0')}</span>
-            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{caso.title}</h1>
+            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#2B1B14' }}>{caso.title}</h1>
             <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-              background: isCerrado ? '#d1fae5' : '#fef3c7',
-              color: isCerrado ? '#065f46' : '#92400e' }}>
+              background: isCerrado ? '#DDF0E6' : '#FFF0C7',
+              color: isCerrado ? '#1F5E43' : '#7A4B00' }}>
               {isCerrado ? '✅ Cerrado' : '🔓 Abierto'}
             </span>
             <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
@@ -688,26 +688,26 @@ export default function ConvivenciaCasoDetail() {
               {caso.criticality || 'media'} criticidad
             </span>
           </div>
-          <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 0' }}>
+          <p style={{ fontSize: 12, color: '#6B5446', margin: '4px 0 0' }}>
             {caso.date ? fmtDate(caso.date) : ''} · {caso.year}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {saved && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>✓ Guardado</span>}
+          {saved && <span style={{ fontSize: 12, color: '#2F7D5B', fontWeight: 600 }}>✓ Guardado</span>}
           <button onClick={handleSave} disabled={saving} style={{
             padding: '8px 16px', background: primary, color: '#fff', border: 'none',
             borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.7 : 1
           }}>{saving ? 'Guardando...' : '💾 Guardar'}</button>
           <button onClick={cerrarOReabrir} style={{
-            padding: '8px 14px', border: '1px solid #e2e8f0', borderRadius: 8,
+            padding: '8px 14px', border: '1px solid #ECE8E3', borderRadius: 8,
             fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            background: isCerrado ? '#fff' : '#f0fdf4',
-            color: isCerrado ? '#475569' : '#15803d',
-            borderColor: isCerrado ? '#e2e8f0' : '#bbf7d0',
+            background: isCerrado ? '#fff' : '#DDF0E6',
+            color: isCerrado ? '#5C463A' : '#1F5E43',
+            borderColor: isCerrado ? '#ECE8E3' : '#B8E0CB',
           }}>{isCerrado ? 'Reabrir caso' : 'Cerrar caso'}</button>
           {canAdvance && (
             <button onClick={handleAvanzar} style={{
-              padding: '8px 16px', background: '#16a34a', color: '#fff', border: 'none',
+              padding: '8px 16px', background: '#2F7D5B', color: '#fff', border: 'none',
               borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer'
             }}>Avanzar Etapa →</button>
           )}
@@ -716,16 +716,16 @@ export default function ConvivenciaCasoDetail() {
 
       {/* Datos del caso: se definen acá, no en otra pantalla */}
       <div className="card" style={{ marginBottom: 18, padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '11px 16px', borderBottom: '1px solid #f1f5f9',
+        <div style={{ padding: '11px 16px', borderBottom: '1px solid #F3F0EC',
           display: 'flex', alignItems: 'center', gap: 8 }}>
-          <h3 style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', margin: 0,
+          <h3 style={{ fontSize: 11, fontWeight: 800, color: '#9C8A7E', margin: 0,
             textTransform: 'uppercase', letterSpacing: '.06em' }}>Datos del caso</h3>
-          {guardandoDato && <span style={{ fontSize: 11, color: '#94a3b8' }}>guardando…</span>}
+          {guardandoDato && <span style={{ fontSize: 11, color: '#9C8A7E' }}>guardando…</span>}
         </div>
 
         <div style={{ display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 1,
-          background: '#f1f5f9' }}>
+          background: '#F3F0EC' }}>
 
           {/* Profesional a cargo */}
           <div style={celdaDato}>
@@ -795,15 +795,15 @@ export default function ConvivenciaCasoDetail() {
         {ETAPAS.map((etapa, i) => {
           const isDone = i < estadoIdx;
           const isActive = i === estadoIdx;
-          const color = isDone ? '#22c55e' : isActive ? primary : '#e2e8f0';
-          const textColor = isDone ? '#15803d' : isActive ? primary : '#94a3b8';
+          const color = isDone ? '#2F7D5B' : isActive ? primary : '#ECE8E3';
+          const textColor = isDone ? '#1F5E43' : isActive ? primary : '#9C8A7E';
           return (
             <div key={etapa.key} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 80 }}>
                 <div style={{
                   width: 34, height: 34, borderRadius: '50%', background: color,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: isDone || isActive ? '#fff' : '#94a3b8',
+                  color: isDone || isActive ? '#fff' : '#9C8A7E',
                   fontWeight: 800, fontSize: 14, flexShrink: 0
                 }}>
                   {isDone ? '✓' : i + 1}
@@ -813,7 +813,7 @@ export default function ConvivenciaCasoDetail() {
                 </span>
               </div>
               {i < ETAPAS.length - 1 && (
-                <div style={{ width: 30, height: 2, background: isDone ? '#22c55e' : '#e2e8f0', flexShrink: 0, margin: '0 2px' }} />
+                <div style={{ width: 30, height: 2, background: isDone ? '#2F7D5B' : '#ECE8E3', flexShrink: 0, margin: '0 2px' }} />
               )}
             </div>
           );
@@ -838,7 +838,7 @@ export default function ConvivenciaCasoDetail() {
 
           return (
             <div key={etapa} style={{
-              border: `1px solid ${isActive ? primary : isDone ? '#bbf7d0' : '#e2e8f0'}`,
+              border: `1px solid ${isActive ? primary : isDone ? '#B8E0CB' : '#ECE8E3'}`,
               borderRadius: 12, overflow: 'hidden',
               opacity: unlocked ? 1 : 0.5,
             }}>
@@ -847,32 +847,32 @@ export default function ConvivenciaCasoDetail() {
                 onClick={() => unlocked && setOpenAnexo(isOpen ? null : etapa)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-                  background: isActive ? `${primary}08` : isDone ? '#f0fdf4' : '#f8fafc',
+                  background: isActive ? `${primary}08` : isDone ? '#DDF0E6' : '#F7F6F4',
                   cursor: unlocked ? 'pointer' : 'not-allowed', userSelect: 'none',
                 }}
               >
-                <span style={{ fontSize: 10, background: isActive ? primary : isDone ? '#22c55e' : '#e2e8f0',
-                  color: isActive || isDone ? '#fff' : '#94a3b8',
+                <span style={{ fontSize: 10, background: isActive ? primary : isDone ? '#2F7D5B' : '#ECE8E3',
+                  color: isActive || isDone ? '#fff' : '#9C8A7E',
                   padding: '2px 8px', borderRadius: 4, fontWeight: 700, flexShrink: 0 }}>
                   {tag}
                 </span>
-                <span style={{ fontWeight: 600, fontSize: 14, color: '#1e293b', flex: 1 }}>{label}</span>
-                {isDone && <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>✓ Completado</span>}
+                <span style={{ fontWeight: 600, fontSize: 14, color: '#2B1B14', flex: 1 }}>{label}</span>
+                {isDone && <span style={{ fontSize: 11, color: '#2F7D5B', fontWeight: 700 }}>✓ Completado</span>}
                 {isActive && <span style={{ fontSize: 11, color: primary, fontWeight: 700 }}>● En curso</span>}
-                {!unlocked && <span style={{ fontSize: 12, color: '#94a3b8' }}>🔒</span>}
+                {!unlocked && <span style={{ fontSize: 12, color: '#9C8A7E' }}>🔒</span>}
                 {unlocked && (
                   <button
                     onClick={e => { e.stopPropagation(); printAnexo(gen(), `${tag} - Caso #${String(caso.case_number).padStart(3,'0')}`); }}
-                    style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#374151',
+                    style={{ background: '#F3F0EC', border: '1px solid #ECE8E3', color: '#5C463A',
                       padding: '3px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer', flexShrink: 0 }}
                   >🖨️ Imprimir</button>
                 )}
-                <span style={{ color: '#94a3b8', fontSize: 16 }}>{isOpen ? '▲' : '▼'}</span>
+                <span style={{ color: '#9C8A7E', fontSize: 16 }}>{isOpen ? '▲' : '▼'}</span>
               </div>
 
               {/* Body */}
               {isOpen && unlocked && (
-                <div style={{ padding: '20px 20px 16px', borderTop: `1px solid ${isActive ? primary + '40' : '#e2e8f0'}` }}>
+                <div style={{ padding: '20px 20px 16px', borderTop: `1px solid ${isActive ? primary + '40' : '#ECE8E3'}` }}>
                   {form}
                 </div>
               )}
@@ -882,7 +882,7 @@ export default function ConvivenciaCasoDetail() {
       </div>
 
       {toast && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, background: toast.type === 'error' ? '#dc2626' : '#16a34a',
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: toast.type === 'error' ? '#B8321B' : '#2F7D5B',
           color: '#fff', padding: '10px 18px', borderRadius: 10, fontWeight: 600, fontSize: 14, zIndex: 9999,
           boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
           {toast.msg}

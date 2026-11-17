@@ -7,7 +7,7 @@ import { buildCurriculumUrl, LEVEL_GROUP_LABELS, LEVEL_GROUP_COLORS } from '../.
 export default function SubjectCurriculumPage() {
   const { courseId, courseSubjectId } = useParams();
   const { school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const iframeRef = useRef(null);
 
   const [course, setCourse] = useState(null);
@@ -72,14 +72,14 @@ export default function SubjectCurriculumPage() {
   return (
     <div>
       {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#64748b', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6B5446', marginBottom: 20 }}>
         <Link to="/courses" style={{ color: primary, textDecoration: 'none', fontWeight: 600 }}>Cursos</Link>
         <span>›</span>
         <Link to={`/courses/${courseId}`} style={{ color: primary, textDecoration: 'none', fontWeight: 600 }}>
           {course.name}
         </Link>
         <span>›</span>
-        <span style={{ color: '#0f172a', fontWeight: 600 }}>{subject?.name}</span>
+        <span style={{ color: '#2B1B14', fontWeight: 600 }}>{subject?.name}</span>
       </div>
 
       {/* Header de la asignatura */}
@@ -102,7 +102,7 @@ export default function SubjectCurriculumPage() {
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: '#2B1B14', margin: 0 }}>
                 {subject?.name}
               </h1>
               {subject?.code && (
@@ -114,11 +114,11 @@ export default function SubjectCurriculumPage() {
                 </span>
               )}
             </div>
-            <p style={{ color: '#64748b', fontSize: 14, margin: '4px 0' }}>
+            <p style={{ color: '#6B5446', fontSize: 14, margin: '4px 0' }}>
               📚 {course.name} · {course.level} · {course.year}
             </p>
             {teacher && (
-              <p style={{ color: '#64748b', fontSize: 13, margin: '2px 0' }}>
+              <p style={{ color: '#6B5446', fontSize: 13, margin: '2px 0' }}>
                 👨‍🏫 {teacher.first_name} {teacher.last_name}
               </p>
             )}
@@ -128,12 +128,12 @@ export default function SubjectCurriculumPage() {
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <div style={{
               background: '#fff', borderRadius: 10, padding: '10px 16px',
-              border: '1px solid #e2e8f0', textAlign: 'center'
+              border: '1px solid #ECE8E3', textAlign: 'center'
             }}>
               <p style={{ fontSize: 20, fontWeight: 800, color: subjectColor, margin: 0 }}>
                 {courseSubject.hours_per_week}
               </p>
-              <p style={{ fontSize: 11, color: '#94a3b8', margin: '2px 0 0' }}>hrs/sem</p>
+              <p style={{ fontSize: 11, color: '#9C8A7E', margin: '2px 0 0' }}>hrs/sem</p>
             </div>
             {groupLabel && (
               <div style={{
@@ -143,7 +143,7 @@ export default function SubjectCurriculumPage() {
                 <p style={{ fontSize: 12, fontWeight: 700, color: groupColor, margin: 0 }}>
                   {groupLabel}
                 </p>
-                <p style={{ fontSize: 10, color: '#94a3b8', margin: '2px 0 0' }}>nivel escolar</p>
+                <p style={{ fontSize: 10, color: '#9C8A7E', margin: '2px 0 0' }}>nivel escolar</p>
               </div>
             )}
           </div>
@@ -157,10 +157,10 @@ export default function SubjectCurriculumPage() {
           <div className="card" style={{ marginBottom: 16, padding: '14px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
               <div style={{ flex: 1 }}>
-                <p style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', margin: 0 }}>
+                <p style={{ fontWeight: 700, fontSize: 14, color: '#2B1B14', margin: 0 }}>
                   📋 Plan y Programa — Ministerio de Educación de Chile
                 </p>
-                <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 0' }}>
+                <p style={{ fontSize: 12, color: '#6B5446', margin: '2px 0 0' }}>
                   Objetivos de aprendizaje oficiales para {subject?.name} · {course.level}
                 </p>
               </div>
@@ -197,7 +197,7 @@ export default function SubjectCurriculumPage() {
                 flexDirection: 'column'
               }}>
                 <div className="spinner" style={{ borderTopColor: primary }} />
-                <p style={{ color: '#64748b', fontSize: 13 }}>Cargando currículo oficial...</p>
+                <p style={{ color: '#6B5446', fontSize: 13 }}>Cargando currículo oficial...</p>
               </div>
             )}
 
@@ -237,8 +237,8 @@ export default function SubjectCurriculumPage() {
         /* Asignatura no mapeada */
         <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>📖</div>
-          <h3 style={{ color: '#0f172a', marginBottom: 8 }}>Currículo no disponible</h3>
-          <p style={{ color: '#64748b', maxWidth: 400, margin: '0 auto 20px' }}>
+          <h3 style={{ color: '#2B1B14', marginBottom: 8 }}>Currículo no disponible</h3>
+          <p style={{ color: '#6B5446', maxWidth: 400, margin: '0 auto 20px' }}>
             No se encontró el plan y programa del Ministerio para <strong>{subject?.name}</strong> en el nivel <strong>{course.level}</strong>.
             Puedes buscarlo directamente en el sitio oficial.
           </p>
@@ -266,16 +266,16 @@ function BlockedFallback({ url, subjectName, courseLevel, primary, subjectColor 
     <div style={{ padding: '32px 28px' }}>
       {/* Aviso */}
       <div style={{
-        background: '#fffbeb', border: '1px solid #fde68a',
+        background: '#FFF8E1', border: '1px solid #FFE29A',
         borderRadius: 10, padding: '12px 16px', marginBottom: 24,
         display: 'flex', alignItems: 'flex-start', gap: 10
       }}>
         <span style={{ fontSize: 18, flexShrink: 0 }}>ℹ️</span>
         <div>
-          <p style={{ fontWeight: 600, color: '#92400e', fontSize: 13, margin: 0 }}>
+          <p style={{ fontWeight: 600, color: '#7A4B00', fontSize: 13, margin: 0 }}>
             El sitio del Ministerio no permite mostrarse dentro de la aplicación
           </p>
-          <p style={{ color: '#78350f', fontSize: 12, margin: '4px 0 0' }}>
+          <p style={{ color: '#7A4B00', fontSize: 12, margin: '4px 0 0' }}>
             Usa el botón "Abrir en sitio oficial" para ver el contenido completo en una nueva pestaña.
           </p>
         </div>
@@ -307,9 +307,9 @@ function BlockedFallback({ url, subjectName, courseLevel, primary, subjectColor 
 
       {/* URL visible */}
       <div style={{
-        background: '#f8fafc', border: '1px solid #e2e8f0',
+        background: '#F7F6F4', border: '1px solid #ECE8E3',
         borderRadius: 8, padding: '8px 14px', marginBottom: 28,
-        fontSize: 12, color: '#64748b', wordBreak: 'break-all'
+        fontSize: 12, color: '#6B5446', wordBreak: 'break-all'
       }}>
         🔗 {url}
       </div>
@@ -319,12 +319,12 @@ function BlockedFallback({ url, subjectName, courseLevel, primary, subjectColor 
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <div style={{ width: 4, height: 20, background: subjectColor, borderRadius: 2 }} />
-            <h3 style={{ fontWeight: 700, fontSize: 16, color: '#0f172a', margin: 0 }}>
+            <h3 style={{ fontWeight: 700, fontSize: 16, color: '#2B1B14', margin: 0 }}>
               Objetivos de Aprendizaje — Referencia
             </h3>
             <span style={{
               fontSize: 10, padding: '2px 8px', borderRadius: 10,
-              background: '#f1f5f9', color: '#64748b', fontWeight: 600
+              background: '#F3F0EC', color: '#6B5446', fontWeight: 600
             }}>
               Resumen orientativo
             </span>
@@ -333,7 +333,7 @@ function BlockedFallback({ url, subjectName, courseLevel, primary, subjectColor 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
             {staticOAs.map((oa, i) => (
               <div key={i} style={{
-                border: '1px solid #e2e8f0', borderRadius: 10,
+                border: '1px solid #ECE8E3', borderRadius: 10,
                 padding: '14px 16px',
                 borderLeft: `3px solid ${subjectColor}`
               }}>
@@ -345,12 +345,12 @@ function BlockedFallback({ url, subjectName, courseLevel, primary, subjectColor 
                   }}>
                     OA {oa.num}
                   </span>
-                  <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 13, color: '#5C463A', margin: 0, lineHeight: 1.5 }}>
                     {oa.text}
                   </p>
                 </div>
                 {oa.axis && (
-                  <p style={{ fontSize: 11, color: '#94a3b8', margin: '6px 0 0 0' }}>
+                  <p style={{ fontSize: 11, color: '#9C8A7E', margin: '6px 0 0 0' }}>
                     Eje: {oa.axis}
                   </p>
                 )}
@@ -358,7 +358,7 @@ function BlockedFallback({ url, subjectName, courseLevel, primary, subjectColor 
             ))}
           </div>
 
-          <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 16, textAlign: 'center' }}>
+          <p style={{ fontSize: 11, color: '#9C8A7E', marginTop: 16, textAlign: 'center' }}>
             * Resumen orientativo. Para los objetivos completos y actualizados, consulta el{' '}
             <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: primary }}>
               sitio oficial del Ministerio de Educación

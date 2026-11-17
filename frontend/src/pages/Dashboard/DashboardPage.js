@@ -55,14 +55,14 @@ export default function DashboardPage() {
 
   const indicadores = [
     { et: 'Estudiantes', val: resumen?.total_students ?? '—', ico: 'familia',
-      color: '#3b4fd8', fondo: '#eef1fe', nota: 'matriculados y activos' },
+      color: '#C2410C', fondo: '#FFF8E6', nota: 'matriculados y activos' },
     { et: 'Docentes', val: resumen?.total_teachers ?? '—', ico: 'personas',
-      color: '#2f7d4f', fondo: '#eaf7ef', nota: 'con cuenta en la plataforma' },
+      color: '#2F7D5B', fondo: '#DDF0E6', nota: 'con cuenta en la plataforma' },
     { et: 'Cursos', val: resumen?.total_courses ?? '—', ico: 'libro',
-      color: '#6d4ed8', fondo: '#f1eefe', nota: `año lectivo ${year}` },
+      color: '#8A2846', fondo: '#FFF8E6', nota: `año lectivo ${year}` },
     { et: 'Requieren atención', val: alertas.length, ico: 'reloj',
-      color: alertas.length ? '#b91c1c' : '#2f7d4f',
-      fondo: alertas.length ? '#fee2e2' : '#eaf7ef',
+      color: alertas.length ? '#9A3412' : '#2F7D5B',
+      fondo: alertas.length ? '#FDE2D7' : '#DDF0E6',
       nota: alertas.length ? 'en la carga académica' : 'sin pendientes' },
   ];
 
@@ -126,13 +126,13 @@ export default function DashboardPage() {
               <div className="kv-barras">
                 {carga.por_asignatura.slice(0, 6).map(a => {
                   const falta = a.horas_faltantes;
-                  const col = falta === 0 ? '#2f7d4f' : falta < 0 ? '#b91c1c' : '#b45309';
+                  const col = falta === 0 ? '#2F7D5B' : falta < 0 ? '#9A3412' : '#7A4B00';
                   return (
                     <div className="kv-barra" key={a.asignatura}>
                       <span className="nom" title={a.asignatura}>{a.asignatura}</span>
                       <span className="pista">
                         <i style={{ width: `${Math.min(a.cobertura_pct, 100)}%`,
-                          background: falta === 0 ? '#7cc496' : '#3b4fd8' }} />
+                          background: falta === 0 ? '#B8E0CB' : '#2B1B14' }} />
                       </span>
                       <span className="cif" style={{ color: col }}>
                         {a.horas_asignadas}/{a.horas_demanda}
@@ -166,8 +166,8 @@ export default function DashboardPage() {
                 {alertas.slice(0, 5).map((a, i) => (
                   <Link to="/carga-academica" className="kv-pend" key={i}>
                     <span className="mk" style={{
-                      background: a.tipo === 'descuadre' ? '#fee2e2' : '#fef3c7',
-                      color: a.tipo === 'descuadre' ? '#b91c1c' : '#b45309' }}>
+                      background: a.tipo === 'descuadre' ? '#FDE2D7' : '#FFF0C7',
+                      color: a.tipo === 'descuadre' ? '#9A3412' : '#7A4B00' }}>
                       <Icono nombre="reloj" tam={14} />
                     </span>
                     <span className="txt">{a.mensaje}</span>

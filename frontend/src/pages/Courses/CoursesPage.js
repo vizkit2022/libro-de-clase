@@ -7,7 +7,7 @@ const EMPTY = { name:'', level:'', letter:'', year: new Date().getFullYear(), he
 
 export default function CoursesPage() {
   const { school, user, anio, anios } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const [courses, setCourses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [year, setYear] = useState(anio || new Date().getFullYear());
@@ -46,11 +46,11 @@ export default function CoursesPage() {
   };
 
   const levelColors = {
-    'Pre-Kinder':'#fce7f3', 'Kinder':'#fce7f3',
-    '1° Básico':'#fef9c3', '2° Básico':'#fef9c3', '3° Básico':'#fef9c3',
-    '4° Básico':'#dcfce7', '5° Básico':'#dcfce7', '6° Básico':'#dcfce7',
-    '7° Básico':'#dbeafe', '8° Básico':'#dbeafe',
-    '1° Medio':'#ede9fe', '2° Medio':'#ede9fe', '3° Medio':'#ede9fe', '4° Medio':'#ede9fe',
+    'Pre-Kinder':'#FCE4EC', 'Kinder':'#FCE4EC',
+    '1° Básico':'#FFF0C7', '2° Básico':'#FFF0C7', '3° Básico':'#FFF0C7',
+    '4° Básico':'#DDF0E6', '5° Básico':'#DDF0E6', '6° Básico':'#DDF0E6',
+    '7° Básico':'#FFF0C7', '8° Básico':'#FFF0C7',
+    '1° Medio':'#FCE4EC', '2° Medio':'#FCE4EC', '3° Medio':'#FCE4EC', '4° Medio':'#FCE4EC',
   };
 
   return (
@@ -62,7 +62,7 @@ export default function CoursesPage() {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <select value={year} onChange={e => setYear(+e.target.value)}
-            style={{ padding: '9px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit' }}>
+            style={{ padding: '9px 14px', border: '1.5px solid #ECE8E3', borderRadius: 10, fontSize: 14, fontFamily: 'inherit' }}>
             {opcionesAnio.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           {canEdit && <button className="btn btn-primary" onClick={() => { setForm({...EMPTY, year}); setEditing(null); setShowModal(true); }} style={{ background: primary }}>＋ Nuevo curso</button>}
@@ -79,21 +79,21 @@ export default function CoursesPage() {
                 onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow=''; }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: levelColors[c.level] || '#f1f5f9',
+                  <div style={{ width: 48, height: 48, borderRadius: 12, background: levelColors[c.level] || '#F3F0EC',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>📚</div>
                   {canEdit && (
                     <button className="btn btn-secondary btn-sm btn-icon"
                       onClick={e => { e.preventDefault(); setForm({...c, head_teacher_id: c.head_teacher_id||''}); setEditing(c); setShowModal(true); }}>✏️</button>
                   )}
                 </div>
-                <h3 style={{ fontWeight: 700, color: '#0f172a', fontSize: '18px', marginBottom: 4 }}>{c.name}</h3>
-                <p style={{ color: '#64748b', fontSize: 13, marginBottom: 12 }}>{c.description || c.level}</p>
+                <h3 style={{ fontWeight: 700, color: '#2B1B14', fontSize: '18px', marginBottom: 4 }}>{c.name}</h3>
+                <p style={{ color: '#6B5446', fontSize: 13, marginBottom: 12 }}>{c.description || c.level}</p>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ background: '#f1f5f9', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#475569' }}>
+                  <span style={{ background: '#F3F0EC', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#5C463A' }}>
                     👥 {c.student_count} alumnos
                   </span>
                   {c.head_teacher && (
-                    <span style={{ background: '#dbeafe', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#1d4ed8' }}>
+                    <span style={{ background: '#FFF0C7', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#9A3412' }}>
                       👨‍🏫 {c.head_teacher.first_name} {c.head_teacher.last_name[0]}.
                     </span>
                   )}

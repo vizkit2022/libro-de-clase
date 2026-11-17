@@ -7,15 +7,15 @@ import '../../components/UI/ui.css';
 import './AuditoriaPage.css';
 
 export const EVENTOS = {
-  login:         { et: 'Inicio de sesión', col: '#15803d', bg: '#dcfce7' },
-  login_fallido: { et: 'Inicio fallido',   col: '#b91c1c', bg: '#fee2e2' },
-  logout:        { et: 'Cierre de sesión', col: '#475569', bg: '#e2e8f0' },
-  crear:         { et: 'Creación',         col: '#1d4ed8', bg: '#dbeafe' },
-  editar:        { et: 'Edición',          col: '#b45309', bg: '#fef3c7' },
-  eliminar:      { et: 'Eliminación',      col: '#9f1239', bg: '#ffe4e6' },
-  descargar:     { et: 'Descarga',         col: '#6d28d9', bg: '#ede9fe' },
-  importar:      { et: 'Importación',      col: '#0f766e', bg: '#ccfbf1' },
-  accion:        { et: 'Acción',           col: '#4338ca', bg: '#e0e7ff' },
+  login:         { et: 'Inicio de sesión', col: '#1F5E43', bg: '#DDF0E6' },
+  login_fallido: { et: 'Inicio fallido',   col: '#9A3412', bg: '#FDE2D7' },
+  logout:        { et: 'Cierre de sesión', col: '#5C463A', bg: '#ECE8E3' },
+  crear:         { et: 'Creación',         col: '#3D2A21', bg: '#FFF0C7' },
+  editar:        { et: 'Edición',          col: '#7A4B00', bg: '#FFF0C7' },
+  eliminar:      { et: 'Eliminación',      col: '#8A2846', bg: '#FCE4EC' },
+  descargar:     { et: 'Descarga',         col: '#8A2846', bg: '#FCE4EC' },
+  importar:      { et: 'Importación',      col: '#1F5E43', bg: '#DDF0E6' },
+  accion:        { et: 'Acción',           col: '#3D2A21', bg: '#FFF0C7' },
 };
 
 const ROLES = {
@@ -42,7 +42,7 @@ function fmtFechaHora(v) {
 }
 
 export function ChipEvento({ evento }) {
-  const e = EVENTOS[evento] || { et: evento || '—', col: '#475569', bg: '#f1f5f9' };
+  const e = EVENTOS[evento] || { et: evento || '—', col: '#5C463A', bg: '#F3F0EC' };
   return <span className="ui-chip" style={{ color: e.col, background: e.bg }}>{e.et}</span>;
 }
 

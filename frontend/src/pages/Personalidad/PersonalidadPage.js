@@ -20,7 +20,7 @@ function useAviso() {
     setTimeout(() => setToast(null), 3500);
   }, []);
   const nodo = toast && (
-    <div className="ip-toast" style={{ background: toast.tipo === 'err' ? '#b91c1c' : '#15803d' }}>
+    <div className="ip-toast" style={{ background: toast.tipo === 'err' ? '#9A3412' : '#1F5E43' }}>
       {toast.msg}
     </div>
   );

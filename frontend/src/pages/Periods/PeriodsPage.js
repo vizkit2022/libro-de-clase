@@ -7,7 +7,7 @@ const EMPTY = { name:'', period_type:'semestral', year: new Date().getFullYear()
 
 export default function PeriodsPage() {
   const { school, anio, anios } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const [periods, setPeriods] = useState([]);
   const [year, setYear] = useState(anio || new Date().getFullYear());
   // Sigue al año elegido en la barra lateral, sin quitar el selector propio
@@ -59,7 +59,7 @@ export default function PeriodsPage() {
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <select value={year} onChange={e => setYear(+e.target.value)}
-            style={{ padding: '9px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', fontFamily: 'inherit' }}>
+            style={{ padding: '9px 14px', border: '1.5px solid #ECE8E3', borderRadius: '10px', fontSize: '14px', fontFamily: 'inherit' }}>
             {years.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <button className="btn btn-primary" onClick={openNew} style={{ background: primary }}>＋ Nuevo período</button>
@@ -80,7 +80,7 @@ export default function PeriodsPage() {
             <div key={p.id} className="card" style={{ borderTop: `4px solid ${primary}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div>
-                  <h3 style={{ fontWeight: 700, color: '#0f172a', fontSize: '16px' }}>{p.name}</h3>
+                  <h3 style={{ fontWeight: 700, color: '#2B1B14', fontSize: '16px' }}>{p.name}</h3>
                   <span className={`badge ${p.is_active ? 'badge-active' : 'badge-inactive'}`} style={{ marginTop: 4 }}>
                     {p.is_active ? 'Activo' : 'Inactivo'}
                   </span>
@@ -91,11 +91,11 @@ export default function PeriodsPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: '#64748b' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: '#6B5446' }}>
                   <span>📋</span> <span>{TYPES[p.period_type]} — N° {p.number}</span>
                 </div>
                 {p.start_date && (
-                  <div style={{ fontSize: 13, color: '#64748b', display: 'flex', gap: 8 }}>
+                  <div style={{ fontSize: 13, color: '#6B5446', display: 'flex', gap: 8 }}>
                     <span>📆</span>
                     <span>{new Date(p.start_date + 'T12:00').toLocaleDateString('es-CL')} → {p.end_date ? new Date(p.end_date + 'T12:00').toLocaleDateString('es-CL') : '...'}</span>
                   </div>

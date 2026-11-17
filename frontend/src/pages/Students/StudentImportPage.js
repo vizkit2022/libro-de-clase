@@ -10,11 +10,11 @@ const ACTION_LABEL = { crear: 'Crear', actualizar: 'Actualizar', omitir: 'Omitir
 
 function Totals({ result }) {
   const items = [
-    ['Filas', result.total_rows, '#0f172a'],
-    [result.dry_run ? 'Se crearán' : 'Creados', result.created, '#166534'],
-    [result.dry_run ? 'Se actualizarán' : 'Actualizados', result.updated, '#1d4ed8'],
-    ['Omitidos', result.skipped, '#64748b'],
-    ['Errores', result.errors?.length || 0, (result.errors?.length || 0) ? '#991b1b' : '#64748b'],
+    ['Filas', result.total_rows, '#2B1B14'],
+    [result.dry_run ? 'Se crearán' : 'Creados', result.created, '#1F5E43'],
+    [result.dry_run ? 'Se actualizarán' : 'Actualizados', result.updated, '#3D2A21'],
+    ['Omitidos', result.skipped, '#6B5446'],
+    ['Errores', result.errors?.length || 0, (result.errors?.length || 0) ? '#9A3412' : '#6B5446'],
   ];
   return (
     <div className="imp-totals">
@@ -42,7 +42,7 @@ function ResultTable({ result, confirmed, primary }) {
             const sid = r.student_id || r.id;
             return (
               <tr key={`${r.row}-${i}`}>
-                <td style={{ color: '#94a3b8', fontWeight: 600 }}>{r.row}</td>
+                <td style={{ color: '#9C8A7E', fontWeight: 600 }}>{r.row}</td>
                 <td style={{ whiteSpace: 'nowrap' }}>{r.rut || '—'}</td>
                 <td style={{ fontWeight: 600 }}>{r.name || '—'}</td>
                 <td><span className={`imp-action ${r.action}`}>{ACTION_LABEL[r.action] || r.action}</span></td>
@@ -51,13 +51,13 @@ function ResultTable({ result, confirmed, primary }) {
                 <td>
                   {r.warnings?.length ? (
                     <ul className="imp-warn">{r.warnings.map((w, j) => <li key={j}>{w}</li>)}</ul>
-                  ) : <span style={{ color: '#cbd5e1' }}>—</span>}
+                  ) : <span style={{ color: '#D9D2CA' }}>—</span>}
                 </td>
                 {confirmed && (
                   <td>
                     {sid && r.action !== 'omitir' ? (
                       <Link to={`/students/${sid}/ficha`} className="btn btn-secondary btn-sm" style={{ color: primary }}>🗂️ Ver ficha</Link>
-                    ) : <span style={{ color: '#cbd5e1' }}>—</span>}
+                    ) : <span style={{ color: '#D9D2CA' }}>—</span>}
                   </td>
                 )}
               </tr>
@@ -71,7 +71,7 @@ function ResultTable({ result, confirmed, primary }) {
 
 export default function StudentImportPage() {
   const { school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const [searchParams] = useSearchParams();
   const fileRef = useRef(null);
 
@@ -167,7 +167,7 @@ export default function StudentImportPage() {
             <small className="ff-hint">Si eliges un curso, todos los alumnos del archivo se matricularán en él.</small>
           </div>
           <div className="form-group">
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Accesos de apoderado</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#5C463A' }}>Accesos de apoderado</span>
             <label className="fcheck" htmlFor="imp-access" style={{ marginTop: 6 }}>
               <input id="imp-access" type="checkbox" checked={createAccess} disabled={!!busy || !!final}
                 onChange={e => { setCreateAccess(e.target.checked); setPreview(null); }} />

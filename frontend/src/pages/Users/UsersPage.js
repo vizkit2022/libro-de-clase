@@ -25,7 +25,7 @@ function PhotoUploadSection({ editing, form, pendingPhoto, setPendingPhoto, prim
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20, padding: '14px 0', borderBottom: '1px solid #f1f5f9' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20, padding: '14px 0', borderBottom: '1px solid #F3F0EC' }}>
       {/* Avatar clickable */}
       <div
         style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}
@@ -59,22 +59,22 @@ function PhotoUploadSection({ editing, form, pendingPhoto, setPendingPhoto, prim
 
       {/* Texto y acciones */}
       <div>
-        <p style={{ fontWeight: 600, fontSize: 14, color: '#0f172a', margin: 0 }}>Foto de perfil</p>
-        <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 6px' }}>Haz clic en el círculo para subir o cambiar la foto</p>
+        <p style={{ fontWeight: 600, fontSize: 14, color: '#2B1B14', margin: 0 }}>Foto de perfil</p>
+        <p style={{ fontSize: 12, color: '#6B5446', margin: '2px 0 6px' }}>Haz clic en el círculo para subir o cambiar la foto</p>
         {pendingPhoto && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 11, background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: 5, fontWeight: 600 }}>
+            <span style={{ fontSize: 11, background: '#DDF0E6', color: '#1F5E43', padding: '2px 8px', borderRadius: 5, fontWeight: 600 }}>
               ✓ Nueva foto lista
             </span>
             <button type="button" onClick={() => setPendingPhoto(null)}
-              style={{ fontSize: 11, background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}>
+              style={{ fontSize: 11, background: 'none', border: 'none', color: '#B8321B', cursor: 'pointer', fontWeight: 600 }}>
               Cancelar
             </button>
           </div>
         )}
         {!pendingPhoto && editing?.has_photo && (
           <button type="button" onClick={() => setPendingPhoto('')}
-            style={{ fontSize: 11, background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 600, padding: 0 }}>
+            style={{ fontSize: 11, background: 'none', border: 'none', color: '#B8321B', cursor: 'pointer', fontWeight: 600, padding: 0 }}>
             🗑 Eliminar foto actual
           </button>
         )}
@@ -87,7 +87,7 @@ const EMPTY_FORM = { first_name:'', last_name:'', email:'', rut:'', phone:'', ad
 
 export default function UsersPage() {
   const { school } = useAuth();
-  const primary = school?.primary_color || '#2563EB';
+  const primary = '#2B1B14'; // color del sistema recreo.edu, igual para todos los colegios
   const [users, setUsers] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -335,13 +335,13 @@ export default function UsersPage() {
                           color={avatarColor(u.id)}
                         />
                         <div>
-                          <p style={{ fontWeight: 600, color: '#0f172a', fontSize: '14px' }}>{u.first_name} {u.last_name}</p>
-                          <p style={{ fontSize: '12px', color: '#64748b' }}>{u.email}</p>
+                          <p style={{ fontWeight: 600, color: '#2B1B14', fontSize: '14px' }}>{u.first_name} {u.last_name}</p>
+                          <p style={{ fontSize: '12px', color: '#6B5446' }}>{u.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td style={{ color: '#64748b', fontSize: '13px' }}>{u.rut || '—'}</td>
-                    <td style={{ color: '#64748b', fontSize: '13px' }}>{u.phone || '—'}</td>
+                    <td style={{ color: '#6B5446', fontSize: '13px' }}>{u.rut || '—'}</td>
+                    <td style={{ color: '#6B5446', fontSize: '13px' }}>{u.phone || '—'}</td>
                     <td><span className={`badge badge-${u.role}`}>{ROLE_LABELS[u.role]}</span></td>
                     <td><span className={`badge ${u.is_active ? 'badge-active' : 'badge-inactive'}`}>{u.is_active ? 'Activo' : 'Inactivo'}</span></td>
                     <td>
@@ -459,7 +459,7 @@ export default function UsersPage() {
                         </button>
                       )}
                     </div>
-                    <p style={{ fontSize: 12, color: '#64748b', margin: '6px 0 0', lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 12, color: '#6B5446', margin: '6px 0 0', lineHeight: 1.5 }}>
                       {editing
                         ? 'La contraseña actual no se puede ver: la plataforma guarda solo una huella cifrada, nunca el texto. Si la persona la perdió, escribe una nueva o genérala acá y entrégasela.'
                         : 'Anótala o cópiala antes de guardar: después no se puede volver a ver.'}
@@ -475,10 +475,10 @@ export default function UsersPage() {
                     <div className="form-group" style={{ gridColumn: '1/-1' }}>
                       <label>👨‍👧 Alumnos asignados</label>
                       {allStudents.length === 0 ? (
-                        <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0' }}>No hay alumnos registrados aún.</p>
+                        <p style={{ fontSize: 13, color: '#6B5446', margin: '4px 0' }}>No hay alumnos registrados aún.</p>
                       ) : (
                         <div style={{
-                          border: '1px solid #e2e8f0',
+                          border: '1px solid #ECE8E3',
                           borderRadius: 8,
                           maxHeight: 200,
                           overflowY: 'auto',
@@ -491,7 +491,7 @@ export default function UsersPage() {
                               gap: 10,
                               padding: '7px 14px',
                               cursor: 'pointer',
-                              background: selectedStudents.includes(s.id) ? '#eff6ff' : 'transparent',
+                              background: selectedStudents.includes(s.id) ? '#FFF8E6' : 'transparent',
                               transition: 'background 0.15s'
                             }}>
                               <input
@@ -503,7 +503,7 @@ export default function UsersPage() {
                               <span style={{ fontSize: 13, fontWeight: selectedStudents.includes(s.id) ? 600 : 400 }}>
                                 {s.last_name}, {s.first_name}
                               </span>
-                              {s.rut && <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 'auto' }}>{s.rut}</span>}
+                              {s.rut && <span style={{ fontSize: 12, color: '#9C8A7E', marginLeft: 'auto' }}>{s.rut}</span>}
                             </label>
                           ))}
                         </div>
@@ -523,13 +523,13 @@ export default function UsersPage() {
                       {teacherCourses.length === 0 ? (
                         <div style={{
                           padding: '14px 16px', borderRadius: 8,
-                          background: '#f8fafc', border: '1px dashed #cbd5e1',
+                          background: '#F7F6F4', border: '1px dashed #D9D2CA',
                           textAlign: 'center'
                         }}>
-                          <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
+                          <p style={{ fontSize: 13, color: '#9C8A7E', margin: 0 }}>
                             Este profesor no tiene cursos asignados aún.
                           </p>
-                          <p style={{ fontSize: 12, color: '#94a3b8', margin: '4px 0 0' }}>
+                          <p style={{ fontSize: 12, color: '#9C8A7E', margin: '4px 0 0' }}>
                             Asígna cursos y asignaturas desde la sección <strong>Cursos</strong>.
                           </p>
                         </div>
@@ -539,15 +539,15 @@ export default function UsersPage() {
                             <div key={course.id} style={{
                               display: 'flex', alignItems: 'center', gap: 12,
                               padding: '10px 14px', borderRadius: 8,
-                              background: course.is_head_teacher ? '#fef3c722' : '#f8fafc',
-                              border: `1px solid ${course.is_head_teacher ? '#fde68a' : '#e2e8f0'}`
+                              background: course.is_head_teacher ? '#fef3c722' : '#F7F6F4',
+                              border: `1px solid ${course.is_head_teacher ? '#FFE29A' : '#ECE8E3'}`
                             }}>
                               {/* Info del curso */}
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', margin: 0 }}>
+                                <p style={{ fontWeight: 600, fontSize: 13, color: '#2B1B14', margin: 0 }}>
                                   {course.name}
                                 </p>
-                                <p style={{ fontSize: 11, color: '#94a3b8', margin: '2px 0 0' }}>
+                                <p style={{ fontSize: 11, color: '#9C8A7E', margin: '2px 0 0' }}>
                                   {course.students?.length || 0} alumnos
                                   {course.my_subjects?.length > 0 && (
                                     <> · {course.my_subjects.map(s => s.subject?.name).filter(Boolean).join(', ')}</>
@@ -559,8 +559,8 @@ export default function UsersPage() {
                                 {course.is_head_teacher && (
                                   <span style={{
                                     fontSize: 11, fontWeight: 700,
-                                    background: '#fef3c7', color: '#92400e',
-                                    padding: '2px 8px', borderRadius: 20, border: '1px solid #fde68a'
+                                    background: '#FFF0C7', color: '#7A4B00',
+                                    padding: '2px 8px', borderRadius: 20, border: '1px solid #FFE29A'
                                   }}>
                                     ⭐ Prof. Jefe
                                   </span>
@@ -572,9 +572,9 @@ export default function UsersPage() {
                                   style={{
                                     fontSize: 11, fontWeight: 600, cursor: 'pointer',
                                     padding: '4px 10px', borderRadius: 6, border: '1px solid',
-                                    background: course.is_head_teacher ? '#fef2f2' : `${primary}15`,
-                                    color: course.is_head_teacher ? '#dc2626' : primary,
-                                    borderColor: course.is_head_teacher ? '#fecaca' : `${primary}40`,
+                                    background: course.is_head_teacher ? '#FEF1EB' : `${primary}15`,
+                                    color: course.is_head_teacher ? '#B8321B' : primary,
+                                    borderColor: course.is_head_teacher ? '#F8C4AE' : `${primary}40`,
                                     opacity: togglingCourse === course.id ? 0.6 : 1
                                   }}
                                 >
@@ -590,7 +590,7 @@ export default function UsersPage() {
                           ))}
                         </div>
                       )}
-                      <p style={{ fontSize: 11, color: '#94a3b8', margin: '6px 0 0' }}>
+                      <p style={{ fontSize: 11, color: '#9C8A7E', margin: '6px 0 0' }}>
                         💡 Para agregar cursos o asignaturas al profesor, ve a <strong>Cursos → Detalle del curso</strong>.
                       </p>
                     </div>

@@ -4,17 +4,17 @@ import { Icono } from '../Layout/iconos';
 import './ui.css';
 
 export const EVENTOS = {
-  matricula:       { et: 'Matrícula',             icono: 'mas',      col: '#15803d', bg: '#dcfce7' },
-  importacion:     { et: 'Importación',           icono: 'subir',    col: '#1d4ed8', bg: '#dbeafe' },
-  retiro:          { et: 'Retiro',                icono: 'cruz',     col: '#b91c1c', bg: '#fee2e2' },
-  cambio_curso:    { et: 'Cambio de curso',       icono: 'flechas',  col: '#b45309', bg: '#fef3c7' },
-  promocion:       { et: 'Promoción',             icono: 'ascenso',  col: '#4338ca', bg: '#e0e7ff' },
-  confirmacion:    { et: 'Matrícula confirmada',  icono: 'check',    col: '#15803d', bg: '#dcfce7' },
-  repite:          { et: 'Repite curso',          icono: 'deshacer', col: '#b45309', bg: '#fef3c7' },
-  no_continua:     { et: 'No continúa',           icono: 'cruz',     col: '#475569', bg: '#e2e8f0' },
-  egreso:          { et: 'Egreso',                icono: 'birrete',  col: '#6d28d9', bg: '#ede9fe' },
-  reincorporacion: { et: 'Reincorporación',       icono: 'deshacer', col: '#15803d', bg: '#dcfce7' },
-  ficha_editada:   { et: 'Ficha editada',         icono: 'lapiz',    col: '#475569', bg: '#f1f5f9' },
+  matricula:       { et: 'Matrícula',             icono: 'mas',      col: '#1F5E43', bg: '#DDF0E6' },
+  importacion:     { et: 'Importación',           icono: 'subir',    col: '#3D2A21', bg: '#FFF0C7' },
+  retiro:          { et: 'Retiro',                icono: 'cruz',     col: '#9A3412', bg: '#FDE2D7' },
+  cambio_curso:    { et: 'Cambio de curso',       icono: 'flechas',  col: '#7A4B00', bg: '#FFF0C7' },
+  promocion:       { et: 'Promoción',             icono: 'ascenso',  col: '#3D2A21', bg: '#FFF0C7' },
+  confirmacion:    { et: 'Matrícula confirmada',  icono: 'check',    col: '#1F5E43', bg: '#DDF0E6' },
+  repite:          { et: 'Repite curso',          icono: 'deshacer', col: '#7A4B00', bg: '#FFF0C7' },
+  no_continua:     { et: 'No continúa',           icono: 'cruz',     col: '#5C463A', bg: '#ECE8E3' },
+  egreso:          { et: 'Egreso',                icono: 'birrete',  col: '#8A2846', bg: '#FCE4EC' },
+  reincorporacion: { et: 'Reincorporación',       icono: 'deshacer', col: '#1F5E43', bg: '#DDF0E6' },
+  ficha_editada:   { et: 'Ficha editada',         icono: 'lapiz',    col: '#5C463A', bg: '#F3F0EC' },
 };
 
 function fmtFechaHora(v) {
@@ -39,7 +39,7 @@ const vacio = (v) => (v === null || v === undefined || v === '' ? '—' : String
 
 function Evento({ ev }) {
   const [abierto, setAbierto] = useState(false);
-  const tipo = EVENTOS[ev.evento] || { et: ev.evento || 'Evento', icono: 'historial', col: '#475569', bg: '#f1f5f9' };
+  const tipo = EVENTOS[ev.evento] || { et: ev.evento || 'Evento', icono: 'historial', col: '#5C463A', bg: '#F3F0EC' };
   const campos = camposDe(ev.detalles);
   const curso = ev.curso_origen && ev.curso && ev.curso_origen !== ev.curso
     ? `${ev.curso_origen} → ${ev.curso}` : ev.curso;
