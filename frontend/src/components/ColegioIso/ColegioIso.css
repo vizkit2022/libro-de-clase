@@ -82,3 +82,60 @@
 .ci-escala { display: inline-flex; align-items: center; gap: 6px; }
 .ci-leyenda .ci-escala i { width: 120px; height: 10px; border-radius: 999px; }
 .ci-escala small { font-size: 11px; font-weight: 700; color: var(--cacao-tenue); }
+
+/* Alumno enfocado: se mece en su banco con un halo naranja */
+.ci-al-sel { animation: ciMece 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.ci-halo { animation: ciHalo 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes ciMece { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes ciHalo { from { opacity: .9; transform: scale(.7); } to { opacity: 0; transform: scale(1.5); } }
+.ci-alumnos li { cursor: pointer; border-radius: 8px; }
+.ci-alumnos li:hover { background: var(--nube); }
+@media (prefers-reduced-motion: reduce) { .ci-al-sel, .ci-halo { animation: none; } }
+
+/* Tarjeta rápida del alumno */
+.fr { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.fr-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.fr-cab h4 { font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0; color: var(--cacao); line-height: 1.15; }
+.fr-cab p { font-size: 13px; color: var(--cacao-tenue); margin: 3px 0 0; }
+.fr-porque {
+  margin: 10px 0 0; font-size: 13px; color: var(--cacao-suave); background: var(--nube);
+  border-radius: 12px; padding: 7px 10px;
+}
+.fr-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 10px; }
+.fr-tabs button {
+  display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--arena); background: #fff;
+  border-radius: 999px; padding: 5px 10px; font: inherit; font-size: 12.5px; font-weight: 700;
+  color: var(--cacao-suave); cursor: pointer;
+}
+.fr-tabs button.on { border-color: var(--cacao); color: var(--cacao); }
+.fr-tabs i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+.fr-cuerpo { flex: 1; overflow-y: auto; min-height: 0; }
+.fr-barra { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12.5px; }
+.fr-barra-et { width: 42%; color: var(--cacao); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fr-barra-pista { flex: 1; height: 8px; background: var(--arena); border-radius: 999px; overflow: hidden; }
+.fr-barra-pista i { display: block; height: 100%; border-radius: 999px; }
+.fr-barra b { width: 30px; text-align: right; font-size: 12.5px; }
+.fr-dato { font-size: 13px; color: var(--cacao-suave); margin: 0 0 8px; }
+.fr-vacio { font-size: 13px; color: var(--cacao-tenue); margin: 4px 0 10px; }
+.fr-anot { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.fr-anot span { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px; }
+.fr-anot .neg { background: var(--alerta-suave); color: var(--alerta-texto); }
+.fr-anot .pos { background: var(--exito-suave); color: var(--exito-texto); }
+.fr-casos { list-style: none; margin: 0 0 8px; padding: 0; }
+.fr-casos li { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--arena); }
+.fr-casos a { flex: 1; min-width: 0; text-decoration: none; color: var(--cacao); }
+.fr-casos a b { display: block; font-size: 13px; }
+.fr-casos a small { font-size: 11.5px; color: var(--cacao-tenue); }
+.fr-casos a:hover b { text-decoration: underline; }
+.fr-resta { font-size: 12px; font-weight: 800; color: var(--alerta-texto); }
+.fr-link { display: inline-block; margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--ladrillo); text-decoration: none; }
+.fr-link:hover { text-decoration: underline; }
+.fr-ficha {
+  margin-top: 12px; text-align: center; background: var(--cacao); color: #fff; border-radius: 999px;
+  padding: 10px 14px; font-weight: 700; font-size: 14px; text-decoration: none;
+}
+.fr-ficha:hover { background: #3D2A21; }
+.fr-cuerpo { overflow-x: hidden; }
+.fr-barra { min-width: 0; }
+.fr-barra-et { flex: 0 0 42%; min-width: 0; }
+.fr-barra-pista { min-width: 30px; }

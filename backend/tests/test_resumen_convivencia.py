@@ -42,6 +42,10 @@ def test_casos_y_anotaciones_mueven_el_puntaje(app, client, headers):
     por_id = {a['id']: a for a in c['alumnos']}
     assert por_id[sid]['puntaje'] == 100 - 25 - 8
     assert por_id[sid]['casos'] == 1
+    caso = por_id[sid]['detalle_casos'][0]
+    assert caso['titulo'] == 'Pelea en recreo' and caso['resta'] == 25 and not caso['cerrado']
+    assert por_id[sid]['anotaciones'] == {'negativas': 1, 'positivas': 0}
+    assert por_id[tranquilo]['anotaciones']['positivas'] == 1
     assert por_id[tranquilo]['puntaje'] == 100      # no pasa de 100
     assert c['puntaje'] is not None
 

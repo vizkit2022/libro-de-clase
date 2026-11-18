@@ -46,3 +46,15 @@ def test_promedia_por_asignatura_y_por_curso(app, client, headers):
 def test_consumidores_no_ven_el_resumen(client, headers):
     for rol in ('apoderado', 'alumno'):
         assert client.get('/api/grades/resumen', headers=headers[rol]).status_code == 403
+
+
+def test_detalle_por_asignatura(app, client, headers):
+    from models import Course
+    with app.app_context():
+        year = Course.query.filter(Course.year.isnot(None)).first().year
+    r = client.get(f'/api/grades/resumen?year={year}', headers=headers['admin'])
+    alumnos = [a for c in r.get_json()['cursos'] for a in c['alumnos'] if a['asignaturas']]
+    assert alumnos
+    notas = [x['nota'] for x in alumnos[0]['asignaturas']]
+    assert notas == sorted(notas)          # de la más baja a la más alta
+    assert all(x['nombre'] for x in alumnos[0]['asignaturas'])

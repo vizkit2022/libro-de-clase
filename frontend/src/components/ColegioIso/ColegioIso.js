@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { colorPuntaje, etiquetaPuntaje, DEGRADADO_PUNTAJE } from '../../pages/Personalidad/colores';
-import { P, Piso, Caja, SalaIso, EspacioIso, ArbolIso } from './iso';
+import { P, Piso, Caja, SalaIso, EspacioIso, ArbolIso, grillaAlumnos } from './iso';
+import FichaRapida from './FichaRapida';
 import { armarPlano, MURO } from './plano';
 import { CRITERIOS } from './criterios';
 import './ColegioIso.css';
@@ -28,45 +29,69 @@ function vbSala(e, aspecto) {
   return [l.x0 - w * 0.04, (l.y0 + l.y1) / 2 - h / 2, w, h];
 }
 
+// Encuadre de un alumno sentado en su banco, con sitio a la derecha para la tarjeta
+function vbAlumno(e, curso, al, aspecto) {
+  const i = (curso.alumnos || []).findIndex(a => a.id === al.id);
+  const { s, pos } = grillaAlumnos(e.x, e.y, e.w, e.d, (curso.alumnos || []).length);
+  const p = pos(Math.max(0, i));
+  const [cx, cy] = P(p.x + s * 0.3, p.y + s * 0.3, s * 0.5);
+  const h = s * 6; const w = h * aspecto;
+  return [cx - w * 0.3, cy - h * 0.5, w, h];
+}
+
+// Valor animado 0..1 con requestAnimationFrame
+function useTween(dur) {
+  const [v, setV] = useState(0);
+  const ref = useRef(0); const raf = useRef(null);
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  const ir = (hacia, alTerminar) => {
+    cancelAnimationFrame(raf.current);
+    const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const desde = ref.current; const t0 = performance.now();
+    const paso = (ahora) => {
+      const k = reducido ? 1 : Math.min(1, (ahora - t0) / dur);
+      ref.current = desde + (hacia - desde) * k;
+      setV(ref.current);
+      if (k < 1) raf.current = requestAnimationFrame(paso);
+      else if (alTerminar) alTerminar();
+    };
+    raf.current = requestAnimationFrame(paso);
+  };
+  return [v, ir];
+}
+
 const mezcla = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
 const suave = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 // El colegio en isométrico. Primera vista: cada curso es una sala cerrada
 // con el techo verde, ámbar o rojo según su puntaje. Al hacer clic la sala
 // se abre (el techo sube) y se ven sus alumnos, cada uno con su color.
-export default function ColegioIso({ cursos, criterios = ['personalidad'] }) {
+export default function ColegioIso({ cursos, criterios = ['personalidad'], areas = [] }) {
   const [hover, setHover] = useState(null);
   const [sel, setSel] = useState(null);      // espacio abierto (o cerrándose)
-  const [t, setT] = useState(0);             // 0 colegio, 1 sala abierta
-  const anim = useRef(null);
-  const tRef = useRef(0);
+  const [t, animar] = useTween(DUR);         // 0 colegio, 1 sala abierta
+  const [alId, setAlId] = useState(null);    // alumno enfocado
+  const [z, enfocar] = useTween(750);        // 0 sala, 1 zoom al alumno
   const plano = useMemo(() => armarPlano(cursos), [cursos]);
   const { patio, pasillos, entrada } = plano;
 
   const vbBase = useMemo(() => vbColegio(plano), [plano]);
-  const vb = sel ? mezcla(vbBase, vbSala(sel, vbBase[2] / vbBase[3]), suave(t)) : vbBase;
-
-  const animar = (hacia, alTerminar) => {
-    cancelAnimationFrame(anim.current);
-    const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const desde = tRef.current; const t0 = performance.now();
-    const paso = (ahora) => {
-      const k = reducido ? 1 : Math.min(1, (ahora - t0) / DUR);
-      tRef.current = desde + (hacia - desde) * k;
-      setT(tRef.current);
-      if (k < 1) anim.current = requestAnimationFrame(paso);
-      else if (alTerminar) alTerminar();
-    };
-    anim.current = requestAnimationFrame(paso);
-  };
-  useEffect(() => () => cancelAnimationFrame(anim.current), []);
+  const aspecto = vbBase[2] / vbBase[3];
+  // El curso se busca de nuevo en los datos: al cambiar los criterios cambian sus colores
+  const cursoSel = sel ? cursos.find(c => c.id === sel.curso?.id) || sel.curso : null;
+  const al = cursoSel && alId != null ? (cursoSel.alumnos || []).find(a => a.id === alId) : null;
+  let vb = sel ? mezcla(vbBase, vbSala(sel, aspecto), suave(t)) : vbBase;
+  if (sel && al) vb = mezcla(vb, vbAlumno(sel, cursoSel, al, aspecto), suave(z));
 
   const abrir = (e) => { if (sel) return; setHover(null); setSel(e); animar(1); };
-  const cerrar = () => animar(0, () => setSel(null));
+  const soltarAlumno = (luego) => enfocar(0, () => { setAlId(null); if (luego) luego(); });
+  const cerrar = () => (alId != null ? soltarAlumno(() => animar(0, () => setSel(null)))
+    : animar(0, () => setSel(null)));
+  const verAlumno = (a) => { setAlId(a.id); enfocar(1); };
 
   useEffect(() => {
     if (!sel) return undefined;
-    const tecla = (ev) => { if (ev.key === 'Escape') cerrar(); };
+    const tecla = (ev) => { if (ev.key === 'Escape') (alId != null ? soltarAlumno() : cerrar()); };
     window.addEventListener('keydown', tecla);
     return () => window.removeEventListener('keydown', tecla);
   });
@@ -80,7 +105,7 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'] }) {
 
   const nodos = [
     ...orden.map((e, i) => {
-      const esSel = sel === e;
+      const esSel = !!sel && sel.x === e.x && sel.y === e.y;
       const techo = esSel ? t : 0;
       return {
         k: prof(e),
@@ -92,7 +117,9 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'] }) {
              onPointerLeave={e.curso ? () => setHover(null) : undefined}>
             {e.tipo === 'sala'
               ? <SalaIso x={e.x} y={e.y} w={e.w} d={e.d} muro={MURO} curso={e.curso}
-                  techo={techo} caras={esSel && t > 0.85} />
+                  techo={techo} caras={esSel && t > 0.85}
+                  alumnoSel={esSel && z > 0.02 ? alId : null}
+                  onAlumno={esSel && t > 0.9 ? verAlumno : undefined} />
               : <EspacioIso x={e.x} y={e.y} w={e.w} d={e.d} muro={MURO} nombre={e.nombre} />}
           </g>
         ),
@@ -107,7 +134,7 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'] }) {
       </g>) },
   ].sort((a, b) => a.k - b.k).map(o => o.n);
 
-  const curso = sel?.curso;
+  const curso = cursoSel;
   const alumnos = curso ? [...(curso.alumnos || [])].sort((a, b) => (a.puntaje ?? 999) - (b.puntaje ?? 999)) : [];
   const nombresCrit = Object.fromEntries(CRITERIOS.map(c => [c.id, c.nombre]));
 
@@ -152,6 +179,10 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'] }) {
 
       {curso && (
         <aside className="ci-panel" style={{ opacity: Math.max(0, (t - 0.5) * 2) }}>
+          {al ? (
+            <FichaRapida key={al.id} al={al} curso={curso} areas={areas} criterios={criterios}
+              onVolver={() => soltarAlumno()} />
+          ) : (<>
           <button type="button" className="ci-volver" onClick={cerrar}>← Volver al colegio</button>
           <div className="ci-panel-cab">
             <h4>{curso.nombre}</h4>
@@ -176,7 +207,8 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'] }) {
           {alumnos.length === 0 && <p className="ci-panel-sub">Este curso no tiene alumnos activos.</p>}
           <ol className="ci-alumnos">
             {alumnos.map(a => (
-              <li key={a.id}>
+              <li key={a.id} onClick={() => verAlumno(a)} role="button" tabIndex={0}
+                  onKeyDown={ev => { if (ev.key === 'Enter') verAlumno(a); }}>
                 <i style={{ background: colorPuntaje(a.puntaje).base }} />
                 <span>{a.nombre} {a.apellido}</span>
                 {a.casos > 0 && <small className="ci-casos" title="Casos de convivencia">{a.casos} caso{a.casos === 1 ? '' : 's'}</small>}
@@ -185,6 +217,7 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'] }) {
               </li>
             ))}
           </ol>
+          </>)}
         </aside>
       )}
 

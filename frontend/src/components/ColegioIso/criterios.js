@@ -50,9 +50,11 @@ export function combinar(fuentes, seleccion) {
       alumnos: (c.alumnos || []).map(a => {
         const k = `${c.id}:${a.id}`;
         const det = Object.fromEntries(idx.map(i => [i.id, i.alumnos.get(k)?.puntaje ?? null]));
+        // origen: el alumno tal como lo entrega cada criterio, para explicar su color
+        const origen = Object.fromEntries(idx.map(i => [i.id, i.alumnos.get(k) || null]));
         return {
           ...a, ...extra(deNotas, k, 'nota', 'alumnos'), ...extra(deConv, k, 'casos', 'alumnos'),
-          detalle: det, puntaje: promedio(Object.values(det)),
+          detalle: det, origen, puntaje: promedio(Object.values(det)),
         };
       }),
     };

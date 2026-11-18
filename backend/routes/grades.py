@@ -281,11 +281,14 @@ def resumen_notas():
     cursos = _cursos_visibles(year)
     ids = [c.id for c in cursos]
     filas = []
+    nombre_asig = {}
     if ids:
         filas = db.session.query(Grade.student_id, CourseSubject.course_id,
                                  CourseSubject.id, Grade.value)\
             .join(CourseSubject, Grade.course_subject_id == CourseSubject.id)\
             .filter(CourseSubject.course_id.in_(ids)).all()
+        nombre_asig = {cs.id: (cs.subject.name if cs.subject else 'Asignatura')
+                       for cs in CourseSubject.query.filter(CourseSubject.course_id.in_(ids)).all()}
     # {(curso, alumno): {asignatura: [notas]}}
     notas = {}
     for st, cid, csid, valor in filas:
@@ -306,6 +309,11 @@ def resumen_notas():
                 'apellido': m.student.last_name,
                 'nota': round(prom, 1) if prom is not None else None,
                 'puntaje': nota_a_puntaje(prom),
+                # Promedio por asignatura, de la más baja a la más alta
+                'asignaturas': sorted(
+                    ({'nombre': nombre_asig.get(csid, 'Asignatura'),
+                      'nota': round(_promedio(vs), 1), 'notas': len(vs)}
+                     for csid, vs in por_asig.items()), key=lambda x: x['nota']),
             })
         prom_c = _promedio([a['nota'] for a in alumnos])
         out.append({

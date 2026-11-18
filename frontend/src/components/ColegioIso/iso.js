@@ -65,23 +65,44 @@ function Carita({ cx, cy, r, p }) {
   );
 }
 
-function AlumnoIso({ a, x, y, s, cara }) {
+function AlumnoIso({ a, x, y, s, cara, sel, apagado, onClick }) {
   const piel = PALETA.piel[a.id % PALETA.piel.length];
   const pelo = PALETA.pelo[(a.id * 7) % PALETA.pelo.length];
   const bw = s * 0.62; const bd = s * 0.3; const bh = s * 0.34;
   const cx = x + (bw - s * 0.28) / 2;
   const [hx, hy] = P(cx + s * 0.14, y + bd + s * 0.12, s * 0.72);
+  const [px, py] = P(x + bw / 2, y + bd + s * 0.2, 0);
   return (
-    <g>
+    <g className={`ci-al ${sel ? 'ci-al-sel' : ''}`} opacity={apagado ? 0.18 : 1}
+       onClick={onClick ? (ev) => { ev.stopPropagation(); onClick(a); } : undefined}
+       style={onClick ? { cursor: 'pointer' } : undefined}>
+      {sel && <ellipse className="ci-halo" cx={px} cy={py} rx={s * 0.75} ry={s * 0.38}
+        fill="none" stroke="#FF7417" strokeWidth={s * 0.06} />}
       <Caja x={x} y={y} w={bw} d={bd} h={bh} c={PALETA.madera} />
       <Caja x={cx - s * 0.03} y={y + bd + s * 0.08} w={s * 0.34} d={s * 0.26} h={s * 0.2} c={PALETA.silla} />
       <Caja x={cx} y={y + bd + s * 0.04} z={s * 0.2} w={s * 0.28} d={s * 0.16} h={s * 0.42} c={colorAlumno(a.puntaje)} />
       <circle cx={hx} cy={hy} r={s * 0.13} fill={piel} stroke="rgba(60,35,20,.25)" strokeWidth={0.5} />
       <path d={`M${hx - s * 0.13} ${hy - s * 0.01} A ${s * 0.13} ${s * 0.13} 0 0 1 ${hx + s * 0.13} ${hy - s * 0.01} Q ${hx} ${hy - s * 0.06} ${hx - s * 0.13} ${hy - s * 0.01} Z`} fill={pelo} />
       <Caja x={cx - s * 0.03} y={y + bd + s * 0.3} w={s * 0.34} d={s * 0.05} h={s * 0.38} c={PALETA.silla} />
-      {cara && <Carita cx={hx} cy={hy - s * 0.42} r={s * 0.17} p={a.puntaje} />}
+      {cara && <Carita cx={hx} cy={hy - s * 0.42} r={s * (sel ? 0.24 : 0.17)} p={a.puntaje} />}
     </g>
   );
+}
+
+// Grilla de bancos de una sala: la usa el dibujo y el zoom al alumno
+export function grillaAlumnos(x, y, w, d, n) {
+  const ax0 = x + w * 0.1; const ay0 = y + d * 0.34;
+  const aw = w * 0.84; const ad = d * 0.62;
+  let cols = Math.max(3, Math.round(Math.sqrt(Math.max(1, n) * (aw / ad) * 0.75)));
+  let filas = Math.ceil(n / cols);
+  while (filas > 6) { cols++; filas = Math.ceil(n / cols); }
+  const cw = aw / cols; const cd = ad / Math.max(1, filas);
+  const s = Math.min(cw * 1.15, cd * 1.05, 40);
+  const pos = (i) => {
+    const fi = Math.floor(i / cols); const ci = i % cols;
+    return { x: ax0 + ci * cw + (cw - s * 0.62) / 2, y: ay0 + fi * cd };
+  };
+  return { s, pos };
 }
 
 // Muros delanteros y techo de una sala. techo: 0 = cerrada, 1 = abierta
@@ -128,17 +149,11 @@ function Profesor({ x, y, s }) {
 }
 
 // Una sala de clases abierta (sin techo) con el color de su curso
-export function SalaIso({ x, y, w, d, muro, curso, techo = 0, caras = false }) {
+export function SalaIso({ x, y, w, d, muro, curso, techo = 0, caras = false, alumnoSel = null, onAlumno }) {
   const col = colorPuntaje(curso.puntaje);
   const t = Math.max(3, w * 0.022);
   const alumnos = curso.alumnos || [];
-  const ax0 = x + w * 0.1; const ay0 = y + d * 0.34;
-  const aw = w * 0.84; const ad = d * 0.62;
-  let cols = Math.max(3, Math.round(Math.sqrt(Math.max(1, alumnos.length) * (aw / ad) * 0.75)));
-  let filas = Math.ceil(alumnos.length / cols);
-  while (filas > 6) { cols++; filas = Math.ceil(alumnos.length / cols); }
-  const cw = aw / cols; const cd = ad / Math.max(1, filas);
-  const s = Math.min(cw * 1.15, cd * 1.05, 40);
+  const { s, pos } = grillaAlumnos(x, y, w, d, alumnos.length);
   const estanteH = muro * 0.45;
 
   const libros = [];
@@ -174,8 +189,10 @@ export function SalaIso({ x, y, w, d, muro, curso, techo = 0, caras = false }) {
       <Caja x={x + w * 0.24} y={y + d * 0.11} w={w * 0.15} d={d * 0.09} h={s * 0.42} c={PALETA.azul} />
       <Profesor x={x + w * 0.66} y={y + d * 0.12} s={s * 1.05} />
       {alumnos.map((a, i) => {
-        const fi = Math.floor(i / cols); const ci = i % cols;
-        return <AlumnoIso key={a.id} a={a} s={s} cara={caras} x={ax0 + ci * cw + (cw - s * 0.62) / 2} y={ay0 + fi * cd} />;
+        const p = pos(i);
+        return <AlumnoIso key={a.id} a={a} s={s} cara={caras} x={p.x} y={p.y}
+          sel={alumnoSel === a.id} apagado={alumnoSel != null && alumnoSel !== a.id}
+          onClick={onAlumno} />;
       })}
       {techo < 1 && <Cubierta x={x} y={y} w={w} d={d} muro={muro} t={t} techo={techo} c={col} />}
     </g>

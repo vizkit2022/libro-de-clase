@@ -412,20 +412,29 @@ def resumen_convivencia():
     resta = {}        # (curso, alumno) -> puntos
     suma = {}
     n_casos = {}      # (curso, alumno) -> casos
+    lista_casos = {}  # (curso, alumno) -> casos para el detalle del alumno
+    n_anot = {}       # (curso, alumno) -> {'negativas': n, 'positivas': n}
     de_curso = {}     # curso -> puntos de casos sin alumno
     for c in casos:
         if c.student_id and c.course_id:
             k = (c.course_id, c.student_id)
             resta[k] = resta.get(k, 0) + peso_caso(c)
             n_casos[k] = n_casos.get(k, 0) + 1
+            lista_casos.setdefault(k, []).append({
+                'id': c.id, 'titulo': c.title, 'tipificacion': c.typification,
+                'cerrado': c.status == 'cerrado' or c.estado == 'cerrado',
+                'fecha': c.date.isoformat() if c.date else None, 'resta': peso_caso(c)})
         elif c.course_id:
             de_curso[c.course_id] = de_curso.get(c.course_id, 0) + PESO_CASO_DE_CURSO
     for a in anotaciones:
         k = (a.course_id, a.student_id)
+        cuenta = n_anot.setdefault(k, {'negativas': 0, 'positivas': 0})
         if a.annotation_type == 'negativa':
             resta[k] = resta.get(k, 0) + PESO_ANOTACION_NEGATIVA
+            cuenta['negativas'] += 1
         elif a.annotation_type == 'positiva':
             suma[k] = suma.get(k, 0) + PESO_ANOTACION_POSITIVA
+            cuenta['positivas'] += 1
 
     def puntaje(k):
         if not hay_datos:
@@ -443,6 +452,8 @@ def resumen_convivencia():
                 'id': m.student_id, 'nombre': m.student.first_name,
                 'apellido': m.student.last_name, 'puntaje': puntaje(k),
                 'casos': n_casos.get(k, 0),
+                'detalle_casos': sorted(lista_casos.get(k, []), key=lambda x: x['fecha'] or '', reverse=True),
+                'anotaciones': n_anot.get(k, {'negativas': 0, 'positivas': 0}),
             })
         ps = [a['puntaje'] for a in alumnos if a['puntaje'] is not None]
         p = None

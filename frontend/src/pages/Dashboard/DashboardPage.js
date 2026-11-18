@@ -137,7 +137,7 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <ColegioIso cursos={cursosMapa} criterios={criterios} />
+          <ColegioIso cursos={cursosMapa} criterios={criterios} areas={mapa?.areas || []} />
         </div>
       )}
 
