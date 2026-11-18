@@ -32,6 +32,7 @@ import OnboardingPage from './pages/Onboarding/OnboardingPage';
 import PersonalidadCursosPage, { PersonalidadCursoPage, PersonalidadAlumnoPage } from './pages/Personalidad/PersonalidadPage';
 import PlanPage from './pages/Plan/PlanPage';
 import PersonalidadPautaPage from './pages/Personalidad/PersonalidadPautaPage';
+import PersonalidadMapaPage from './pages/Personalidad/PersonalidadMapaPage';
 import RegistroPage from './pages/Registro/RegistroPage';
 import BienvenidaPage from './pages/Registro/BienvenidaPage';
 import AutoOnboardingPage from './pages/Registro/AutoOnboardingPage';
@@ -146,6 +147,7 @@ export default function App() {
             <Route path="convivencia/casos/:id/editar" element={<PrivateRoute roles={['admin','directivo','profesor']}><ConvivenciaCasoForm /></PrivateRoute>} />
             {/* Gestión docente: informe de personalidad */}
             <Route path="personalidad" element={<PrivateRoute roles={['admin','directivo','profesor']}><PersonalidadCursosPage /></PrivateRoute>} />
+            <Route path="personalidad/colegio" element={<PrivateRoute roles={['admin','directivo','profesor']}><PersonalidadMapaPage /></PrivateRoute>} />
             <Route path="personalidad/pauta" element={<PrivateRoute roles={['admin','directivo']}><PersonalidadPautaPage /></PrivateRoute>} />
             <Route path="personalidad/cursos/:courseId" element={<PrivateRoute roles={['admin','directivo','profesor']}><PersonalidadCursoPage /></PrivateRoute>} />
             <Route path="personalidad/cursos/:courseId/alumnos/:studentId" element={<PrivateRoute roles={['admin','directivo','profesor']}><PersonalidadAlumnoPage /></PrivateRoute>} />

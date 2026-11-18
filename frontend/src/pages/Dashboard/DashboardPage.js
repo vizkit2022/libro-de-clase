@@ -3,6 +3,8 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Icono } from '../../components/Layout/iconos';
+import ColegioIso from '../../components/ColegioIso/ColegioIso';
+import { CRITERIOS, combinar } from '../../components/ColegioIso/criterios';
 import './DashboardPage.css';
 
 const SALUDO = () => {
@@ -21,6 +23,10 @@ export default function DashboardPage() {
   const [resumen, setResumen] = useState(null);
   const [cursos, setCursos] = useState([]);
   const [carga, setCarga] = useState(null);
+  const [mapa, setMapa] = useState(null);
+  const [notasMapa, setNotasMapa] = useState(null);
+  const [convMapa, setConvMapa] = useState(null);
+  const [criterios, setCriterios] = useState(['personalidad']);
   const [cargando, setCargando] = useState(true);
 
   const gestiona = ['admin', 'directivo'].includes(user?.role);
@@ -34,15 +40,21 @@ export default function DashboardPage() {
       }
       // Cada fuente va por su lado: si una falla, el resto del panel se ve igual
       const pedir = (url) => axios.get(url).then(r => r.data).catch(() => null);
-      const [s, c, k] = await Promise.all([
+      const [s, c, k, m, n, v] = await Promise.all([
         pedir('/api/reports/school/summary'),
         pedir('/api/courses'),
         gestiona ? pedir(`/api/carga-academica/dashboard?year=${year + 1}`) : null,
+        pedir(`/api/personalidad/resumen?year=${year}`),
+        pedir(`/api/grades/resumen?year=${year}`),
+        pedir(`/api/convivencia/resumen?year=${year}`),
       ]);
       if (!vivo) return;
       setResumen(s);
       setCursos(Array.isArray(c) ? c : []);
       setCarga(k);
+      setMapa(m);
+      setNotasMapa(n);
+      setConvMapa(v);
       setCargando(false);
     })();
     return () => { vivo = false; };
@@ -51,6 +63,12 @@ export default function DashboardPage() {
   if (cargando) return <div className="loading-container"><div className="spinner" /></div>;
 
   const alertas = carga?.alertas || [];
+  // Fuentes de cada criterio del mapa; las que falten se agregan aquí
+  const fuentes = { personalidad: mapa, notas: notasMapa, convivencia: convMapa };
+  const hayMapa = [mapa, notasMapa, convMapa].some(f => f?.cursos?.length);
+  const cursosMapa = hayMapa ? combinar(fuentes, criterios) : [];
+  const alternar = (id) => setCriterios(cs => (cs.includes(id)
+    ? (cs.length > 1 ? cs.filter(c => c !== id) : cs) : [...cs, id]));
   const cob = carga?.resumen;
 
   const indicadores = [
@@ -98,6 +116,30 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* El colegio en 3D: una sala por curso, pintada según su informe de personalidad */}
+      {cursosMapa.length > 0 && (
+        <div className="card kv-tarj kv-mapa">
+          <div className="kv-tarj-cab">
+            <div>
+              <h3>Tu colegio</h3>
+              <p>{cursosMapa.length} cursos · haz clic en una sala para ver a sus alumnos</p>
+            </div>
+            <div className="kv-criterios" role="group" aria-label="Criterios del mapa">
+              {CRITERIOS.map(c => (
+                <button key={c.id} type="button" disabled={!c.listo}
+                  className={criterios.includes(c.id) ? 'on' : ''}
+                  aria-pressed={criterios.includes(c.id)}
+                  title={c.listo ? '' : 'Próximamente'}
+                  onClick={() => alternar(c.id)}>
+                  {c.nombre}{!c.listo && <small>pronto</small>}
+                </button>
+              ))}
+            </div>
+          </div>
+          <ColegioIso cursos={cursosMapa} criterios={criterios} />
+        </div>
+      )}
 
       <div className="kv-rejilla">
 

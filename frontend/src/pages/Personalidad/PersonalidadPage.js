@@ -68,11 +68,16 @@ export default function PersonalidadCursosPage() {
           <h2>Informe de personalidad</h2>
           <p>Elige un curso para llenar el informe de cada alumno. Año {year}.</p>
         </div>
-        {gestiona && (
-          <Link to="/personalidad/pauta" className="ui-btn">
-            <Icono nombre="ajustes" tam={15} /> Pauta de criterios
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Link to="/personalidad/colegio" className="ui-btn ui-btn-pri" style={{ color: "#fff" }}>
+            <Icono nombre="colegio" tam={15} /> Mapa del colegio 3D
           </Link>
-        )}
+          {gestiona && (
+            <Link to="/personalidad/pauta" className="ui-btn">
+              <Icono nombre="ajustes" tam={15} /> Pauta de criterios
+            </Link>
+          )}
+        </div>
       </div>
 
       {error && <div className="ui-aviso ui-aviso-peligro">{error}</div>}
@@ -152,9 +157,14 @@ export function PersonalidadCursoPage() {
           <h2>{datos.curso.nombre}</h2>
           <p>Profesor(a) jefe: {datos.curso.profesor_jefe || 'sin asignar'} · Año {datos.curso.year}</p>
         </div>
-        <button type="button" className="ui-btn" onClick={bajarCurso} disabled={bajando}>
-          <Icono nombre="bajar" tam={15} /> {bajando ? 'Generando…' : 'PDF del curso'}
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Link to={`/personalidad/colegio?curso=${courseId}`} className="ui-btn">
+            <Icono nombre="pizarra" tam={15} /> Ver sala animada
+          </Link>
+          <button type="button" className="ui-btn" onClick={bajarCurso} disabled={bajando}>
+            <Icono nombre="bajar" tam={15} /> {bajando ? 'Generando…' : 'PDF del curso'}
+          </button>
+        </div>
       </div>
 
       <div className="ip-filtros">

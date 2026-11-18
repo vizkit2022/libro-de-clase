@@ -84,6 +84,7 @@ const TITULOS = {
   '/periods': ['Gestión pedagógica', 'Períodos'],
   '/personalidad': ['Gestión docente', 'Informe de personalidad'],
   '/personalidad/pauta': ['Gestión docente', 'Pauta del informe de personalidad'],
+  '/personalidad/colegio': ['Gestión docente', 'Mapa del colegio'],
   '/carga-academica': ['Planificación', 'Carga Académica'],
   '/convivencia': ['Planificación', 'Convivencia Escolar'],
   '/reports': ['Información', 'Reportes'],

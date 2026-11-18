@@ -147,3 +147,20 @@
   .kv-curso { flex-wrap: wrap; gap: 4px 12px; }
   .kv-curso .nom { width: auto; }
 }
+
+/* Tarjeta con el colegio en 3D */
+.kv-mapa { margin-bottom: 18px; }
+.kv-mapa .ci { border-radius: 0; }
+.kv-mapa .kv-tarj-cab { flex-wrap: wrap; }
+.kv-criterios { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.kv-criterios button {
+  border: 1.5px solid var(--arena); background: #fff; color: var(--cacao-suave);
+  border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.kv-criterios button.on { background: var(--sol); border-color: var(--sol); color: var(--cacao); }
+.kv-criterios button:disabled { cursor: default; color: var(--cacao-tenue); opacity: .7; }
+.kv-criterios small {
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+  background: var(--nube); border-radius: 999px; padding: 1px 6px;
+}

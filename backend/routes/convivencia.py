@@ -1,11 +1,13 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from models import (db, ConvivenciaCase, ConvivenciaCaseStep, ConvivenciaBitacora,
-                    User, Course, CONVIVENCIA_PROTOCOL_STEPS)
+                    User, Course, Annotation, CONVIVENCIA_PROTOCOL_STEPS)
 from datetime import date, datetime
 from sqlalchemy import extract, func
 import json as json_lib
 from routes.access import ensure_del_colegio
+# Mismas reglas de visibilidad que el informe de personalidad (profesor: solo sus cursos)
+from routes.personalidad import staff_required, _cursos_visibles, _matriculas, _estado
 
 convivencia_bp = Blueprint('convivencia', __name__)
 
@@ -367,3 +369,88 @@ Responde SOLO con el JSON, sin markdown ni explicaciones."""
         # Sin el texto crudo del SDK: trae el JSON de la respuesta y el
         # request_id, que no le dicen nada a quien registra un caso.
         return jsonify({'error': ia.explicar_error(e)}), 502
+
+
+# ── Resumen por curso y alumno (mapa del colegio) ───────────────────────
+
+# Cuánto resta un caso según su tipificación (o su criticidad si no la tiene).
+# Un caso cerrado resta la mitad: el problema existió, pero se trabajó.
+PESO_TIPIFICACION = {'falta leve': 10, 'falta grave': 25, 'falta gravísima': 40}
+PESO_CRITICIDAD = {'baja': 10, 'media': 20, 'alta': 35}
+PESO_ANOTACION_NEGATIVA = 8
+PESO_ANOTACION_POSITIVA = 4
+PESO_CASO_DE_CURSO = 5       # caso del curso sin alumno identificado
+
+
+def peso_caso(caso):
+    peso = PESO_TIPIFICACION.get((caso.typification or '').strip().lower())
+    if peso is None:
+        peso = PESO_CRITICIDAD.get(caso.criticality or 'media', 20)
+    cerrado = caso.status == 'cerrado' or caso.estado == 'cerrado'
+    return peso / 2 if cerrado else peso
+
+
+@convivencia_bp.route('/resumen', methods=['GET'])
+@jwt_required()
+@staff_required
+def resumen_convivencia():
+    """Puntaje de convivencia 0-100 por curso y alumno para el año.
+
+    Cada alumno parte en 100; restan sus casos (ver peso_caso) y anotaciones
+    negativas, y suman las positivas. Si el colegio no registró ningún caso ni
+    anotación en el año, todo queda sin datos (para no pintar verde por
+    omisión)."""
+    year = request.args.get('year', date.today().year, type=int)
+    sid = get_jwt().get('school_id')
+    cursos = _cursos_visibles(year)
+    ids = [c.id for c in cursos]
+    casos = ConvivenciaCase.query.filter_by(school_id=sid, year=year).all()
+    anotaciones = Annotation.query.filter(Annotation.course_id.in_(ids)).all() if ids else []
+    anotaciones = [a for a in anotaciones if not a.date or a.date.year == year]
+    hay_datos = bool(casos or anotaciones)
+
+    resta = {}        # (curso, alumno) -> puntos
+    suma = {}
+    n_casos = {}      # (curso, alumno) -> casos
+    de_curso = {}     # curso -> puntos de casos sin alumno
+    for c in casos:
+        if c.student_id and c.course_id:
+            k = (c.course_id, c.student_id)
+            resta[k] = resta.get(k, 0) + peso_caso(c)
+            n_casos[k] = n_casos.get(k, 0) + 1
+        elif c.course_id:
+            de_curso[c.course_id] = de_curso.get(c.course_id, 0) + PESO_CASO_DE_CURSO
+    for a in anotaciones:
+        k = (a.course_id, a.student_id)
+        if a.annotation_type == 'negativa':
+            resta[k] = resta.get(k, 0) + PESO_ANOTACION_NEGATIVA
+        elif a.annotation_type == 'positiva':
+            suma[k] = suma.get(k, 0) + PESO_ANOTACION_POSITIVA
+
+    def puntaje(k):
+        if not hay_datos:
+            return None
+        return round(max(0, min(100, 100 - resta.get(k, 0) + suma.get(k, 0))))
+
+    out = []
+    for c in cursos:
+        alumnos = []
+        for m in _matriculas(c):
+            if _estado(m) != 'activo':
+                continue
+            k = (c.id, m.student_id)
+            alumnos.append({
+                'id': m.student_id, 'nombre': m.student.first_name,
+                'apellido': m.student.last_name, 'puntaje': puntaje(k),
+                'casos': n_casos.get(k, 0),
+            })
+        ps = [a['puntaje'] for a in alumnos if a['puntaje'] is not None]
+        p = None
+        if hay_datos and ps:
+            p = round(max(0, sum(ps) / len(ps) - de_curso.get(c.id, 0)))
+        out.append({
+            'id': c.id, 'nombre': c.name, 'puntaje': p,
+            'casos': sum(a['casos'] for a in alumnos), 'alumnos': alumnos,
+        })
+    return jsonify({'year': year, 'cursos': out}), 200
+

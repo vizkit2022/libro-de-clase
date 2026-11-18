@@ -1,0 +1,81 @@
+/* Plano isométrico del colegio (mismo dibujo del video de aulas 3D) */
+.ci { position: relative; background: linear-gradient(#F7F6F4, #EEF5E6); border-radius: 16px; overflow: hidden; }
+.ci svg { display: block; width: 100%; height: auto; max-height: 560px; }
+.ci-esp { animation: ciSube .55s cubic-bezier(.2, .8, .3, 1) backwards; }
+.ci-sala, .ci-etq { cursor: pointer; }
+.ci-sala:hover { filter: brightness(1.06); }
+.ci-etq text { font-family: var(--font-sans); pointer-events: none; }
+@keyframes ciSube { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: none; } }
+
+.ci-tip {
+  position: absolute; left: 14px; top: 14px; background: #fff; border: 1.5px solid var(--arena);
+  border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;
+  pointer-events: none; min-width: 180px;
+}
+.ci-tip b { font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--cacao); }
+.ci-tip span { font-size: 13px; color: var(--cacao-suave); font-weight: 600; }
+.ci-tip small { font-size: 12px; color: var(--cacao-tenue); }
+
+.ci-leyenda {
+  position: absolute; right: 12px; bottom: 10px; display: flex; gap: 12px; flex-wrap: wrap;
+  background: rgba(255, 255, 255, .92); border-radius: 999px; padding: 6px 12px;
+  font-size: 12px; color: var(--cacao-suave); font-weight: 600;
+}
+.ci-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.ci-leyenda i { width: 11px; height: 11px; border-radius: 3px; display: block; }
+
+@media (prefers-reduced-motion: reduce) { .ci-esp { animation: none; } }
+@media (max-width: 640px) { .ci-leyenda { position: static; border-radius: 0; justify-content: center; } }
+
+/* Sala abierta: lista de alumnos a la derecha */
+.ci-panel {
+  position: absolute; top: 14px; right: 14px; bottom: 14px; width: min(320px, 40%);
+  background: #fff; border: 1.5px solid var(--arena); border-radius: 20px;
+  padding: 14px 16px; display: flex; flex-direction: column; overflow: hidden;
+}
+.ci-volver {
+  align-self: flex-start; border: 1.5px solid var(--cacao); background: #fff; color: var(--cacao);
+  border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer; margin-bottom: 12px;
+}
+.ci-volver:hover { background: var(--nube); }
+.ci-panel-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ci-panel-cab h4 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; color: var(--cacao); }
+.ci-nota {
+  min-width: 46px; text-align: center; color: #fff; font-family: var(--font-display);
+  font-weight: 600; font-size: 18px; border-radius: 999px; padding: 3px 10px;
+}
+.ci-panel-sub { font-size: 13px; color: var(--cacao-tenue); margin: 3px 0 10px; }
+.ci-crit { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.ci-crit span {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600;
+  background: var(--nube); border-radius: 999px; padding: 3px 9px; color: var(--cacao-suave);
+}
+.ci-crit i, .ci-alumnos i { width: 10px; height: 10px; border-radius: 50%; display: block; flex-shrink: 0; }
+.ci-panel h5 {
+  font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--cacao-tenue); margin: 4px 0 6px;
+}
+.ci-alumnos { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+.ci-alumnos li {
+  display: flex; align-items: center; gap: 9px; padding: 7px 2px; font-size: 13.5px;
+  border-bottom: 1px solid var(--arena); color: var(--cacao);
+}
+.ci-alumnos li:last-child { border-bottom: 0; }
+.ci-alumnos span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ci-alumnos b { font-weight: 800; font-size: 13px; }
+.ci-ley-crit { font-weight: 800; color: var(--cacao); }
+.ci-carita { animation: ciCara .35s ease backwards; }
+@keyframes ciCara { from { opacity: 0; } }
+
+@media (max-width: 640px) {
+  .ci-panel { position: static; width: auto; margin: 10px; }
+}
+.ci-nota-chile {
+  font-size: 11.5px; font-weight: 700; color: var(--cacao-suave); background: var(--nube);
+  border-radius: 999px; padding: 1px 7px;
+}
+.ci-casos {
+  font-size: 11px; font-weight: 700; color: var(--convivencia-texto); background: var(--convivencia-suave);
+  border-radius: 999px; padding: 1px 7px; white-space: nowrap;
+}

@@ -2,10 +2,13 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from models import db, Grade, CourseSubject, Enrollment, User, Period
 from sqlalchemy import func
-from datetime import datetime
+from datetime import datetime, date
 from routes.access import (current_claims, allowed_student_ids, can_view_student, only_published, forbidden,
                            ensure_course_subject_open, ensure_course_open,
                            ensure_del_colegio, ensure_course_subject_del_colegio)
+
+# Mismas reglas de visibilidad que el informe de personalidad (profesor: solo sus cursos)
+from routes.personalidad import staff_required, _cursos_visibles, _matriculas, _estado
 
 grades_bp = Blueprint('grades', __name__)
 
@@ -246,3 +249,70 @@ def unpublish_grades():
         count += 1
     db.session.commit()
     return jsonify({'unpublished': count}), 200
+
+
+# ── Resumen de notas por curso y alumno (mapa del colegio) ───────────────
+
+def nota_a_puntaje(nota):
+    """Lleva una nota chilena (1,0 a 7,0) a 0-100, con el 4,0 en 50 y el 7,0
+    en 100, para sumarla con los demás criterios del mapa del colegio."""
+    if nota is None:
+        return None
+    n = max(1.0, min(7.0, nota))
+    p = (n - 1) / 3 * 50 if n < 4 else 50 + (n - 4) / 3 * 50
+    return round(p)
+
+
+def _promedio(vs):
+    vs = [v for v in vs if v is not None]
+    return sum(vs) / len(vs) if vs else None
+
+
+@grades_bp.route('/resumen', methods=['GET'])
+@jwt_required()
+@staff_required
+def resumen_notas():
+    """Promedio de notas del año por curso y por alumno.
+
+    El promedio del alumno es el de sus promedios por asignatura; el del
+    curso, el de sus alumnos con notas. Cada uno va como nota (1-7) y como
+    puntaje 0-100 (ver nota_a_puntaje)."""
+    year = request.args.get('year', date.today().year, type=int)
+    cursos = _cursos_visibles(year)
+    ids = [c.id for c in cursos]
+    filas = []
+    if ids:
+        filas = db.session.query(Grade.student_id, CourseSubject.course_id,
+                                 CourseSubject.id, Grade.value)\
+            .join(CourseSubject, Grade.course_subject_id == CourseSubject.id)\
+            .filter(CourseSubject.course_id.in_(ids)).all()
+    # {(curso, alumno): {asignatura: [notas]}}
+    notas = {}
+    for st, cid, csid, valor in filas:
+        if valor is None or not 1 <= valor <= 7:
+            continue
+        notas.setdefault((cid, st), {}).setdefault(csid, []).append(valor)
+
+    out = []
+    for c in cursos:
+        alumnos = []
+        for m in _matriculas(c):
+            if _estado(m) != 'activo':
+                continue
+            por_asig = notas.get((c.id, m.student_id), {})
+            prom = _promedio([_promedio(vs) for vs in por_asig.values()])
+            alumnos.append({
+                'id': m.student_id, 'nombre': m.student.first_name,
+                'apellido': m.student.last_name,
+                'nota': round(prom, 1) if prom is not None else None,
+                'puntaje': nota_a_puntaje(prom),
+            })
+        prom_c = _promedio([a['nota'] for a in alumnos])
+        out.append({
+            'id': c.id, 'nombre': c.name,
+            'nota': round(prom_c, 1) if prom_c is not None else None,
+            'puntaje': nota_a_puntaje(prom_c),
+            'evaluados': sum(1 for a in alumnos if a['nota'] is not None),
+            'alumnos': alumnos,
+        })
+    return jsonify({'year': year, 'cursos': out}), 200

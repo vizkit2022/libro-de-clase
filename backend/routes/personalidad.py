@@ -362,6 +362,81 @@ def curso_detalle(course_id):
     }), 200
 
 
+# ── Resumen del colegio (vista 3D y sala animada) ────────────────────────
+
+# Puntaje de cada valor de la escala (0 a 100). "No Observado" no cuenta.
+PUNTAJE_VALOR = {'S': 100, 'G': 70, 'AV': 35, 'N': 0}
+
+
+def _promedio(valores):
+    vs = [PUNTAJE_VALOR[v] for v in valores if v in PUNTAJE_VALOR]
+    return round(sum(vs) / len(vs)) if vs else None
+
+
+@personalidad_bp.route('/resumen', methods=['GET'])
+@jwt_required()
+@staff_required
+def resumen():
+    """Puntaje (0-100) por curso, área y alumno para un semestre.
+
+    Sin `semestre` usa el más reciente que tenga respuestas."""
+    year = request.args.get('year', date.today().year, type=int)
+    semestre = request.args.get('semestre', type=int)
+    sid = _sid()
+    pares = pauta(sid)
+    areas = [a for a, _crit in pares]
+    area_de = {c.id: a.id for a, crit in pares for c in crit}
+    cursos_v = _cursos_visibles(year)
+    activos = {c.id: [m for m in _matriculas(c) if _estado(m) == 'activo'] for c in cursos_v}
+    student_ids = {m.student_id for ms in activos.values() for m in ms}
+
+    filas = []
+    if student_ids and area_de:
+        filas = db.session.query(PersonalidadRespuesta.student_id, PersonalidadRespuesta.semestre,
+                                 PersonalidadRespuesta.criterio_id, PersonalidadRespuesta.valor)\
+            .filter(PersonalidadRespuesta.student_id.in_(student_ids),
+                    PersonalidadRespuesta.year == year,
+                    PersonalidadRespuesta.criterio_id.in_(list(area_de))).all()
+    if semestre not in SEMESTRES:
+        semestre = 2 if any(f.semestre == 2 for f in filas) else 1
+
+    # {student_id: {area_id: [valores]}}
+    por_alumno = {}
+    for st, sem, cid, valor in filas:
+        if sem == semestre:
+            por_alumno.setdefault(st, {}).setdefault(area_de[cid], []).append(valor)
+
+    out = []
+    for c in cursos_v:
+        alumnos, por_area = [], {a.id: [] for a in areas}
+        for m in activos[c.id]:
+            r = por_alumno.get(m.student_id, {})
+            for aid, vs in r.items():
+                por_area[aid].extend(vs)
+            alumnos.append({
+                'id': m.student_id, 'nombre': m.student.first_name,
+                'apellido': m.student.last_name,
+                'puntaje': _promedio([v for vs in r.values() for v in vs]),
+                'areas': {str(aid): _promedio(vs) for aid, vs in r.items()},
+            })
+        todos = [v for vs in por_area.values() for v in vs]
+        out.append({
+            'id': c.id, 'nombre': c.name, 'nivel': c.level, 'letra': c.letter,
+            'profesor_jefe': (f'{c.head_teacher.first_name} {c.head_teacher.last_name}'.strip()
+                              if c.head_teacher else None),
+            'puntaje': _promedio(todos),
+            'evaluados': sum(1 for a in alumnos if a['puntaje'] is not None),
+            'areas': {str(aid): _promedio(vs) for aid, vs in por_area.items()},
+            'alumnos': alumnos,
+        })
+    return jsonify({
+        'year': year, 'semestre': semestre,
+        'areas': [{'id': a.id, 'nombre': a.nombre} for a in areas],
+        'escala': PUNTAJE_VALOR,
+        'cursos': out,
+    }), 200
+
+
 def _alumno_en_curso(curso, student_id):
     m = next((m for m in _matriculas(curso) if m.student_id == student_id), None)
     if m is None:

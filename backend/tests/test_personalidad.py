@@ -182,3 +182,35 @@ def test_importar_solo_admin_y_solo_pdf(client, headers):
     r = client.post('/api/personalidad/importar/previsualizar', headers=headers['admin'],
                     data={'archivos': (io.BytesIO(b'x'), 'a.txt')}, content_type='multipart/form-data')
     assert r.status_code == 400
+
+
+def test_resumen_puntajes_por_curso_y_area(client, headers, app, ids):
+    from models import db, Enrollment
+    c = _curso(app, ids)
+    alumno = create_user(app, first_name='Tomás', last_name='Resumen Uno')
+    with app.app_context():
+        db.session.add(Enrollment(student_id=alumno, course_id=c['id'], year=c['year'], is_active=True))
+        db.session.commit()
+    h = headers['admin']
+    areas = client.get('/api/personalidad/pauta', headers=h).get_json()['areas']
+    a0, a1 = areas[0], areas[1]
+    resp = {str(a0['criterios'][0]['id']): 'S', str(a0['criterios'][1]['id']): 'N',
+            str(a1['criterios'][0]['id']): 'G', str(a1['criterios'][1]['id']): 'NO'}
+    r = client.put(f"/api/personalidad/cursos/{c['id']}/alumnos/{alumno}", headers=h,
+                   json={'semestre': 2, 'respuestas': resp})
+    assert r.status_code == 200
+
+    r = client.get(f"/api/personalidad/resumen?year={c['year']}&semestre=2", headers=h)
+    assert r.status_code == 200
+    d = r.get_json()
+    assert d['semestre'] == 2
+    curso = next(x for x in d['cursos'] if x['id'] == c['id'])
+    al = next(x for x in curso['alumnos'] if x['id'] == alumno)
+    # S=100, N=0 -> 50 ; G=70 ; NO no cuenta
+    assert al['areas'][str(a0['id'])] == 50
+    assert al['areas'][str(a1['id'])] == 70
+    assert al['puntaje'] == round((100 + 0 + 70) / 3)
+    assert curso['evaluados'] >= 1
+
+    for rol in ('apoderado', 'alumno'):
+        assert client.get('/api/personalidad/resumen', headers=headers[rol]).status_code == 403
