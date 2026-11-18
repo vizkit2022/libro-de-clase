@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { colorPuntaje, etiquetaPuntaje, UMBRAL_BAJO, UMBRAL_ALTO } from '../../pages/Personalidad/colores';
+import { colorPuntaje, etiquetaPuntaje, DEGRADADO_PUNTAJE } from '../../pages/Personalidad/colores';
 import { P, Piso, Caja, SalaIso, EspacioIso, ArbolIso } from './iso';
 import { armarPlano, MURO } from './plano';
 import { CRITERIOS } from './criterios';
@@ -190,9 +190,7 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'] }) {
 
       <div className="ci-leyenda" style={{ opacity: 1 - Math.min(1, t * 2) }}>
         <span className="ci-ley-crit">{criterios.map(id => nombresCrit[id]).join(' + ')}</span>
-        <span><i style={{ background: colorPuntaje(20).base }} /> Bajo {UMBRAL_BAJO}</span>
-        <span><i style={{ background: colorPuntaje(62).base }} /> {UMBRAL_BAJO}–{UMBRAL_ALTO - 1}</span>
-        <span><i style={{ background: colorPuntaje(90).base }} /> {UMBRAL_ALTO} o más</span>
+        <span className="ci-escala"><small>0</small><i style={{ background: DEGRADADO_PUNTAJE }} /><small>100</small></span>
         <span><i style={{ background: colorPuntaje(null).base }} /> Sin datos</span>
       </div>
     </div>

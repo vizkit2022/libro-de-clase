@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
 import { msgError } from '../../components/UI/Modal';
-import { colorPuntaje, etiquetaPuntaje, UMBRAL_BAJO, UMBRAL_ALTO } from './colores';
+import { colorPuntaje, etiquetaPuntaje, UMBRAL_BAJO, DEGRADADO_PUNTAJE } from './colores';
 import SalaAnimada from './SalaAnimada';
 import '../../components/UI/ui.css';
 import './Personalidad.css';
@@ -188,9 +188,7 @@ export default function PersonalidadMapaPage() {
             </AnimatePresence>
 
             <div className="cm-leyenda">
-              <span><i style={{ background: colorPuntaje(20).base }} /> Bajo {UMBRAL_BAJO}</span>
-              <span><i style={{ background: colorPuntaje(62).base }} /> {UMBRAL_BAJO}–{UMBRAL_ALTO - 1}</span>
-              <span><i style={{ background: colorPuntaje(90).base }} /> {UMBRAL_ALTO} o más</span>
+              <span className="cm-escala"><small>0</small><i style={{ background: DEGRADADO_PUNTAJE }} /><small>100</small></span>
               <span><i style={{ background: colorPuntaje(null).base }} /> Sin datos</span>
             </div>
           </div>
