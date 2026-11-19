@@ -81,10 +81,14 @@ function TemaConvivencia({ al }) {
 // Tarjeta rápida de un alumno: por qué está en ese color y acceso a cada tema
 export default function FichaRapida({ al, curso, areas = [], criterios, onVolver }) {
   const det = al.detalle || {};
+  const todos = al.todosDet || det;
   const activos = criterios.filter(id => id in det);
+  // Pestañas: todos los temas con datos; los apagados se ven igual, más tenues
+  const temas = CRITERIOS.map(c => c.id).filter(id => id in todos);
   // Empieza en el tema que más lo baja: esa es la explicación de su color
   const peor = [...activos].sort((a, b) => (det[a] ?? 999) - (det[b] ?? 999))[0];
-  const [tema, setTema] = useState(peor || activos[0]);
+  const [elegido, setTema] = useState(null);
+  const tema = elegido && temas.includes(elegido) ? elegido : (peor || temas[0]);
   const c = colorPuntaje(al.puntaje);
 
   return (
@@ -105,11 +109,13 @@ export default function FichaRapida({ al, curso, areas = [], criterios, onVolver
       )}
 
       <div className="ca-tabs" role="tablist">
-        {activos.map(id => (
+        {temas.map(id => (
           <button key={id} type="button" role="tab" aria-selected={tema === id}
-            className={tema === id ? 'on' : ''} onClick={() => setTema(id)}>
-            <i style={{ background: colorPuntaje(det[id]).base }} />
-            {nombreCrit[id]} <b>{det[id] ?? '—'}</b>
+            className={`${tema === id ? 'on' : ''} ${activos.includes(id) ? '' : 'apagado'}`}
+            title={activos.includes(id) ? '' : 'No cuenta para el color: está apagado arriba'}
+            onClick={() => setTema(id)}>
+            <i style={{ background: colorPuntaje(todos[id]).base }} />
+            {nombreCrit[id]} <b>{todos[id] ?? '—'}</b>
           </button>
         ))}
       </div>

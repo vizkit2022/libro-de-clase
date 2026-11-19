@@ -141,3 +141,4 @@
 .ca-barra-pista { min-width: 30px; }
 .ci-nombre text { font-family: var(--font-sans); }
 .ci-nombre { animation: ciCara .2s ease backwards; }
+.ca-tabs button.apagado { border-style: dashed; opacity: .7; }

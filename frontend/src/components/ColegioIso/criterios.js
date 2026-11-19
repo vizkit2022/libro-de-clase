@@ -23,14 +23,18 @@ export function combinar(fuentes, seleccion) {
   const base = activos.length ? fuentes[activos[0]] : Object.values(fuentes).find(f => f?.cursos);
   if (!base) return [];
   // índices por criterio: curso -> puntaje, alumno -> puntaje
-  const idx = activos.map(id => {
+  const indice = (id) => {
     const cursos = new Map(); const alumnos = new Map();
     fuentes[id].cursos.forEach(c => {
       cursos.set(c.id, c);
       (c.alumnos || []).forEach(a => alumnos.set(`${c.id}:${a.id}`, a));
     });
     return { id, cursos, alumnos };
-  });
+  };
+  const idx = activos.map(indice);
+  // Todos los criterios con datos, aunque no estén encendidos: la tarjeta del
+  // alumno los muestra igual (solo los encendidos cuentan para el color)
+  const todos = CRITERIOS.filter(c => fuentes[c.id]?.cursos).map(c => indice(c.id));
   // Datos que viajan aparte del puntaje para mostrarlos tal cual:
   // la nota (1-7) de Notas y los casos de Convivencia
   const extra = (i, k, campo, mapa) => {
@@ -50,11 +54,13 @@ export function combinar(fuentes, seleccion) {
       alumnos: (c.alumnos || []).map(a => {
         const k = `${c.id}:${a.id}`;
         const det = Object.fromEntries(idx.map(i => [i.id, i.alumnos.get(k)?.puntaje ?? null]));
-        // origen: el alumno tal como lo entrega cada criterio, para explicar su color
-        const origen = Object.fromEntries(idx.map(i => [i.id, i.alumnos.get(k) || null]));
+        // origen: el alumno tal como lo entrega cada criterio, para explicar su color;
+        // todosDet: su puntaje en cada criterio con datos, encendido o no
+        const origen = Object.fromEntries(todos.map(i => [i.id, i.alumnos.get(k) || null]));
+        const todosDet = Object.fromEntries(todos.map(i => [i.id, i.alumnos.get(k)?.puntaje ?? null]));
         return {
           ...a, ...extra(deNotas, k, 'nota', 'alumnos'), ...extra(deConv, k, 'casos', 'alumnos'),
-          detalle: det, origen, puntaje: promedio(Object.values(det)),
+          detalle: det, todosDet, origen, puntaje: promedio(Object.values(det)),
         };
       }),
     };
