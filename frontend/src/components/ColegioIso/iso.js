@@ -65,7 +65,7 @@ function Carita({ cx, cy, r, p }) {
   );
 }
 
-function AlumnoIso({ a, x, y, s, cara, sel, apagado, onClick }) {
+function AlumnoIso({ a, x, y, s, cara, sel, apagado, onClick, onHover }) {
   const piel = PALETA.piel[a.id % PALETA.piel.length];
   const pelo = PALETA.pelo[(a.id * 7) % PALETA.pelo.length];
   const bw = s * 0.62; const bd = s * 0.3; const bh = s * 0.34;
@@ -75,6 +75,8 @@ function AlumnoIso({ a, x, y, s, cara, sel, apagado, onClick }) {
   return (
     <g className={`ci-al ${sel ? 'ci-al-sel' : ''}`} opacity={apagado ? 0.18 : 1}
        onClick={onClick ? (ev) => { ev.stopPropagation(); onClick(a); } : undefined}
+       onPointerEnter={onHover ? () => onHover(a) : undefined}
+       onPointerLeave={onHover ? () => onHover(null) : undefined}
        style={onClick ? { cursor: 'pointer' } : undefined}>
       {sel && <ellipse className="ci-halo" cx={px} cy={py} rx={s * 0.75} ry={s * 0.38}
         fill="none" stroke="#FF7417" strokeWidth={s * 0.06} />}
@@ -149,7 +151,7 @@ function Profesor({ x, y, s }) {
 }
 
 // Una sala de clases abierta (sin techo) con el color de su curso
-export function SalaIso({ x, y, w, d, muro, curso, techo = 0, caras = false, alumnoSel = null, onAlumno }) {
+export function SalaIso({ x, y, w, d, muro, curso, techo = 0, caras = false, alumnoSel = null, onAlumno, onHoverAlumno }) {
   const col = colorPuntaje(curso.puntaje);
   const t = Math.max(3, w * 0.022);
   const alumnos = curso.alumnos || [];
@@ -192,7 +194,7 @@ export function SalaIso({ x, y, w, d, muro, curso, techo = 0, caras = false, alu
         const p = pos(i);
         return <AlumnoIso key={a.id} a={a} s={s} cara={caras} x={p.x} y={p.y}
           sel={alumnoSel === a.id} apagado={alumnoSel != null && alumnoSel !== a.id}
-          onClick={onAlumno} />;
+          onClick={onAlumno} onHover={onHoverAlumno} />;
       })}
       {techo < 1 && <Cubierta x={x} y={y} w={w} d={d} muro={muro} t={t} techo={techo} c={col} />}
     </g>

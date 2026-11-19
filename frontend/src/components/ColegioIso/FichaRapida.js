@@ -9,9 +9,9 @@ const coma = (n) => (n == null ? '—' : Number(n).toFixed(1).replace('.', ','))
 function Barra({ etiqueta, valor, texto }) {
   const c = colorPuntaje(valor);
   return (
-    <div className="fr-barra">
-      <span className="fr-barra-et" title={etiqueta}>{etiqueta}</span>
-      <span className="fr-barra-pista"><i style={{ width: `${valor ?? 0}%`, background: c.base }} /></span>
+    <div className="ca-barra">
+      <span className="ca-barra-et" title={etiqueta}>{etiqueta}</span>
+      <span className="ca-barra-pista"><i style={{ width: `${valor ?? 0}%`, background: c.base }} /></span>
       <b>{texto ?? valor ?? '—'}</b>
     </div>
   );
@@ -25,9 +25,9 @@ function TemaPersonalidad({ al, areas, curso }) {
     .sort((a, b) => (a.p ?? 999) - (b.p ?? 999));
   return (
     <>
-      {!filas.length && <p className="fr-vacio">Todavía no tiene informe de personalidad este semestre.</p>}
+      {!filas.length && <p className="ca-vacio">Todavía no tiene informe de personalidad este semestre.</p>}
       {filas.map(f => <Barra key={f.id} etiqueta={f.nombre} valor={f.p} />)}
-      <Link className="fr-link" to={`/personalidad/cursos/${curso.id}/alumnos/${al.id}`}>Ver informe de personalidad →</Link>
+      <Link className="ca-link" to={`/personalidad/cursos/${curso.id}/alumnos/${al.id}`}>Ver informe de personalidad →</Link>
     </>
   );
 }
@@ -38,13 +38,13 @@ function TemaNotas({ al }) {
   const asig = o?.asignaturas || [];
   return (
     <>
-      {o?.nota != null && <p className="fr-dato">Promedio general <b>{coma(o.nota)}</b></p>}
-      {!asig.length && <p className="fr-vacio">No tiene notas registradas este año.</p>}
+      {o?.nota != null && <p className="ca-dato">Promedio general <b>{coma(o.nota)}</b></p>}
+      {!asig.length && <p className="ca-vacio">No tiene notas registradas este año.</p>}
       {asig.map(a => (
         <Barra key={a.nombre} etiqueta={a.nombre} texto={coma(a.nota)}
           valor={a.nota < 4 ? ((a.nota - 1) / 3) * 50 : 50 + ((a.nota - 4) / 3) * 50} />
       ))}
-      <Link className="fr-link" to={`/students/${al.id}/life`}>Ver hoja de vida y notas →</Link>
+      <Link className="ca-link" to={`/students/${al.id}/life`}>Ver hoja de vida y notas →</Link>
     </>
   );
 }
@@ -56,12 +56,12 @@ function TemaConvivencia({ al }) {
   const an = o?.anotaciones || { negativas: 0, positivas: 0 };
   return (
     <>
-      <div className="fr-anot">
+      <div className="ca-anot">
         <span className="neg">{an.negativas} anotacion{an.negativas === 1 ? '' : 'es'} negativa{an.negativas === 1 ? '' : 's'}</span>
         <span className="pos">{an.positivas} positiva{an.positivas === 1 ? '' : 's'}</span>
       </div>
-      {!casos.length && <p className="fr-vacio">Sin casos de convivencia este año.</p>}
-      <ul className="fr-casos">
+      {!casos.length && <p className="ca-vacio">Sin casos de convivencia este año.</p>}
+      <ul className="ca-casos">
         {casos.map(c => (
           <li key={c.id}>
             <Link to={`/convivencia/casos/${c.id}`}>
@@ -69,11 +69,11 @@ function TemaConvivencia({ al }) {
               <small>{c.tipificacion || 'Sin tipificar'} · {c.cerrado ? 'cerrado' : 'abierto'}
                 {c.fecha ? ` · ${c.fecha.split('-').reverse().join('-')}` : ''}</small>
             </Link>
-            <span className="fr-resta">−{c.resta}</span>
+            <span className="ca-resta">−{c.resta}</span>
           </li>
         ))}
       </ul>
-      <Link className="fr-link" to={`/students/${al.id}/life`}>Ver anotaciones →</Link>
+      <Link className="ca-link" to={`/students/${al.id}/life`}>Ver anotaciones →</Link>
     </>
   );
 }
@@ -88,9 +88,9 @@ export default function FichaRapida({ al, curso, areas = [], criterios, onVolver
   const c = colorPuntaje(al.puntaje);
 
   return (
-    <div className="fr">
+    <div className="ca">
       <button type="button" className="ci-volver" onClick={onVolver}>← Volver a {curso.nombre}</button>
-      <div className="fr-cab">
+      <div className="ca-cab">
         <div>
           <h4>{al.nombre} {al.apellido}</h4>
           <p>{curso.nombre} · {etiquetaPuntaje(al.puntaje)}</p>
@@ -99,12 +99,12 @@ export default function FichaRapida({ al, curso, areas = [], criterios, onVolver
       </div>
 
       {peor && det[peor] != null && activos.length > 1 && (
-        <p className="fr-porque">
+        <p className="ca-porque">
           Lo que más lo baja: <b>{nombreCrit[peor]}</b> ({det[peor]})
         </p>
       )}
 
-      <div className="fr-tabs" role="tablist">
+      <div className="ca-tabs" role="tablist">
         {activos.map(id => (
           <button key={id} type="button" role="tab" aria-selected={tema === id}
             className={tema === id ? 'on' : ''} onClick={() => setTema(id)}>
@@ -114,13 +114,13 @@ export default function FichaRapida({ al, curso, areas = [], criterios, onVolver
         ))}
       </div>
 
-      <div className="fr-cuerpo">
+      <div className="ca-cuerpo">
         {tema === 'personalidad' && <TemaPersonalidad al={al} areas={areas} curso={curso} />}
         {tema === 'notas' && <TemaNotas al={al} />}
         {tema === 'convivencia' && <TemaConvivencia al={al} />}
       </div>
 
-      <Link className="fr-ficha" to={`/students/${al.id}/ficha`}>Abrir ficha del alumno</Link>
+      <Link className="ca-ficha" to={`/students/${al.id}/ficha`}>Abrir ficha del alumno</Link>
     </div>
   );
 }

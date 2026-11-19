@@ -60,6 +60,9 @@ function useTween(dur) {
   return [v, ir];
 }
 
+// "Josefa Poblete Contreras" -> "Josefa P."
+const corto = (a) => `${(a.nombre || '').split(' ')[0]} ${(a.apellido || '').charAt(0)}${a.apellido ? '.' : ''}`.trim();
+
 const mezcla = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
 const suave = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -72,6 +75,7 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'], areas
   const [t, animar] = useTween(DUR);         // 0 colegio, 1 sala abierta
   const [alId, setAlId] = useState(null);    // alumno enfocado
   const [z, enfocar] = useTween(750);        // 0 sala, 1 zoom al alumno
+  const [alHover, setAlHover] = useState(null); // alumno bajo el mouse (sala abierta)
   const plano = useMemo(() => armarPlano(cursos), [cursos]);
   const { patio, pasillos, entrada } = plano;
 
@@ -119,7 +123,8 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'], areas
               ? <SalaIso x={e.x} y={e.y} w={e.w} d={e.d} muro={MURO} curso={e.curso}
                   techo={techo} caras={esSel && t > 0.85}
                   alumnoSel={esSel && z > 0.02 ? alId : null}
-                  onAlumno={esSel && t > 0.9 ? verAlumno : undefined} />
+                  onAlumno={esSel && t > 0.9 ? verAlumno : undefined}
+                  onHoverAlumno={esSel && t > 0.9 ? setAlHover : undefined} />
               : <EspacioIso x={e.x} y={e.y} w={e.w} d={e.d} muro={MURO} nombre={e.nombre} />}
           </g>
         ),
@@ -167,6 +172,27 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'], areas
             );
           })}
         </g>
+        {/* nombre corto sobre la cabeza del alumno bajo el mouse y del enfocado */}
+        {sel && t > 0.9 && cursoSel && [...new Set([alHover?.id, alId].filter(v => v != null))].map(id => {
+          const lista = cursoSel.alumnos || [];
+          const i = lista.findIndex(a => a.id === id);
+          if (i < 0) return null;
+          const a = lista[i];
+          const { s, pos } = grillaAlumnos(sel.x, sel.y, sel.w, sel.d, lista.length);
+          const p = pos(i);
+          const [lx, ly] = P(p.x + s * 0.3, p.y + s * 0.42, s * (alId === id ? 1.62 : 1.38));
+          const f = s * 0.42 * (1 - suave(z) * 0.45);
+          const txt = `${corto(a)} · ${a.puntaje ?? '—'}`;
+          const ancho = txt.length * f * 0.56 + f * 1.4;
+          const col = colorPuntaje(a.puntaje).base;
+          return (
+            <g key={`n${id}`} className="ci-nombre" transform={`translate(${lx} ${ly})`} pointerEvents="none">
+              <rect x={-ancho / 2} y={-f * 1.25} width={ancho} height={f * 1.6} rx={f * 0.8}
+                fill="#fff" stroke={col} strokeWidth={f * 0.14} />
+              <text x={0} y={-f * 0.12} textAnchor="middle" fontSize={f} fontWeight={700} fill="#2B1B14">{txt}</text>
+            </g>
+          );
+        })}
       </svg>
 
       {hover && !sel && (
@@ -208,6 +234,7 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'], areas
           <ol className="ci-alumnos">
             {alumnos.map(a => (
               <li key={a.id} onClick={() => verAlumno(a)} role="button" tabIndex={0}
+                  onPointerEnter={() => setAlHover(a)} onPointerLeave={() => setAlHover(null)}
                   onKeyDown={ev => { if (ev.key === 'Enter') verAlumno(a); }}>
                 <i style={{ background: colorPuntaje(a.puntaje).base }} />
                 <span>{a.nombre} {a.apellido}</span>
