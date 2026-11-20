@@ -8,7 +8,8 @@ amarillos, naranjos y rojos.
 
 No importa app.py (que corre migraciones y seeds al cargar): solo usa los
 modelos. Los alumnos y docentes nuevos no pueden iniciar sesión.
-Si los cursos demo ya existen no hace nada.
+Los cursos que ya tienen notas se saltan, así se puede volver a correr
+para agregar cursos nuevos sin duplicar nada.
 
     cd backend
     python3 scripts/demo_san_patricio.py                       # vista previa
@@ -16,6 +17,7 @@ Si los cursos demo ya existen no hace nada.
 """
 import argparse
 import os
+import itertools
 import random
 import sys
 from datetime import date, datetime, timedelta
@@ -40,12 +42,26 @@ CURSOS = [
     ('8° Básico A', '8° Básico', 'A', 0.84, 26),
     ('I Medio A', 'I Medio', 'A', 0.22, 29),
     ('II Medio A', 'II Medio', 'A', 0.70, 28),
+    # Segunda tanda: los paralelos B (el colegio crece a 2 pisos en el mapa)
+    ('1° Básico B', '1° Básico', 'B', 0.88, 25),
+    ('2° Básico B', '2° Básico', 'B', 0.63, 24),
+    ('3° Básico B', '3° Básico', 'B', 0.90, 26),
+    ('4° Básico B', '4° Básico', 'B', 0.45, 27),
+    ('5° Básico B', '5° Básico', 'B', 0.76, 26),
+    ('6° Básico B', '6° Básico', 'B', 0.82, 28),
+    ('7° Básico B', '7° Básico', 'B', 0.38, 29),
+    ('8° Básico B', '8° Básico', 'B', 0.66, 27),
+    ('I Medio B', 'I Medio', 'B', 0.55, 30),
+    ('II Medio B', 'II Medio', 'B', 0.93, 28),
 ]
 
 DOCENTES = [('Carolina', 'Vidal Araya'), ('Rodrigo', 'Pizarro Leiva'), ('Paula', 'Sepúlveda Godoy'),
             ('Andrés', 'Tapia Olivares'), ('Gabriela', 'Muñoz Ibarra'), ('Felipe', 'Cáceres Rojas'),
             ('Daniela', 'Henríquez Soto'), ('Ignacio', 'Bustos Lagos'), ('Javiera', 'Poblete Fuentes'),
-            ('Cristián', 'Navarrete Mena')]
+            ('Cristián', 'Navarrete Mena'), ('Valeria', 'Rojas Escobar'), ('Sebastián', 'Godoy Araya'),
+            ('Macarena', 'Torres Leiva'), ('Gonzalo', 'Figueroa Silva'), ('Camila', 'Olivares Donoso'),
+            ('Patricio', 'Maturana Vera'), ('Francisca', 'Quiroz Bravo'), ('Esteban', 'Jofré Muñoz'),
+            ('Bárbara', 'Leiva Contreras'), ('Mauricio', 'Valenzuela Ibarra')]
 
 NOMBRES_F = ('Antonia', 'Florencia', 'Isidora', 'Josefa', 'Trinidad', 'Emilia', 'Martina', 'Agustina',
              'Sofía', 'Catalina', 'Maite', 'Amanda', 'Renata', 'Julieta', 'Fernanda', 'Constanza')
@@ -124,13 +140,19 @@ def sembrar(school, year, azar):
     docentes = User.query.filter_by(school_id=sid, role='profesor').order_by(User.id).all()
     nuevos_docentes = []
     for i, (nombre, apellido) in enumerate(DOCENTES):
-        u = User(school_id=sid, email=f'docente.demo.{sid}.{i}{DOMINIO}', first_name=nombre,
+        correo = f'docente.demo.{sid}.{i}{DOMINIO}'
+        if User.query.filter_by(email=correo).first():
+            continue    # creado en una corrida anterior
+        u = User(school_id=sid, email=correo, first_name=nombre,
                  last_name=apellido, role='profesor', is_active=True, password_hash=CLAVE_INUTILIZABLE)
         nuevos_docentes.append(u)
     db.session.add_all(nuevos_docentes)
     db.session.flush()
-    docentes = docentes + nuevos_docentes
-    jefe_de = iter(nuevos_docentes + docentes)
+    docentes = User.query.filter_by(school_id=sid, role='profesor').order_by(User.id).all()
+    # Profesor jefe: primero los que todavía no tienen jefatura
+    con_jefatura = {c.head_teacher_id for c in Course.query.filter_by(school_id=sid, year=year).all()}
+    libres = [d for d in docentes if d.id not in con_jefatura]
+    jefe_de = itertools.cycle(libres or docentes)
 
     ensure_personalidad_pauta(sid)
     db.session.flush()
@@ -145,6 +167,9 @@ def sembrar(school, year, azar):
 
     for nombre, nivel, letra, calidad, total in CURSOS:
         curso = Course.query.filter_by(school_id=sid, name=nombre, year=year).first()
+        if curso is not None and Grade.query.join(CourseSubject)\
+                .filter(CourseSubject.course_id == curso.id).first() is not None:
+            continue    # ya cargado en una corrida anterior
         if curso is None:
             curso = Course(school_id=sid, name=nombre, level=nivel, letter=letra, year=year,
                            is_active=True, head_teacher_id=next(jefe_de).id)
@@ -253,11 +278,12 @@ def main():
         school = School.query.filter_by(name=NOMBRE_COLEGIO).first()
         if school is None:
             raise SystemExit(f'No existe "{NOMBRE_COLEGIO}"')
-        if Course.query.filter_by(school_id=school.id, name='Pre-kínder', year=args.year).first():
-            print('Los cursos demo ya están cargados. No hago nada.')
-            return
         azar = random.Random(f'san-patricio-{args.year}')
         resumen, notas, pers, docentes = sembrar(school, args.year, azar)
+        if not resumen:
+            print('Todos los cursos demo ya están cargados. No hago nada.')
+            db.session.rollback()
+            return
         print(f'{NOMBRE_COLEGIO} (id {school.id}), año {args.year}')
         for nombre, (alumnos, casos) in resumen.items():
             print(f'  {nombre:<14} {alumnos:>3} alumnos  {casos} casos')

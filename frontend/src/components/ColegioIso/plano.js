@@ -12,8 +12,15 @@ export const W = 230;      // ancho de una sala
 export const D = 165;      // fondo de una sala
 export const C = 46;       // ancho del pasillo
 export const MURO = 46;    // alto de los muros
+export const ALTO_PISO = MURO * 1.25;  // cuánto sube cada piso
+const MAX_UN_PISO = 12;    // con más cursos que esto, el colegio crece a 2 pisos
 
-export function armarPlano(cursos) {
+export function armarPlano(todos) {
+  // Con muchos cursos el colegio tiene 2 pisos: la mitad arriba, sobre las mismas salas
+  const dosPisos = todos.length > MAX_UN_PISO;
+  const n1 = dosPisos ? Math.ceil(todos.length / 2) : todos.length;
+  const cursos = todos.slice(0, n1);
+  const arriba = todos.slice(n1);
   const n = cursos.length;
   const lado = Math.max(1, Math.floor(n * 0.3));
   const norte = Math.max(3, n - 2 * lado);
@@ -24,6 +31,7 @@ export function armarPlano(cursos) {
   const sig = () => cursos[k++];
   const agregar = (x, y, c) => espacios.push({
     tipo: c ? 'sala' : 'otro', x, y, w: W, d: D, curso: c, nombre: c?.nombre ?? 'Taller',
+    piso: 1, dz: 0,
   });
 
   for (let i = 0; i < norte; i++) agregar(i * W, 0, sig());
@@ -34,7 +42,14 @@ export function armarPlano(cursos) {
   const yF = y0 + altoAlas + C;
   const entrada = 120;
   const resto = (anchoTotal - entrada) / 2;
-  const frente = (x, nombre) => espacios.push({ tipo: 'otro', x, y: yF, w: resto / 2, d: D * 0.8, nombre });
+  // Segundo piso: los cursos que siguen, sobre las salas del primero (no sobre los servicios)
+  const salasP1 = espacios.slice();
+  arriba.forEach((c, j) => {
+    const b = salasP1[j];
+    if (b) espacios.push({ ...b, tipo: 'sala', curso: c, nombre: c.nombre, piso: 2, dz: ALTO_PISO });
+  });
+  const frente = (x, nombre) => espacios.push({ tipo: 'otro', x, y: yF, w: resto / 2, d: D * 0.8, nombre,
+    piso: 1, dz: 0 });
   frente(0, 'Dirección');
   frente(resto / 2, 'Biblioteca');
   frente(resto + entrada, 'Comedor');
@@ -51,5 +66,6 @@ export function armarPlano(cursos) {
     ],
     entrada: { x: resto, y: yF, w: entrada, d: D * 0.8 },
     ancho: anchoTotal, fondo: yF + D * 0.8,
+    pisos: dosPisos ? 2 : 1,
   };
 }

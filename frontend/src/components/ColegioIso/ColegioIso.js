@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { colorPuntaje, etiquetaPuntaje, DEGRADADO_PUNTAJE } from '../../pages/Personalidad/colores';
 import { P, Piso, Caja, SalaIso, EspacioIso, ArbolIso, grillaAlumnos } from './iso';
 import FichaRapida from './FichaRapida';
-import { armarPlano, MURO } from './plano';
+import { armarPlano, MURO, ALTO_PISO } from './plano';
 import { CRITERIOS } from './criterios';
 import './ColegioIso.css';
 
@@ -15,15 +15,17 @@ function limites(ps) {
 
 // Encuadre de todo el colegio
 function vbColegio(plano) {
-  const l = limites([P(-50, -50, MURO * 1.6), P(plano.ancho + 50, -50, MURO * 1.6),
+  const alto = MURO * 1.6 + ALTO_PISO * (plano.pisos - 1);
+  const l = limites([P(-50, -50, alto), P(plano.ancho + 50, -50, alto),
     P(-50, plano.fondo + 90), P(plano.ancho + 50, plano.fondo + 90)]);
   return [l.x0, l.y0 - 10, l.x1 - l.x0, l.y1 - l.y0 + 10];
 }
 
 // Encuadre de una sala, a la izquierda para dejar sitio a la lista de alumnos
 function vbSala(e, aspecto) {
-  const l = limites([P(e.x - 6, e.y - 6, MURO * 1.6), P(e.x + e.w, e.y - 6, MURO * 1.6),
-    P(e.x - 6, e.y + e.d), P(e.x + e.w, e.y + e.d)]);
+  const z = e.dz || 0;
+  const l = limites([P(e.x - 6, e.y - 6, MURO * 1.6 + z), P(e.x + e.w, e.y - 6, MURO * 1.6 + z),
+    P(e.x - 6, e.y + e.d, z), P(e.x + e.w, e.y + e.d, z)]);
   let w = (l.x1 - l.x0) / 0.58; let h = w / aspecto;
   if (h < (l.y1 - l.y0) * 1.15) { h = (l.y1 - l.y0) * 1.15; w = h * aspecto; }
   return [l.x0 - w * 0.04, (l.y0 + l.y1) / 2 - h / 2, w, h];
@@ -34,7 +36,7 @@ function vbAlumno(e, curso, al, aspecto) {
   const i = (curso.alumnos || []).findIndex(a => a.id === al.id);
   const { s, pos } = grillaAlumnos(e.x, e.y, e.w, e.d, (curso.alumnos || []).length);
   const p = pos(Math.max(0, i));
-  const [cx, cy] = P(p.x + s * 0.3, p.y + s * 0.3, s * 0.5);
+  const [cx, cy] = P(p.x + s * 0.3, p.y + s * 0.3, s * 0.5 + (e.dz || 0));
   const h = s * 6; const w = h * aspecto;
   return [cx - w * 0.3, cy - h * 0.5, w, h];
 }
@@ -76,6 +78,7 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'], areas
   const [alId, setAlId] = useState(null);    // alumno enfocado
   const [z, enfocar] = useTween(750);        // 0 sala, 1 zoom al alumno
   const [alHover, setAlHover] = useState(null); // alumno bajo el mouse (sala abierta)
+  const [pisoVer, setPisoVer] = useState(0);    // 0 ambos pisos, 1 o 2 solo ese piso
   const plano = useMemo(() => armarPlano(cursos), [cursos]);
   const { patio, pasillos, entrada } = plano;
 
@@ -102,22 +105,32 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'], areas
 
   // De atrás hacia adelante, para que lo cercano tape a lo lejano
   const prof = (e) => e.x + e.w / 2 + e.y + e.d / 2;
-  const orden = [...plano.espacios].sort((a, b) => prof(a) - prof(b));
+  // Cada columna de salas se dibuja de abajo hacia arriba (piso 1 y luego piso 2)
+  // Con un piso elegido, el de arriba no se dibuja y el de abajo queda tenue
+  const visibles = plano.espacios.filter(e => !(pisoVer === 1 && e.piso === 2));
+  const orden = [...visibles].sort((a, b) => prof(a) - prof(b) || a.piso - b.piso);
+  const tapada = (e) => visibles.some(o => o.piso > e.piso && o.x === e.x && o.y === e.y);
+  const mismo = (a, b) => !!a && !!b && a.x === b.x && a.y === b.y && a.piso === b.piso;
   const arboles = [[0.12, 0.12], [0.88, 0.14], [0.1, 0.9], [0.9, 0.88]]
     .map(([fx, fy]) => ({ x: patio.x + patio.w * fx, y: patio.y + patio.d * fy }));
   const cancha = (fx, fy) => P(patio.x + patio.w * fx, patio.y + patio.d * fy);
 
   const nodos = [
     ...orden.map((e, i) => {
-      const esSel = !!sel && sel.x === e.x && sel.y === e.y;
+      const esSel = mismo(sel, e);
+      // La sala de arriba de la que se abre desaparece del todo; el resto queda tenue
+      const encima = !!sel && e.x === sel.x && e.y === sel.y && e.piso > sel.piso;
+      const base = pisoVer === 2 && e.piso === 1 ? 0.45 : 1;
+      const opacidad = (!sel || esSel ? 1 : encima ? 1 - suave(t) : 1 - suave(t) * 0.82) * base;
       const techo = esSel ? t : 0;
       return {
         k: prof(e),
         n: (
-          <g key={`${e.x}-${e.y}`} className={`ci-esp ${e.curso && !sel ? 'ci-sala' : ''}`}
-             style={{ animationDelay: `${i * 45}ms`, opacity: sel && !esSel ? 1 - suave(t) * 0.82 : 1 }}
+          <g key={`${e.x}-${e.y}-${e.piso}`} className={`ci-esp ${e.curso && !sel ? 'ci-sala' : ''}`}
+             transform={e.dz ? `translate(0 ${-e.dz})` : undefined}
+             style={{ animationDelay: `${i * 45}ms`, opacity: opacidad }}
              onClick={e.curso ? () => abrir(e) : undefined}
-             onPointerEnter={e.curso && !sel ? () => setHover(e.curso) : undefined}
+             onPointerEnter={e.curso && !sel ? () => setHover({ ...e.curso, piso: plano.pisos > 1 ? e.piso : null }) : undefined}
              onPointerLeave={e.curso ? () => setHover(null) : undefined}>
             {e.tipo === 'sala'
               ? <SalaIso x={e.x} y={e.y} w={e.w} d={e.d} muro={MURO} curso={e.curso}
@@ -145,6 +158,14 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'], areas
 
   return (
     <div className={`ci ${sel ? 'abierto' : ''}`}>
+      {plano.pisos > 1 && !sel && (
+        <div className="ci-pisos" role="group" aria-label="Pisos">
+          {[[0, 'Ambos pisos'], [1, 'Piso 1'], [2, 'Piso 2']].map(([v, txt]) => (
+            <button key={v} type="button" className={pisoVer === v ? 'on' : ''}
+              aria-pressed={pisoVer === v} onClick={() => setPisoVer(v)}>{txt}</button>
+          ))}
+        </div>
+      )}
       <svg viewBox={vb.join(' ')} role="img" aria-label={`Plano del colegio con ${cursos.length} cursos`}>
         <Piso x={-50} y={-50} w={plano.ancho + 100} d={plano.fondo + 140} c="#DCEBC8" />
         <Piso x={patio.x} y={patio.y} w={patio.w} d={patio.d} c="#A9D48A" />
@@ -157,13 +178,13 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'], areas
         {nodos}
         {/* etiquetas sobre cada techo; se esconden al abrir una sala */}
         <g opacity={1 - Math.min(1, t * 2)} pointerEvents={sel ? 'none' : undefined}>
-          {plano.espacios.filter(e => e.tipo === 'sala').map(e => {
-            const [lx, ly] = P(e.x + e.w * 0.5, e.y + e.d * 0.5, MURO * 1.2 + 14);
+          {visibles.filter(e => e.tipo === 'sala' && !tapada(e) && !(pisoVer === 2 && e.piso === 1)).map(e => {
+            const [lx, ly] = P(e.x + e.w * 0.5, e.y + e.d * 0.5, MURO * 1.2 + 14 + (e.dz || 0));
             const c = colorPuntaje(e.curso.puntaje);
             const txt = e.curso.puntaje == null ? e.nombre : `${e.nombre} · ${e.curso.puntaje}`;
             const ancho = txt.length * 12 + 40;
             return (
-              <g key={`l${e.x}-${e.y}`} className="ci-etq" transform={`translate(${lx}, ${ly - 18})`}
+              <g key={`l${e.x}-${e.y}-${e.piso}`} className="ci-etq" transform={`translate(${lx}, ${ly - 18})`}
                  onClick={() => abrir(e)}>
                 <rect x={-ancho / 2} y={0} width={ancho} height={36} rx={18} fill="#fff" stroke={c.base} strokeWidth={3} />
                 <circle cx={-ancho / 2 + 19} cy={18} r={8} fill={c.base} />
@@ -180,7 +201,7 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'], areas
           const a = lista[i];
           const { s, pos } = grillaAlumnos(sel.x, sel.y, sel.w, sel.d, lista.length);
           const p = pos(i);
-          const [lx, ly] = P(p.x + s * 0.3, p.y + s * 0.42, s * (alId === id ? 1.62 : 1.38));
+          const [lx, ly] = P(p.x + s * 0.3, p.y + s * 0.42, s * (alId === id ? 1.62 : 1.38) + (sel.dz || 0));
           const f = s * 0.42 * (1 - suave(z) * 0.45);
           const txt = `${corto(a)} · ${a.puntaje ?? '—'}`;
           const ancho = txt.length * f * 0.56 + f * 1.4;
@@ -197,7 +218,7 @@ export default function ColegioIso({ cursos, criterios = ['personalidad'], areas
 
       {hover && !sel && (
         <div className="ci-tip">
-          <b>{hover.nombre}</b>
+          <b>{hover.nombre}{hover.piso ? <em className="ci-piso">Piso {hover.piso}</em> : null}</b>
           <span>{etiquetaPuntaje(hover.puntaje)}{hover.puntaje != null ? ` · ${hover.puntaje}/100` : ''}</span>
           <small>{(hover.alumnos || []).length} alumnos · clic para entrar a la sala</small>
         </div>
